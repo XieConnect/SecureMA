@@ -4,9 +4,13 @@
  * @version 5/16/12
  */
 
+import java.math.{BigInteger, BigDecimal}
+
+
 object FairplaySimulator {
   val N = 20  //should be upper bound for n
-  val Factor = math.pow(2, N).toInt
+  //TODO hard-code into Fairplay
+  val Factor = new BigInteger("%.0f".format(math.pow(2, N)))
 
   def log2(x: Int) = {
     math.log(x) / math.log(2.0)
@@ -23,64 +27,72 @@ object FairplaySimulator {
    * @param randoms  two random numbers provided to blind return result
    * @return  Two-party shares for n and epsilon
    */
-  def getNAndEpsilon(share1: Int, share2: Int, randoms: (Int, Int)) = {
-    val x = share1 + share2
+  def getNAndEpsilon(share1: BigInteger, share2: BigInteger, randoms: (BigInteger, BigInteger)) = {
+    val x = share1.add(share2)
 
     //estimate n (assuming no log() or multiply() operators provided)
-    var tmp = 2
-    var n = 1
+    var tmp = BigInteger.valueOf(2)
+    var n: Int = 1
     for (i <- 1 to N) {
-      if (tmp < x) {
+      if (tmp.compareTo(x) == -1) {
         //tmp would be equal to 2^n after loop
-        tmp = tmp + tmp
+        tmp = tmp.add(tmp)
         n = n + 1
       }
     }
 
     //estimate epsilon * 2^N
-    tmp = x - tmp
-    //scale up with 2^N
+    tmp = x.subtract(tmp)
+    //scale up with 2^N  (we already scaled with 2^n)
     for (i <- 1 to (N - n)) {
-      tmp = tmp + tmp
+      tmp = tmp.add(tmp)
     }
 
-    //TODO hardcode ln 2
-    val raisedln2 = (math.log(2) * math.pow(2, N)).toInt
-    var nln2 = 0
+    //TODO hardcode 2^N * ln 2
+    val raisedln2 = new BigInteger("%.0f".format(math.log(2) * math.pow(2, N)))
+    //compute n * (2^N * ln 2)
+    var nln2 = BigInteger.ZERO
     for (i <- 1 to n) {
-      nln2 = nln2 + raisedln2
+      nln2 = nln2.add(raisedln2)
     }
 
-    println("Estimate: " + n)
+    println("Estimate of n: " + n)
 
     //return epsilon*2^N and 2^N * n * ln 2
     //P1: alpha1, beta1;  P2: alpha2, beta2
-    (tmp - randoms._1, nln2 - randoms._2)
+    (tmp.subtract(randoms._1), nln2.subtract(randoms._2))
   }
 
 
-  //lcm(2, ..., k)
+  /**
+   * Least-common-multiple: lcm(2, ..., k)
+   * It should work well under Int32 range
+   * TODO use reference table in Fairplay
+   */
   def lcmK(k: Int) = {
     var tmp = 2
     for (i <- 3 to k) {
       tmp = lcm(tmp, i)
     }
 
-    tmp
+    BigInteger.valueOf(tmp)
   }
 
 
-  //TODO errors!  define Q(x) polynomial
-  def qPolynomial(a1: Int, k: Int, random: Int, x: Int) = {
+  //TODO define Q(x) polynomial
+  def qPolynomial(a1: BigInteger, k: Int, random: BigInteger, z: BigInteger) = {
     val multiple = lcmK(k)
-    var result = 0
+    var result = BigInteger.ZERO
+    var numerator = BigInteger.valueOf(-1)
+    var factorTmp = BigInteger.valueOf(1)
+
     for (i <- 1 to k) {
-      //TODO error
-      result += lcmK / i
-        math.pow(-1, i-1).toInt * math.pow(a1 + x, i).toInt * multiple / (math.pow(2, N*(i-1)).toInt * i)
+      numerator = BigInteger.ZERO.subtract( numerator.multiply(a1.add(z)) )
+      result = result.add(numerator.divide( factorTmp.multiply(multiple.divide(BigInteger.valueOf(i))) ))
+      factorTmp = factorTmp.multiply(Factor)
     }
 
-    (random, result - random)
+    result.subtract(random)
   }
 
 
@@ -88,26 +100,35 @@ object FairplaySimulator {
    * Entrance function
    */
   def main(args: Array[String]) = {
-    val randoms = (1, 1)
+    val startedAt = System.currentTimeMillis()
+
+
+    val randoms = (BigInteger.valueOf(1), BigInteger.valueOf(1))
     val (a1, b1) = randoms
     println("2^N = 2^" + N + " = " + Factor)
 
-    val x = 10
+    val share1 = BigInteger.valueOf(2)
+    val share2 = BigInteger.valueOf(18)
 
-    val (a2, b2) = getNAndEpsilon(2, x - 2, randoms)
+    //TODO remove
+    val x = share1.add(share2)
+
+    val (a2, b2) = getNAndEpsilon(share1, share2, randoms)
     println("x= " + x)
-    println("eps= " + (a1+a2).toDouble / Factor)
+    println("eps= " + new BigDecimal(a1.add(a2)).divide(new BigDecimal(Factor)))
 
-    val w1 = 0 //random
-    val k = 14  //TODO define max k
-    val (_, w2) = qPolynomial(a1, k, w1, a2)
 
-    val lcmConstant = lcmK(k)
-    val u1 = lcmConstant * b1 + w1
-    val u2 = lcmConstant * b2 + w2
+    val z1 = BigInteger.valueOf(3) //random
+    val k = 20  //TODO define max k
+    val z2= qPolynomial(a1, k, z1, a2)
 
-    println("Est: " + (u1+u2).toDouble / Factor / lcmConstant)
-    println("Act: " + (math.log(x)))
-    println()
+    val multiple = lcmK(k)
+    val u1 = z1.add(multiple.multiply(b1))
+    val u2 = z2.add(multiple.multiply(b2))
+
+    println("Est: " + new BigDecimal(u1.add(u2)).divide(new BigDecimal(Factor)).divide(new BigDecimal(multiple)))
+    println("Act: " + (math.log(x.doubleValue())))
+
+    println("\nProcess finished in " + (System.currentTimeMillis() - startedAt)/1000.0 + " seconds.")
   }
 }
