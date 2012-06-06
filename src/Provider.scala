@@ -41,6 +41,12 @@ object Provider {
   }
 
 
+  /**
+   * For testing only
+   * @param encryptedData
+   * @param thresholdParties
+   * @return
+   */
   def decryptData(encryptedData: BigInteger, thresholdParties: Array[PaillierThreshold]): BigInteger = {
     thresholdParties(0).combineShares((for (p <- thresholdParties) yield p.decrypt(encryptedData)): _*)
   }
@@ -152,6 +158,8 @@ object Provider {
     if (toVerifyEncryption) {
       verifyEncryption(EncryptedDataFile, privateKeys)
     }
+
+    println("Saved encrypted data in: " + EncryptedDataFile)
 
     //TODO for test only. will move to file later
     privateKeys

@@ -59,7 +59,7 @@ object Mediator {
     var multiplier = 0.0
 
     for (line <- io.Source.fromFile(inputFile).getLines()) {
-      val record = line.split(",")
+      val record = line.split(Provider.Delimiter)
 
       if (indx == 0) {
         multiplier = record(1).toDouble
