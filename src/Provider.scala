@@ -1,5 +1,6 @@
 /**
- * For providers to preprocess and upload data
+ * Data Providers pre-process and upload data
+ * Final data will be stored in file specified by EncryptedDataFile below
  */
 
 import java.math.BigInteger
@@ -15,10 +16,10 @@ import java.math.{BigDecimal, RoundingMode}
 
 object Provider {
   //TODO Read config file
-  val MULTIPLIER: Double = math.pow(10, 10)
+  val MULTIPLIER: Double = math.pow(10, 10)  // to hard-code if needed
   val PartiesNumberThreshold = 3
   val EncryptedDataFile = "data/encrypted_data.csv"
-  val Delimiter = ","
+  val Delimiter = ","  // how is raw data file delimited
 
 
   /**
@@ -50,42 +51,58 @@ object Provider {
 
 
   /**
-   * Verify correctness of encryption
+   * Verify correctness of encryption (for testing)
    * @param inputFile  file containing encrypted data (first two rows are header)
-   * @param privateKeys
+   * @param privateKeys  private keys
+   * @return  number of errors for Weight and Beta*Weight
    */
   def verifyEncryption(inputFile: String, privateKeys: Array[PaillierPrivateThresholdKey]) = {
     var indx = 0
     var multiplier = 0.0
     val epsilon = 1.0 / MULTIPLIER
     val thresholdParties: Array[PaillierThreshold] = for (k <- privateKeys.take(PartiesNumberThreshold)) yield new PaillierThreshold(k)
+    var weightErrors, betaWeightErrors = 0
 
     for (line <- io.Source.fromFile(inputFile).getLines()) {
-      val record = line.split(",")
+      val record = line.split(Delimiter)
 
       if (indx == 0) {
         multiplier = record(1).toDouble
         println("Compare multiplier: " + (multiplier == MULTIPLIER) + "  " + multiplier + " " + MULTIPLIER)
       } else if (indx > 1) {
-        println( "Weight:      " +
-          ((record(3).toDouble - decryptData(record(0), thresholdParties).doubleValue / multiplier).abs <= epsilon))
-        println( "Beta*Weight: " +
-          (((decryptData(record(1), thresholdParties) subtract decryptData(record(2), thresholdParties)).doubleValue / multiplier - record(4).toDouble).abs <= epsilon ))
+        val compareWeight = ((record(3).toDouble - decryptData(record(0), thresholdParties).doubleValue / multiplier).abs <= epsilon)
+        val compareBetaWeight = (((decryptData(record(1), thresholdParties) subtract decryptData(record(2), thresholdParties)).doubleValue / multiplier - record(4).toDouble).abs <= epsilon )
+
+        if (!compareWeight) {
+          weightErrors += 1
+        }
+        if (!compareBetaWeight) {
+          betaWeightErrors += 1
+        }
+
+        println( "Weight:      " + compareWeight)
+        println( "Beta*Weight: " + compareBetaWeight)
       }
 
       indx += 1
     }
+
+    println("All verification finished. Weight: [" + weightErrors + "] errors;  Beta*Weight: [" + betaWeightErrors + "] errors.")
+
+    (weightErrors, betaWeightErrors)
   }
 
 
   /**
-   * Prepare data from raw values
-   * @param fileName  raw data file
-   * @return
+   * Prepare (encrypted) data for sharing
+   * @param fileName  path to file containing raw data
+   * @param toVerifyEncryption  if set to true, will decrypt to verify encryption (for testing)
+   * @return  all private keys (for dev only)
    */
   def prepareData(fileName: String = "data/raw_data_sorted.csv", toVerifyEncryption: Boolean = true) = {
+    // to store encrypted data
     val writer = new java.io.PrintWriter(new java.io.File(EncryptedDataFile))
-    // Input
+    // Input: file row contains labels
     val lines = io.Source.fromFile(fileName).getLines.drop(1).toArray
     val NUMBER_OF_PARTIES = lines.length
 
@@ -98,7 +115,8 @@ object Provider {
     val publicKey = privateKeys(0).getPublicKey()
     val someone = new paillierp.Paillier(publicKey)
 
-    writer.println("Multiplier:," + MULTIPLIER)
+    writer.println("Multiplier:" + Delimiter + MULTIPLIER)
+    // TODO use Delimiter instead of ","
     writer.println(""""encrypted weight_i","encrypted positive beta*weight","encrypted negative beta*weight","weight_i","beta*weight","positive beta*weight","negative beta*weight"""")
 
     for (line <- lines; record = line.split(Delimiter)) {
@@ -118,14 +136,14 @@ object Provider {
       val encryptedWeight = someone.encrypt(raisedWeightI)
       val encryptedBetaWeightPositive = someone.encrypt(splitBetaWeight(0))
       val encryptedBetaWeightNegative = someone.encrypt(splitBetaWeight(1))
-      writer.print( encryptedWeight + "," +
-                    encryptedBetaWeightPositive + "," +
-                    encryptedBetaWeightNegative + ",")
+      writer.print( encryptedWeight + Delimiter +
+                    encryptedBetaWeightPositive + Delimiter +
+                    encryptedBetaWeightNegative + Delimiter)
 
-      // Store plain values
-      writer.print(weightI + "," +
-                   betaWeight + "," +
-                   splitBetaWeight(0) + "," +
+      // Store plain values (for testing)
+      writer.print(weightI + Delimiter +
+                   betaWeight + Delimiter +
+                   splitBetaWeight(0) + Delimiter +
                    splitBetaWeight(1) + "\n")
     }
 
@@ -138,7 +156,6 @@ object Provider {
     //TODO for test only. will move to file later
     privateKeys
   }
-
 
 
   def main(args: Array[String]) = {
