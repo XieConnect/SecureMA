@@ -4,7 +4,9 @@
  * @version 5/24/12
  */
 
+import java.io.ObjectOutputStream
 import java.math.BigInteger
+import java.net.ServerSocket
 import java.util.Random
 import paillierp.Paillier
 import paillierp.key.KeyGen
@@ -88,11 +90,32 @@ object Mediator {
   }
 
 
+  //TODO move to separate class
+  //TODO send actual keys; config port and hostname, etc
+  /**
+   * Distribute private keys to participants
+   */
+  def distributeKeys() = {
+    val ss = new ServerSocket(3497)
+    println("Host waiting...")
+    val socket = ss.accept()
+    //TODO convert to array of streams
+    val toParties = new ObjectOutputStream(socket.getOutputStream())
+    toParties.writeInt(333)  // send test data
+    toParties.flush()
+
+    toParties.close()
+    socket.close()
+    ss.close()
+  }
+
+
   def main(args: Array[String]) = {
     val startedAt = System.currentTimeMillis()
 
 
-    inverseVariance()
+    //inverseVariance()
+    distributeKeys()
 
 
     println("\nProcess finished in " + (System.currentTimeMillis() - startedAt) / 1000.0 + " seconds.")

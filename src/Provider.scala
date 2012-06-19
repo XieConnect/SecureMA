@@ -3,7 +3,9 @@
  * Final data will be stored in file specified by EncryptedDataFile below
  */
 
+import java.io.ObjectInputStream
 import java.math.BigInteger
+import java.net.Socket
 import java.util.Random
 import paillierp.Paillier
 import paillierp.key.KeyGen
@@ -20,6 +22,20 @@ object Provider {
   val PartiesNumberThreshold = 3
   val EncryptedDataFile = "data/encrypted_data.csv"
   val Delimiter = ","  // how is raw data file delimited
+
+
+  /**
+   * Receive private keys from the mediator
+   */
+  //TODO store data in file securely and easy to restore
+  def receiveKey() = {
+    val socket = new Socket("localhost", 3497)
+    val fromOrigin = new ObjectInputStream(socket.getInputStream())
+    println("Received: " + fromOrigin.readInt())
+
+    socket.close()
+    fromOrigin.close()
+  }
 
 
   /**
@@ -169,7 +185,8 @@ object Provider {
   def main(args: Array[String]) = {
     val startedAt = System.currentTimeMillis()
 
-    prepareData()
+    //prepareData()
+    receiveKey()
 
     println("\nProcess finished in " + (System.currentTimeMillis - startedAt) / 1000.0 + " seconds.")
   }
