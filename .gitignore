@@ -4,10 +4,18 @@ out/*
 target/*
 experiment/*
 
-data/*
-
-*.swp
 run/*
 
 *.iml
+*.ipr
+*.iws
 .idea/*
+
+# vim
+*.swp
+.*.sw[a-z]
+*.un~
+Session.vim
+
+# others
+data/*
