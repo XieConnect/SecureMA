@@ -8,6 +8,7 @@ import java.io.ObjectOutputStream
 import java.math.BigInteger
 import java.net.ServerSocket
 import java.util.Random
+import org.apache.commons.math3.linear.{RealVector, ArrayRealVector}
 import paillierp.Paillier
 import paillierp.key.KeyGen
 import paillierp.key.PaillierPrivateThresholdKey
@@ -16,7 +17,13 @@ import paillierp.key.PaillierKey
 import paillierp.PaillierThreshold
 import java.math.{BigDecimal, RoundingMode}
 
+import org.apache.commons.math3.util.ArithmeticUtils
+
 object Mediator {
+  val K_TAYLOR_PLACES = 10
+  val LCM = (2 to K_TAYLOR_PLACES).foldLeft(1)((a, x) => ArithmeticUtils.lcm(a, x))
+  val POWER_OF_TWO = math.pow(2, 20)
+
   /**
    * Read in public keys from file
    * @param inputFile
@@ -110,12 +117,39 @@ object Mediator {
   }
 
 
+  def polynomialCoefficients(constA: BigInteger, powerI: Int) = {
+    val coefficients = Array.fill[BigInteger](K_TAYLOR_PLACES + 1)(BigInteger.ZERO)
+    //val coefficients = new ArrayRealVector(K_TAYLOR_PLACES + 1)
+
+    val tmp = new BigInteger("%.0f".format(math.pow(POWER_OF_TWO, K_TAYLOR_PLACES - powerI) * math.pow(-1, powerI - 1)))
+    val multiplier = tmp.multiply(BigInteger.valueOf(LCM / powerI))
+
+    for (j <- 0 to powerI) {
+      coefficients(j) = constA.pow(powerI - j).multiply(BigInteger.valueOf(ArithmeticUtils.binomialCoefficient(powerI, j))).multiply(multiplier)
+    }
+
+    coefficients.map(a => println(a.toString))
+    //println(multiplier)
+
+    coefficients
+  }
+
+
   def main(args: Array[String]) = {
     val startedAt = System.currentTimeMillis()
 
 
     //inverseVariance()
-    distributeKeys()
+    //distributeKeys()
+    var result = Array.fill[BigInteger](K_TAYLOR_PLACES + 1)(BigInteger.ZERO)
+    for (variableI <- 1 to K_TAYLOR_PLACES) {
+      val nextVector = polynomialCoefficients(new BigInteger("123456789123456789"), variableI)
+      result = for ((a, b) <- result zip nextVector) yield a.add(b)
+      println()
+      println("Result: ")
+      result.map(println)
+      println
+    }
 
 
     println("\nProcess finished in " + (System.currentTimeMillis() - startedAt) / 1000.0 + " seconds.")
