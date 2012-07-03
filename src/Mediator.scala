@@ -117,19 +117,22 @@ object Mediator {
   }
 
 
+  /**
+   * Obtain coefficients for binomial expansion
+   * @param constA  constant alpha1 as in binomial polynomial
+   * @param powerI  the power size of the expansion
+   * @return  vector with all coefficients
+   */
   def polynomialCoefficients(constA: BigInteger, powerI: Int) = {
     val coefficients = Array.fill[BigInteger](K_TAYLOR_PLACES + 1)(BigInteger.ZERO)
-    //val coefficients = new ArrayRealVector(K_TAYLOR_PLACES + 1)
 
+    //TODO reduce unnecessary power computation
     val tmp = new BigInteger("%.0f".format(math.pow(POWER_OF_TWO, K_TAYLOR_PLACES - powerI) * math.pow(-1, powerI - 1)))
     val multiplier = tmp.multiply(BigInteger.valueOf(LCM / powerI))
 
     for (j <- 0 to powerI) {
       coefficients(j) = constA.pow(powerI - j).multiply(BigInteger.valueOf(ArithmeticUtils.binomialCoefficient(powerI, j))).multiply(multiplier)
     }
-
-    coefficients.map(a => println(a.toString))
-    //println(multiplier)
 
     coefficients
   }
