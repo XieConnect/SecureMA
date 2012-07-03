@@ -22,7 +22,7 @@ import org.apache.commons.math3.util.ArithmeticUtils
 object Mediator {
   val K_TAYLOR_PLACES = 10
   val LCM = (2 to K_TAYLOR_PLACES).foldLeft(1)((a, x) => ArithmeticUtils.lcm(a, x))
-  val POWER_OF_TWO = math.pow(2, 20)
+  val POWER_OF_TWO = math.pow(2, 20)  //2^N
 
   /**
    * Read in public keys from file
@@ -138,12 +138,23 @@ object Mediator {
   }
 
 
+  def dotProduct(coefficients: Array[BigInteger], encryptedPowers: Array[BigInteger]) = {
+    //TODO reduncancy
+    val privateKeys = Provider.prepareData(toVerifyEncryption = false)
+    val publicKey = privateKeys(0).getPublicKey
+    val someone = new Paillier(publicKey)
+
+    (for ((a, b) <- coefficients zip encryptedPowers) yield someone.multiply(b, a)).foldLeft(someone.encrypt(BigInteger.ZERO))((m,x) => someone.add(m, x))
+  }
+
+
   def main(args: Array[String]) = {
     val startedAt = System.currentTimeMillis()
 
 
     //inverseVariance()
     //distributeKeys()
+
     var result = Array.fill[BigInteger](K_TAYLOR_PLACES + 1)(BigInteger.ZERO)
     for (variableI <- 1 to K_TAYLOR_PLACES) {
       val nextVector = polynomialCoefficients(new BigInteger("123456789123456789"), variableI)
