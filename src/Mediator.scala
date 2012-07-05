@@ -148,6 +148,22 @@ object Mediator {
   }
 
 
+  //TODO move to Provider side
+  /**
+   * Compute encryptions of powers of alpha2
+   * @param baseValue  alpha2
+   * @return  vector of encrypted powers
+   */
+  def encryptPowers(baseValue: BigInteger) = {
+    //TODO reduncancy
+    val privateKeys = Provider.prepareData(toVerifyEncryption = false)
+    val publicKey = privateKeys(0).getPublicKey
+    val someone = new Paillier(publicKey)
+
+    (for (i <- 0 to K_TAYLOR_PLACES) yield someone.encrypt(baseValue.pow(i))).asInstanceOf[Array[BigInteger]]
+  }
+
+
   def main(args: Array[String]) = {
     val startedAt = System.currentTimeMillis()
 
