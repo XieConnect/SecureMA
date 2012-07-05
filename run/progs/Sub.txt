@@ -1,0 +1,69 @@
+program Sub {
+  const MaxN = 32;  //max N
+  const Nln2 = 2977044472;  // ~ 2^N * ln 2
+
+  type int = Int<64>;
+
+  type AliceInput = int;
+  type BobInput = int;
+
+  type AliceOutput = int;
+  type BobOutput = int;
+
+  type Input = struct {AliceInput alice, BobInput bob};
+  type Output = struct {AliceOutput alice, BobOutput bob};
+
+
+  function Output output(Input input) {
+    var int est;
+    var int n;
+    // for-loop indices
+    var int i;
+    var int j;
+    var int k;
+    var int l;
+    var int jEnd;
+    var int nlnSum;
+    var int x;
+
+    est = 1;
+    n = 0;
+
+    x = input.bob + input.alice;
+
+    for(i=1 to MaxN) {
+      if (est < x)
+      {
+        est = est + est;
+        n = n + 1;
+      }
+    }
+
+
+    // calculate 2^N * epsilon
+    est = x - est;  // epsilon
+    jEnd = MaxN - n;
+
+    for(j=1 to MaxN) {
+      if (j <= jEnd)
+      {
+        est = est + est;
+      }
+    }
+
+
+    // calculate n * 2^N * ln 2
+    nlnSum = 0;
+    for (k = 1 to MaxN) {
+      if (k <= n)
+      {
+        nlnSum = nlnSum + Nln2;
+      }
+    }
+
+
+    output.alice = 10 - 2;
+    output.bob = 3 - 1;
+  }
+
+}
