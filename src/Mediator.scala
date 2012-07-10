@@ -19,10 +19,14 @@ import java.math.{BigDecimal, RoundingMode}
 
 import org.apache.commons.math3.util.ArithmeticUtils
 
+import SFE.BOAL.{Bob, MyUtil}
+
 object Mediator {
   val K_TAYLOR_PLACES = 10
   val LCM = (2 to K_TAYLOR_PLACES).foldLeft(1)((a, x) => ArithmeticUtils.lcm(a, x))
   val POWER_OF_TWO = math.pow(2, 20)  //2^N
+
+  var FairplayFile = "progs/Sub.txt"
 
   /**
    * Read in public keys from file
@@ -164,6 +168,27 @@ object Mediator {
   }
 
 
+  /**
+   * Compile Fairplay script
+   * NOTE: it seems only ONE compilation is needed
+   * TODO read from config script file name
+   */
+  def compile() = {
+    SFE.BOAL.Bob.main(Array("-c", FairplayFile))
+  }
+
+
+  /**
+   * Run Bob (starts socket server)
+   * Note: socket server blocks the thread
+   * TODO read filename from config
+   */
+  def runBob() = {
+    Bob.main(Array("-r", "progs/Sub.txt", "dj2j", "4"))
+    MyUtil.readResult(MyUtil.pathFile(FairplayFile) + ".Bob.output").filter(_ != null)
+  }
+
+
   def main(args: Array[String]) = {
     val startedAt = System.currentTimeMillis()
 
@@ -171,6 +196,7 @@ object Mediator {
     //inverseVariance()
     //distributeKeys()
 
+    /*
     var result = Array.fill[BigInteger](K_TAYLOR_PLACES + 1)(BigInteger.ZERO)
     for (variableI <- 1 to K_TAYLOR_PLACES) {
       val nextVector = polynomialCoefficients(new BigInteger("123456789123456789"), variableI)
@@ -180,6 +206,17 @@ object Mediator {
       result.map(println)
       println
     }
+    */
+
+    // Run Fairplay
+    FairplayFile = "progs/Sub.txt"
+
+    compile()
+
+    //TODO actually can discard return values, as they're the same as input from Bob
+    val Array(alphaShare, betaShare) = runBob()
+    println(alphaShare)
+    println(betaShare)
 
 
     println("\nProcess finished in " + (System.currentTimeMillis() - startedAt) / 1000.0 + " seconds.")

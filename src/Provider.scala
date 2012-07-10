@@ -15,6 +15,7 @@ import paillierp.key.PaillierKey
 import paillierp.PaillierThreshold
 import java.math.{BigDecimal, RoundingMode}
 
+import SFE.BOAL.{MyUtil, Alice}
 
 object Provider {
   //TODO Read config file
@@ -23,6 +24,7 @@ object Provider {
   val EncryptedDataFile = "data/encrypted_data.csv"
   val Delimiter = ","  // how is raw data file delimited
 
+  var FairplayFile = "progs/Sub.txt"
 
   /**
    * Receive private keys from the mediator
@@ -182,11 +184,27 @@ object Provider {
   }
 
 
+  /**
+   * Run Alice (communicate with Bob)
+   * TODO read filename from config
+   */
+  def runAlice() = {
+    Alice.main(Array("-r", FairplayFile, "djdj", "localhost"))
+    MyUtil.readResult(MyUtil.pathFile(FairplayFile) + ".Alice.output").filter(_ != null)
+  }
+
+
   def main(args: Array[String]) = {
     val startedAt = System.currentTimeMillis()
 
     //prepareData()
-    receiveKey()
+    //receiveKey()
+
+    FairplayFile = "progs/Sub.txt"
+
+    val Array(alpha, beta) = runAlice()
+    println(alpha)
+    println(beta)
 
     println("\nProcess finished in " + (System.currentTimeMillis - startedAt) / 1000.0 + " seconds.")
   }

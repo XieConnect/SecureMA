@@ -5,10 +5,10 @@ program Sub {
   type int = Int<64>;
 
   type AliceInput = int;
-  type BobInput = int;
+  type BobInput = struct {int randb, int randa, int share};
 
-  type AliceOutput = int;
-  type BobOutput = int;
+  type AliceOutput = struct {int a, int b};
+  type BobOutput = struct {int aa, int bb};
 
   type Input = struct {AliceInput alice, BobInput bob};
   type Output = struct {AliceOutput alice, BobOutput bob};
@@ -29,7 +29,7 @@ program Sub {
     est = 1;
     n = 0;
 
-    x = input.bob + input.alice;
+    x = input.bob.share + input.alice;
 
     for(i=1 to MaxN) {
       if (est < x)
@@ -61,9 +61,11 @@ program Sub {
       }
     }
 
+    output.alice.a = est - input.bob.randa;
+    output.alice.b = nlnSum - input.bob.randb;
 
-    output.alice = 10 - 2;
-    output.bob = 3 - 1;
+    output.bob.aa = input.bob.randa;
+    output.bob.bb = input.bob.randb;
   }
 
 }
