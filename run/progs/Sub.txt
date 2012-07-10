@@ -1,8 +1,8 @@
 program Sub {
-  const MaxN = 32;  //max N
-  const Nln2 = 2977044472;  // ~ 2^N * ln 2
+  const MaxN = 20;  //max N
+  const Nln2 = 726817;  // ~ 2^N * ln 2
 
-  type int = Int<64>;
+  type int = Int<20>;
 
   type AliceInput = int;
   type BobInput = struct {int randb, int randa, int share};

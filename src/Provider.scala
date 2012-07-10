@@ -200,13 +200,14 @@ object Provider {
    * @return  vector of encrypted powers
    */
   def encryptPowers(baseValue: BigInteger) = {
-    //TODO redundancy
-    val privateKeys = Provider.prepareData(toVerifyEncryption = false)
-    val publicKey = privateKeys(0).getPublicKey
-    val someone = new Paillier(publicKey)
+    val someone = new Paillier(Mediator.getPublicKey())
+    val powers = Array.fill[BigInteger](Mediator.K_TAYLOR_PLACES + 1)(BigInteger.ZERO)
 
     //TODO read size K (of places) from shared config
-    (for (i <- 0 to Mediator.K_TAYLOR_PLACES) yield someone.encrypt(baseValue.pow(i))).asInstanceOf[Array[BigInteger]]
+    (0 to Mediator.K_TAYLOR_PLACES).map {i =>
+      val t = baseValue.pow(i);
+      if (t.signum() >= 0) someone.encrypt(t) else someone.multiply(someone.encrypt(t.abs()), BigInteger.valueOf(-1))
+    }.toArray
   }
 
 
@@ -219,8 +220,6 @@ object Provider {
     FairplayFile = "progs/Sub.txt"
 
     val Array(alpha, beta) = runAlice()
-    println(alpha)
-    println(beta)
 
     val encryptedPowers = encryptPowers(alpha)
     //TODO send to Mediator via network

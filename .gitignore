@@ -23,3 +23,5 @@ data/*
 # project specific
 *.Opt.circuit
 *.Opt.fmt
+*.power
+*.output
