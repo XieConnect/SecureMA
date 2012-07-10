@@ -194,6 +194,22 @@ object Provider {
   }
 
 
+  /**
+   * Compute encryptions of powers of alpha2
+   * @param baseValue  alpha2
+   * @return  vector of encrypted powers
+   */
+  def encryptPowers(baseValue: BigInteger) = {
+    //TODO redundancy
+    val privateKeys = Provider.prepareData(toVerifyEncryption = false)
+    val publicKey = privateKeys(0).getPublicKey
+    val someone = new Paillier(publicKey)
+
+    //TODO read size K (of places) from shared config
+    (for (i <- 0 to Mediator.K_TAYLOR_PLACES) yield someone.encrypt(baseValue.pow(i))).asInstanceOf[Array[BigInteger]]
+  }
+
+
   def main(args: Array[String]) = {
     val startedAt = System.currentTimeMillis()
 
@@ -205,6 +221,11 @@ object Provider {
     val Array(alpha, beta) = runAlice()
     println(alpha)
     println(beta)
+
+    val encryptedPowers = encryptPowers(alpha)
+    //TODO send to Mediator via network
+    MyUtil.saveResult(encryptedPowers, MyUtil.pathFile(FairplayFile) + ".Alice.power")
+
 
     println("\nProcess finished in " + (System.currentTimeMillis - startedAt) / 1000.0 + " seconds.")
   }
