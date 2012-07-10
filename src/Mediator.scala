@@ -152,22 +152,6 @@ object Mediator {
   }
 
 
-  //TODO move to Provider side
-  /**
-   * Compute encryptions of powers of alpha2
-   * @param baseValue  alpha2
-   * @return  vector of encrypted powers
-   */
-  def encryptPowers(baseValue: BigInteger) = {
-    //TODO reduncancy
-    val privateKeys = Provider.prepareData(toVerifyEncryption = false)
-    val publicKey = privateKeys(0).getPublicKey
-    val someone = new Paillier(publicKey)
-
-    (for (i <- 0 to K_TAYLOR_PLACES) yield someone.encrypt(baseValue.pow(i))).asInstanceOf[Array[BigInteger]]
-  }
-
-
   /**
    * Compile Fairplay script
    * NOTE: it seems only ONE compilation is needed
@@ -189,6 +173,37 @@ object Mediator {
   }
 
 
+  /**
+   * Phase 2 of secure ln(x): Taylor expansion
+   * @param constA  alpha1 as in binomial expansion
+   * @return  encrypted result of Taylor expansion
+   */
+  def taylorExpansion(constA: BigInteger) = {
+    // Prepare constant coefficients
+    var coefficients = Array.fill[BigInteger](K_TAYLOR_PLACES + 1)(BigInteger.ZERO)
+
+    for (variableI <- 1 to K_TAYLOR_PLACES) {
+      val nextVector = polynomialCoefficients(constA, variableI)
+      coefficients = for ((a, b) <- coefficients zip nextVector) yield a.add(b)
+      println()
+      println("Result: ")
+      coefficients.map(println)
+      println
+    }
+
+    // Perform Taylor expansion (assemble coefficients and variables)
+    //TODO read Alice's input via network
+    val encryptedPowers = MyUtil.readResult(MyUtil.pathFile(FairplayFile) + ".Alice.power")
+
+    //TODO redundancy
+    val privateKeys = Provider.prepareData(toVerifyEncryption = false)
+    val publicKey = privateKeys(0).getPublicKey
+    val someone = new Paillier(publicKey)
+
+    (encryptedPowers zip coefficients).foldLeft(someone.encrypt(BigInteger.ZERO))((a, x) => someone.add(a, someone.multiply(x._1, x._2)))
+  }
+
+
   def main(args: Array[String]) = {
     val startedAt = System.currentTimeMillis()
 
@@ -196,17 +211,6 @@ object Mediator {
     //inverseVariance()
     //distributeKeys()
 
-    /*
-    var result = Array.fill[BigInteger](K_TAYLOR_PLACES + 1)(BigInteger.ZERO)
-    for (variableI <- 1 to K_TAYLOR_PLACES) {
-      val nextVector = polynomialCoefficients(new BigInteger("123456789123456789"), variableI)
-      result = for ((a, b) <- result zip nextVector) yield a.add(b)
-      println()
-      println("Result: ")
-      result.map(println)
-      println
-    }
-    */
 
     // Run Fairplay
     FairplayFile = "progs/Sub.txt"
@@ -214,9 +218,11 @@ object Mediator {
     compile()
 
     //TODO actually can discard return values, as they're the same as input from Bob
-    val Array(alphaShare, betaShare) = runBob()
-    println(alphaShare)
-    println(betaShare)
+    val Array(alpha, beta) = runBob()
+    println(alpha)
+    println(beta)
+
+    val taylorResult = taylorExpansion(alpha)
 
 
     println("\nProcess finished in " + (System.currentTimeMillis() - startedAt) / 1000.0 + " seconds.")
