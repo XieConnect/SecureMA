@@ -23,9 +23,12 @@ import org.apache.commons.math3.util.ArithmeticUtils
 import SFE.BOAL.{Bob, MyUtil}
 
 object Mediator {
-  val K_TAYLOR_PLACES = 10
+  val K_TAYLOR_PLACES = 5
   val LCM = (2 to K_TAYLOR_PLACES).foldLeft(1)((a, x) => ArithmeticUtils.lcm(a, x))
-  val POWER_OF_TWO = math.pow(2, 20)  //2^N
+  val MaxN = 20
+  val POWER_OF_TWO = math.pow(2, MaxN)  //2^N
+  val FieldBitsMax = (MaxN + 2) * K_TAYLOR_PLACES + (math.log(MaxN) / math.log(2)).ceil.toInt
+  val FieldMax = new BigInteger("%.0f".format(math.pow(2, FieldBitsMax)))
 
   var FairplayFile = "progs/Sub.txt"
 
@@ -39,7 +42,7 @@ object Mediator {
    * @param thresholdParties
    * @param seed
    */
-  def generateKeys(privateKeyFile: String = "data/private.keys", publicKeyFile: String = "data/public.keys", length: Int = 128,
+  def generateKeys(privateKeyFile: String = "data/private.keys", publicKeyFile: String = "data/public.keys", length: Int = FieldBitsMax,
                    totalParties: Int = 6, thresholdParties: Int = 3, seed: Long = new util.Random().nextLong()) = {
 
     // Generate and store private keys
@@ -186,7 +189,7 @@ object Mediator {
     val multiplier = tmp.multiply(BigInteger.valueOf(LCM / powerI))
 
     for (j <- 0 to powerI) {
-      coefficients(j) = constA.pow(powerI - j).multiply(BigInteger.valueOf(ArithmeticUtils.binomialCoefficient(powerI, j))).multiply(multiplier)
+      coefficients(j) = constA.pow(powerI - j).multiply(BigInteger.valueOf(ArithmeticUtils.binomialCoefficient(powerI, j))).multiply(multiplier).mod(FieldMax)
     }
 
     coefficients
@@ -224,6 +227,13 @@ object Mediator {
   }
 
 
+  def decryptData(encrypted: BigInteger) = {
+    val privateKeys = KeyGen.PaillierThresholdKeyLoad("data/private.keys")
+    val parties = for (k <- privateKeys.take(3)) yield new PaillierThreshold(k)
+    parties(0).combineShares((for (p <- parties) yield p.decrypt(encrypted)): _*)
+  }
+
+
   /**
    * Phase 2 of secure ln(x): Taylor expansion
    * @param constA  alpha1 as in binomial expansion
@@ -235,21 +245,13 @@ object Mediator {
 
     for (variableI <- 1 to K_TAYLOR_PLACES) {
       val nextVector = polynomialCoefficients(constA, variableI)
-      coefficients = for ((a, b) <- coefficients zip nextVector) yield a.add(b)
-      println()
-      println("Result: ")
-      coefficients.map(println)
-      println
+      coefficients = for ((a, b) <- coefficients zip nextVector) yield a.add(b).mod(FieldMax)
     }
 
     // Perform Taylor expansion (assemble coefficients and variables)
     //TODO read Alice's input via network
     val encryptedPowers = MyUtil.readResult(MyUtil.pathFile(FairplayFile) + ".Alice.power")
-
-    //TODO redundancy
-    val privateKeys = Provider.prepareData(toVerifyEncryption = false)
-    val publicKey = privateKeys(0).getPublicKey
-    val someone = new Paillier(publicKey)
+    val someone = new Paillier(getPublicKey())
 
     (encryptedPowers zip coefficients).foldLeft(someone.encrypt(BigInteger.ZERO))((a, x) => someone.add(a, someone.multiply(x._1, x._2)))
   }
@@ -259,11 +261,11 @@ object Mediator {
     val startedAt = System.currentTimeMillis()
 
 
+    generateKeys()
+    //getPublicKey()
     //inverseVariance()
     //distributeKeys()
 
-
-    /*
     // Run Fairplay
     FairplayFile = "progs/Sub.txt"
 
@@ -271,14 +273,13 @@ object Mediator {
 
     //TODO actually can discard return values, as they're the same as input from Bob
     val Array(alpha, beta) = runBob()
-    println(alpha)
-    println(beta)
+    Thread.sleep(5000)  // wait for Alice to finish post-processing
 
     val taylorResult = taylorExpansion(alpha)
-    */
-
-    generateKeys()
-    getPublicKey()
+    val result = decryptData(taylorResult)
+    println("Scaled: " + result)
+    val divisor = new BigInteger("%.0f".format(math.pow(POWER_OF_TWO, K_TAYLOR_PLACES) * LCM))
+    println("Original: " + result.divide(divisor))
 
 
     println("\nProcess finished in " + (System.currentTimeMillis() - startedAt) / 1000.0 + " seconds.")
