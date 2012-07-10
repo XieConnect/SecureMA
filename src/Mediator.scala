@@ -7,6 +7,7 @@
 import java.io.ObjectOutputStream
 import java.math.BigInteger
 import java.net.ServerSocket
+import java.util
 import java.util.Random
 import org.apache.commons.math3.linear.{RealVector, ArrayRealVector}
 import paillierp.Paillier
@@ -28,19 +29,69 @@ object Mediator {
 
   var FairplayFile = "progs/Sub.txt"
 
+
+  /**
+   * Generate and store Paillier Threshold keys to file
+   * @param privateKeyFile
+   * @param publicKeyFile
+   * @param length
+   * @param totalParties
+   * @param thresholdParties
+   * @param seed
+   */
+  def generateKeys(privateKeyFile: String = "data/private.keys", publicKeyFile: String = "data/public.keys", length: Int = 128,
+                   totalParties: Int = 6, thresholdParties: Int = 3, seed: Long = new util.Random().nextLong()) = {
+
+    // Generate and store private keys
+    KeyGen.PaillierThresholdKey(privateKeyFile, length, totalParties, thresholdParties, seed)
+
+    // Store public key
+    val publicKey = KeyGen.PaillierThresholdKeyLoad(privateKeyFile)(0).getPublicKey()
+    val buffer = new java.io.BufferedOutputStream(new java.io.FileOutputStream(publicKeyFile))
+    val output = new java.io.ObjectOutputStream(buffer)
+    output.writeObject(publicKey)
+    output.close
+    buffer.close()
+
+    (privateKeyFile, publicKeyFile)
+  }
+
+
   /**
    * Read in public keys from file
-   * @param inputFile
+   * TODO remove verifyPublicKey
+   * @param filename  file storing public key
+   * @param verifyPublicKey  whether to verify correctness of public key or not
    * @return
    */
+  def getPublicKey(filename: String = "data/public.keys", verifyPublicKey: Boolean = false) = {
+    val buffer = new java.io.BufferedInputStream(new java.io.FileInputStream(filename))
+    val input = new java.io.ObjectInputStream(buffer)
+    val publicKey = input.readObject().asInstanceOf[PaillierKey]
 
-  /*
-  def getPublicKey(inputFile: String = "data/public_key.bin") = {
-    var buffer = new java.io.BufferedInputStream(new java.io.FileInputStream(inputFile))
-    var input = new java.io.ObjectInputStream(buffer)
-    input.readObject().asInstanceOf[PaillierKey]
+    input.close()
+    buffer.close()
+
+    // To verify that public key is correct
+    //TODO for debug only
+    if (verifyPublicKey) {
+      val tmp = BigInteger.valueOf(10)
+      var encryptedTmp = BigInteger.ZERO
+
+      for (i <- 1 to 2) {
+        if (i == 1) {
+          val someone = new Paillier(publicKey)
+          encryptedTmp = someone.encrypt(tmp)
+        } else {
+          val privateKeys = KeyGen.PaillierThresholdKeyLoad("data/private.keys")
+          val parties = for (k <- privateKeys.take(3)) yield new PaillierThreshold(k)
+          println(">> Public Key Correctness: " + tmp.equals(parties(0).combineShares((for (p <- parties) yield p.decrypt(encryptedTmp)): _*)))
+        }
+      }
+    }
+
+    publicKey
   }
-  */
 
 
   /**
@@ -212,6 +263,7 @@ object Mediator {
     //distributeKeys()
 
 
+    /*
     // Run Fairplay
     FairplayFile = "progs/Sub.txt"
 
@@ -223,6 +275,10 @@ object Mediator {
     println(beta)
 
     val taylorResult = taylorExpansion(alpha)
+    */
+
+    generateKeys()
+    getPublicKey()
 
 
     println("\nProcess finished in " + (System.currentTimeMillis() - startedAt) / 1000.0 + " seconds.")
