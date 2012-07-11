@@ -1,3 +1,5 @@
+package main
+
 /**
  * @description This program simulates Fairplay for ln x computation
  * @author Wei Xie <wei.xie (at) vanderbilt.edu>
@@ -8,7 +10,8 @@ import java.math.{BigInteger, BigDecimal}
 
 
 object FairplaySimulator {
-  val N = 20  //should be upper bound for n
+  val N = 20
+  //should be upper bound for n
   //TODO hard-code into Fairplay
   val Factor = new BigInteger("%.0f".format(math.pow(2, N)))
 
@@ -17,8 +20,9 @@ object FairplaySimulator {
   }
 
 
-  def gcd(a: Int, b: Int):Int = if (b==0) a.abs else gcd(b, a%b)
-  def lcm(a: Int, b: Int) = (a*b).abs/gcd(a,b)
+  def gcd(a: Int, b: Int): Int = if (b == 0) a.abs else gcd(b, a % b)
+
+  def lcm(a: Int, b: Int) = (a * b).abs / gcd(a, b)
 
 
   /**
@@ -87,8 +91,8 @@ object FairplaySimulator {
     var factorTmp = BigInteger.valueOf(1)
 
     for (i <- 1 to k) {
-      numerator = BigInteger.ZERO.subtract( numerator.multiply(a1.add(z)) )
-      result = result.add(numerator.divide( factorTmp.multiply(multiple.divide(BigInteger.valueOf(i))) ))
+      numerator = BigInteger.ZERO.subtract(numerator.multiply(a1.add(z)))
+      result = result.add(numerator.divide(factorTmp.multiply(multiple.divide(BigInteger.valueOf(i)))))
       factorTmp = factorTmp.multiply(Factor)
     }
 
@@ -119,8 +123,8 @@ object FairplaySimulator {
 
 
     val z1 = BigInteger.valueOf(3) //random
-    val k = 20  //TODO define max k
-    val z2= qPolynomial(a1, k, z1, a2)
+    val k = 20 //TODO define max k
+    val z2 = qPolynomial(a1, k, z1, a2)
 
     val multiple = lcmK(k)
     val u1 = z1.add(multiple.multiply(b1))
@@ -129,6 +133,6 @@ object FairplaySimulator {
     println("Est: " + new BigDecimal(u1.add(u2)).divide(new BigDecimal(Factor)).divide(new BigDecimal(multiple)))
     println("Act: " + (math.log(x.doubleValue())))
 
-    println("\nProcess finished in " + (System.currentTimeMillis() - startedAt)/1000.0 + " seconds.")
+    println("\nProcess finished in " + (System.currentTimeMillis() - startedAt) / 1000.0 + " seconds.")
   }
 }

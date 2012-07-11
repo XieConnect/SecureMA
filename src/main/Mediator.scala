@@ -1,3 +1,5 @@
+package main
+
 /**
  * @description Refer to README
  * @author Wei Xie <wei.xie (at) vanderbilt.edu>
@@ -26,7 +28,8 @@ object Mediator {
   val K_TAYLOR_PLACES = 5
   val LCM = (2 to K_TAYLOR_PLACES).foldLeft(1)((a, x) => ArithmeticUtils.lcm(a, x))
   val MaxN = 20
-  val POWER_OF_TWO = math.pow(2, MaxN)  //2^N
+  val POWER_OF_TWO = math.pow(2, MaxN)
+  //2^N
   val FieldBitsMax = (MaxN + 2) * K_TAYLOR_PLACES + (math.log(MaxN) / math.log(2)).ceil.toInt
   val FieldMax = new BigInteger("%.0f".format(math.pow(2, FieldBitsMax)))
 
@@ -166,7 +169,7 @@ object Mediator {
     val socket = ss.accept()
     //TODO convert to array of streams
     val toParties = new ObjectOutputStream(socket.getOutputStream())
-    toParties.writeInt(333)  // send test data
+    toParties.writeInt(333) // send test data
     toParties.flush()
 
     toParties.close()
@@ -202,7 +205,7 @@ object Mediator {
     val publicKey = privateKeys(0).getPublicKey
     val someone = new Paillier(publicKey)
 
-    (for ((a, b) <- coefficients zip encryptedPowers) yield someone.multiply(b, a)).foldLeft(someone.encrypt(BigInteger.ZERO))((m,x) => someone.add(m, x))
+    (for ((a, b) <- coefficients zip encryptedPowers) yield someone.multiply(b, a)).foldLeft(someone.encrypt(BigInteger.ZERO))((m, x) => someone.add(m, x))
   }
 
 
@@ -273,7 +276,7 @@ object Mediator {
 
     //TODO actually can discard return values, as they're the same as input from Bob
     val Array(alpha, beta) = runBob()
-    Thread.sleep(5000)  // wait for Alice to finish post-processing
+    Thread.sleep(5000) // wait for Alice to finish post-processing
 
     val taylorResult = taylorExpansion(alpha)
     val result = decryptData(taylorResult)
