@@ -1,3 +1,5 @@
+package main
+
 /**
  * Data Providers pre-process and upload data
  * Final data will be stored in file specified by EncryptedDataFile below
@@ -7,6 +9,7 @@ import java.io.ObjectInputStream
 import java.math.BigInteger
 import java.net.Socket
 import java.util.Random
+import main.Mediator
 import paillierp.Paillier
 import paillierp.key.KeyGen
 import paillierp.key.PaillierPrivateThresholdKey
@@ -19,10 +22,11 @@ import SFE.BOAL.{MyUtil, Alice}
 
 object Provider {
   //TODO Read config file
-  val MULTIPLIER: Double = math.pow(10, 10)  // to hard-code if needed
+  val MULTIPLIER: Double = math.pow(10, 10)
+  // to hard-code if needed
   val PartiesNumberThreshold = 3
   val EncryptedDataFile = "data/encrypted_data.csv"
-  val Delimiter = ","  // how is raw data file delimited
+  val Delimiter = "," // how is raw data file delimited
 
   var FairplayFile = "progs/Sub.txt"
 
@@ -95,7 +99,7 @@ object Provider {
         println("Compare multiplier: " + (multiplier == MULTIPLIER) + "  " + multiplier + " " + MULTIPLIER)
       } else if (indx > 1) {
         val compareWeight = ((record(3).toDouble - decryptData(record(0), thresholdParties).doubleValue / multiplier).abs <= epsilon)
-        val compareBetaWeight = (((decryptData(record(1), thresholdParties) subtract decryptData(record(2), thresholdParties)).doubleValue / multiplier - record(4).toDouble).abs <= epsilon )
+        val compareBetaWeight = (((decryptData(record(1), thresholdParties) subtract decryptData(record(2), thresholdParties)).doubleValue / multiplier - record(4).toDouble).abs <= epsilon)
 
         if (!compareWeight) {
           weightErrors += 1
@@ -104,8 +108,8 @@ object Provider {
           betaWeightErrors += 1
         }
 
-        println( "Weight:      " + compareWeight)
-        println( "Beta*Weight: " + compareBetaWeight)
+        println("Weight:      " + compareWeight)
+        println("Beta*Weight: " + compareBetaWeight)
       }
 
       indx += 1
@@ -141,12 +145,12 @@ object Provider {
 
     writer.println("Multiplier:" + Delimiter + MULTIPLIER)
     // TODO use Delimiter instead of ","
-    writer.println(""""encrypted weight_i","encrypted positive beta*weight","encrypted negative beta*weight","weight_i","beta*weight","positive beta*weight","negative beta*weight"""")
+    writer.println( """"encrypted weight_i","encrypted positive beta*weight","encrypted negative beta*weight","weight_i","beta*weight","positive beta*weight","negative beta*weight"""")
 
     for (line <- lines; record = line.split(Delimiter)) {
       val weightI = 1.0 / math.pow(record(11).toDouble, 2)
       val betaWeight = record(10).toDouble * weightI
-      
+
       val raisedWeightI = new BigInteger("%.0f".format(weightI * MULTIPLIER))
       val raisedBetaWeight = new BigInteger("%.0f".format(betaWeight * MULTIPLIER))
 
@@ -160,15 +164,15 @@ object Provider {
       val encryptedWeight = someone.encrypt(raisedWeightI)
       val encryptedBetaWeightPositive = someone.encrypt(splitBetaWeight(0))
       val encryptedBetaWeightNegative = someone.encrypt(splitBetaWeight(1))
-      writer.print( encryptedWeight + Delimiter +
-                    encryptedBetaWeightPositive + Delimiter +
-                    encryptedBetaWeightNegative + Delimiter)
+      writer.print(encryptedWeight + Delimiter +
+        encryptedBetaWeightPositive + Delimiter +
+        encryptedBetaWeightNegative + Delimiter)
 
       // Store plain values (for testing)
       writer.print(weightI + Delimiter +
-                   betaWeight + Delimiter +
-                   splitBetaWeight(0) + Delimiter +
-                   splitBetaWeight(1) + "\n")
+        betaWeight + Delimiter +
+        splitBetaWeight(0) + Delimiter +
+        splitBetaWeight(1) + "\n")
     }
 
     writer.close()
@@ -204,9 +208,10 @@ object Provider {
     val powers = Array.fill[BigInteger](Mediator.K_TAYLOR_PLACES + 1)(BigInteger.ZERO)
 
     //TODO read size K (of places) from shared config
-    (0 to Mediator.K_TAYLOR_PLACES).map {i =>
-      val t = baseValue.pow(i);
-      if (t.signum() >= 0) someone.encrypt(t) else someone.multiply(someone.encrypt(t.abs()), BigInteger.valueOf(-1))
+    (0 to Mediator.K_TAYLOR_PLACES).map {
+      i =>
+        val t = baseValue.pow(i);
+        if (t.signum() >= 0) someone.encrypt(t) else someone.multiply(someone.encrypt(t.abs()), BigInteger.valueOf(-1))
     }.toArray
   }
 
