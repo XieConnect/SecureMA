@@ -54,15 +54,20 @@ class ProviderSuite extends FunSuite {
     val n = (math.log(x) / math.log(2)).ceil.toInt
     println(n)
 
+    println(aliceOutput(0), aliceOutput(1))
+    /*
     // ensure scaled-up epsilon is within error range
     val expectedEpsilon = new BigInteger("%.0f".format(PowerOfN * (x / math.pow(2, n) - 1)))
     val epsilonError = aliceOutput(0).add(bobOutput(0)).subtract(expectedEpsilon).divide(new BigInteger("%.0f".format(PowerOfN))).abs().compareTo(BigInteger.valueOf(1))
     assert(epsilonError <= 0)
 
     // ensure scaled-up n*ln 2 is within error range
-    val expectedNln2 = new BigInteger("%.0f".format(n * math.log(2) * PowerOfN))
-    val nln2Error = aliceOutput(1).add(bobOutput(1)).subtract(expectedNln2).divide(new BigInteger("%.0f".format(PowerOfN)))
+    val expectedNln2 = n * math.log(2) * PowerOfN
+    //val nln2Error = aliceOutput(1).add(bobOutput(1)).subtract(expectedNln2).divide(new BigInteger("%.0f".format(PowerOfN)))
+    val computedNln2 = aliceOutput(1).add(bobOutput(1)).doubleValue() / PowerOfN / math.log(2)
+    val nln2Error = (computedNln2 - n)
     println(nln2Error)
+    */
   }
 
 }
