@@ -263,6 +263,31 @@ object Mediator {
   }
 
 
+  // alpha and beta belong to Bob
+  def secureLn(alpha: BigInteger, beta: BigInteger, scale: Int = 6) = {
+    val someone = new Paillier(getPublicKey())
+
+    val taylorResult = taylorExpansion(alpha)
+
+    val betas = (for (i <- Array("Alice", "Bob")) yield MyUtil.readResult(MyUtil.pathFile(FairplayFile) + "." + i + ".beta")(0)).asInstanceOf[Array[BigInteger]]
+    var tmp = someone.add(betas(0), betas(1))
+    tmp = someone.add(taylorResult, tmp)
+
+    val divisor = new BigInteger("%.0f" format Mediator.POWER_OF_TWO).pow(Mediator.K_TAYLOR_PLACES).multiply(BigInteger.valueOf(Mediator.LCM))
+
+    new BigDecimal(decryptData(tmp)).divide(new BigDecimal(divisor), scale, BigDecimal.ROUND_HALF_UP)
+  }
+
+
+  // Scale-up and store beta
+  //TODO move to common utils
+  def storeBeta(who: String = "Bob", beta: BigInteger) = {
+    val someone = new Paillier(Mediator.getPublicKey())
+    val scaledBeta = BigInteger.valueOf(2).pow(Mediator.MaxN * (Mediator.K_TAYLOR_PLACES - 1)).multiply(BigInteger.valueOf(Mediator.LCM)).multiply(beta)
+    MyUtil.saveResult(Array[BigInteger](someone.encrypt(scaledBeta)), MyUtil.pathFile(FairplayFile) + "." + who + ".beta")
+  }
+
+
   def main(args: Array[String]) = {
     val startedAt = System.currentTimeMillis()
 
@@ -280,9 +305,11 @@ object Mediator {
     //TODO actually can discard return values, as they're the same as input from Bob
     val Array(alpha, beta) = runBob()
 
-    Thread.sleep(5000) // wait for Alice to finish post-processing
+    storeBeta("Bob", beta)
 
-    val taylorResult = taylorExpansion(alpha)
+    Thread.sleep(4000) // wait for Alice to finish post-processing
+
+    secureLn(alpha, beta)
 
 
     println("\nProcess finished in " + (System.currentTimeMillis() - startedAt) / 1000.0 + " seconds.")
