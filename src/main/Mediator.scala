@@ -25,7 +25,7 @@ import org.apache.commons.math3.util.ArithmeticUtils
 import SFE.BOAL.{Bob, MyUtil}
 
 object Mediator {
-  val K_TAYLOR_PLACES = 5
+  val K_TAYLOR_PLACES = 10
   val LCM = (2 to K_TAYLOR_PLACES).foldLeft(1)((a, x) => ArithmeticUtils.lcm(a, x))
   val MaxN = 20
   val POWER_OF_TWO = math.pow(2, MaxN)
@@ -226,7 +226,7 @@ object Mediator {
    */
   def runBob() = {
     Bob.main(Array("-r", "progs/Sub.txt", "dj2j", "4"))
-    MyUtil.readResult(MyUtil.pathFile(FairplayFile) + ".Bob.output").filter(_ != null)
+    MyUtil.readResult(MyUtil.pathFile(FairplayFile) + ".Bob.output").filter(_ != null).asInstanceOf[Array[BigInteger]]
   }
 
 
@@ -276,10 +276,14 @@ object Mediator {
 
     //TODO actually can discard return values, as they're the same as input from Bob
     val Array(alpha, beta) = runBob()
+    println("In Mediator: " + alpha)
+    println(beta)
+
     Thread.sleep(5000) // wait for Alice to finish post-processing
 
     val taylorResult = taylorExpansion(alpha)
     val result = decryptData(taylorResult)
+
     println("Scaled: " + result)
     val divisor = new BigInteger("%.0f".format(math.pow(POWER_OF_TWO, K_TAYLOR_PLACES) * LCM))
     println("Original: " + result.divide(divisor))

@@ -2,7 +2,7 @@ program Sub {
   const MaxN = 20;  //max N
   const Nln2 = 726817;  // ~ 2^N * ln 2
 
-  type int = Int<20>;
+  type int = Int<64>;
 
   type AliceInput = int;
   type BobInput = struct {int randb, int randa, int share};
