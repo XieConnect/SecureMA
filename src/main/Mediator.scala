@@ -188,7 +188,7 @@ object Mediator {
     val coefficients = Array.fill[BigInteger](K_TAYLOR_PLACES + 1)(BigInteger.ZERO)
 
     //TODO reduce unnecessary power computation
-    val tmp = new BigInteger("%.0f".format(math.pow(POWER_OF_TWO, K_TAYLOR_PLACES - powerI) * math.pow(-1, powerI - 1)))
+    val tmp = new BigInteger("%.0f" format math.pow(POWER_OF_TWO, K_TAYLOR_PLACES - powerI) * math.pow(-1, powerI - 1))
     val multiplier = tmp.multiply(BigInteger.valueOf(LCM / powerI))
 
     for (j <- 0 to powerI) {
