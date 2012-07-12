@@ -32,6 +32,10 @@ class MediatorSuite extends FunSuite {
     (aliceOutput, bobOutput)
   }
 
+  test("Mediator and Provider run correctly") {
+    AutomatedTest.main(Array())
+  }
+
   test("Fairplay inputs are in correct form") {
     // bounded to specific input formats
     val (aliceInput, bobInput) = readInputs()
@@ -98,7 +102,6 @@ class MediatorSuite extends FunSuite {
     }
   }
 
-  // please mannually run Bob and Alice first to get output files
   test("verify Taylor expansion result") {
     val (_, bobOutput) = readOutputs()
     val taylorResult = Mediator.taylorExpansion(bobOutput(0))

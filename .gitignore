@@ -25,3 +25,4 @@ data/*
 *.Opt.fmt
 *.power
 *.output
+run/progs/*.txt.*
