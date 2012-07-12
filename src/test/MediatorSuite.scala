@@ -109,4 +109,12 @@ class MediatorSuite extends FunSuite {
     expect(BigInteger.ZERO) (result.divide(divisor))
   }
 
+  test("verify final result") {
+    val (aliceInput, bobInput) = readInputs()
+    val (_, bobOutput) = readOutputs()
+    val expected = math.log(aliceInput(0) + bobInput(0))
+
+    assert((Mediator.secureLn(bobOutput(0), bobOutput(1)).doubleValue() - expected).abs <= 0.001)
+  }
+
 }

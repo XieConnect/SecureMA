@@ -228,6 +228,8 @@ object Provider {
     //TODO send to Mediator via network
     MyUtil.saveResult(encryptedPowers, MyUtil.pathFile(FairplayFile) + ".Alice.power")
 
+    Mediator.storeBeta("Alice", beta)
+
 
     println("\nProcess finished in " + (System.currentTimeMillis - startedAt) / 1000.0 + " seconds.")
   }
