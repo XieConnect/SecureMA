@@ -9,7 +9,6 @@ import java.io.ObjectInputStream
 import java.math.BigInteger
 import java.net.Socket
 import java.util.Random
-import main.Mediator
 import paillierp.Paillier
 import paillierp.key.KeyGen
 import paillierp.key.PaillierPrivateThresholdKey
@@ -194,7 +193,7 @@ object Provider {
    */
   def runAlice() = {
     Alice.main(Array("-r", FairplayFile, "djdj", "localhost"))
-    MyUtil.readResult(MyUtil.pathFile(FairplayFile) + ".Alice.output").filter(_ != null)
+    MyUtil.readResult(MyUtil.pathFile(FairplayFile) + ".Alice.output").filter(_ != null).asInstanceOf[Array[BigInteger]]
   }
 
 
