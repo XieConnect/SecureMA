@@ -107,6 +107,7 @@ class MediatorSuite extends FunSuite {
     val (_, bobOutput) = readOutputs()
     val taylorResult = Mediator.taylorExpansion(bobOutput(0))
     // NOTE: work-around to get negatives from decrypted result
+    //TODO debug
     val result = Mediator.decryptData(taylorResult).subtract(Mediator.getPublicKey().getN)
 
     val divisor = new BigInteger("%.0f" format Mediator.POWER_OF_TWO).pow(Mediator.K_TAYLOR_PLACES).multiply(BigInteger.valueOf(Mediator.LCM))
