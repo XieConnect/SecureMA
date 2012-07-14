@@ -283,8 +283,9 @@ object Mediator {
   //TODO move to common utils
   def storeBeta(who: String = "Bob", beta: BigInteger) = {
     val someone = new Paillier(Mediator.getPublicKey())
-    val scaledBeta = BigInteger.valueOf(2).pow(Mediator.MaxN * (Mediator.K_TAYLOR_PLACES - 1)).multiply(BigInteger.valueOf(Mediator.LCM)).multiply(beta)
-    MyUtil.saveResult(Array[BigInteger](someone.encrypt(scaledBeta)), MyUtil.pathFile(FairplayFile) + "." + who + ".beta")
+    var scaledBeta = someone.encrypt(BigInteger.valueOf(2).pow(Mediator.MaxN * (Mediator.K_TAYLOR_PLACES - 1)).multiply(BigInteger.valueOf(Mediator.LCM)).multiply(beta.abs))
+    if (beta.compareTo(BigInteger.ZERO) < 0) scaledBeta = someone.multiply(scaledBeta, BigInteger.valueOf(-1))
+    MyUtil.saveResult(Array[BigInteger](scaledBeta), MyUtil.pathFile(FairplayFile) + "." + who + ".beta")
   }
 
 
