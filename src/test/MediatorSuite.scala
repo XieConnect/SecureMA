@@ -18,8 +18,8 @@ class MediatorSuite extends FunSuite {
   val PathPrefix = "run/progs/Sub.txt."
 
   def readInputs() = {
-    val bobInput = Source.fromFile(PathPrefix + "Bob.input").getLines().map(Integer.parseInt).toArray
-    val aliceInput = Source.fromFile(PathPrefix + "Alice.input").getLines().map(Integer.parseInt).toArray
+    val bobInput = Source.fromFile(PathPrefix + "Bob.input").getLines().map(_.toLong).toArray
+    val aliceInput = Source.fromFile(PathPrefix + "Alice.input").getLines().map(_.toLong).toArray
 
     (aliceInput, bobInput)
   }
@@ -31,6 +31,7 @@ class MediatorSuite extends FunSuite {
 
     (aliceOutput, bobOutput)
   }
+
 
   test("Mediator and Provider run correctly") {
     AutomatedTest.main(Array())
