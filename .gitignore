@@ -26,3 +26,4 @@ data/*
 *.power
 *.output
 run/progs/*.txt.*
+run/progs/*.txt.*.input
