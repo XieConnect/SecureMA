@@ -25,10 +25,8 @@ program Sub {
     var int jEnd;
     var int nlnSum;
     var int x;
-    var int preEst;
 
     est = 1;
-    preEst = 1;
     n = 0;
 
     x = input.bob.share + input.alice;
@@ -36,17 +34,11 @@ program Sub {
     for(i=1 to MaxN) {
       if (est < x)
       {
-        preEst = est;
         est = est + est;
         n = n + 1;
       }
     }
 
-    // estimate optimal n
-    if ((x - preEst) < (est - x)) {
-      est = preEst;
-      n = n - 1;
-    }
 
     // calculate 2^N * epsilon
     est = x - est;  // epsilon
