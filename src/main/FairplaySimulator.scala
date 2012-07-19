@@ -7,14 +7,24 @@ package main
  */
 
 import java.math.{BigInteger, BigDecimal}
+import SFE.BOAL.MyUtil
+import paillierp.Paillier
+import org.apache.commons.math3.util.ArithmeticUtils
 
 
 object FairplaySimulator {
+  /*
   val N = 20
   //should be upper bound for n
   //TODO hard-code into Fairplay
   val Factor = new BigInteger("%.0f".format(math.pow(2, N)))
+  */
 
+  val MaxN = 20
+  val Nln2 = 726817
+
+
+  /*
   def log2(x: Int) = {
     math.log(x) / math.log(2.0)
   }
@@ -98,7 +108,66 @@ object FairplaySimulator {
 
     result.subtract(random)
   }
+  */
 
+
+  // Alice: share;  Bob: share, rand, rand
+  def fairplay(aliceInput: Int, bobInput: Tuple3[Int, Int, Int], optimal: Boolean = false) = {
+    val xValue = bobInput._1 + aliceInput  //value of x
+    var overEstimate = 1
+    var overN = 0
+    if (overEstimate < xValue) {
+      overEstimate *= 2
+      overN += 1
+    }
+
+    if (optimal && (xValue - overEstimate/2 < overEstimate - xValue)) {
+      overEstimate /= 2
+      overN -= 1
+    }
+
+    // 2^N * epsilon
+    val epsilon = new BigInteger("%.0f" format math.pow(2, MaxN - overN)).multiply(BigInteger.valueOf(xValue - overEstimate))
+
+    // n * 2^n * ln(2)
+    val nlnSum = BigInteger.valueOf(overN).multiply(BigInteger.valueOf(Nln2))
+
+    // Output Alice and Bob
+    ( (epsilon.subtract(BigInteger.valueOf(bobInput._2)), nlnSum.subtract(BigInteger.valueOf(bobInput._3))),
+      (BigInteger.valueOf(bobInput._2), BigInteger.valueOf(bobInput._3)) )
+  }
+
+
+  /**
+   * Phase 2 of secure ln(x): Taylor expansion
+   */
+  def taylorExpansion(constA: BigInteger, alpha2: BigInteger) = {
+    // Prepare constant coefficients
+    var coefficients = Mediator.polynomialCoefficients(constA, 1)
+
+    for (variableI <- 2 to Mediator.K_TAYLOR_PLACES) {
+      val nextVector = Mediator.polynomialCoefficients(constA, variableI)
+      coefficients = for ((a, b) <- coefficients zip nextVector) yield a.add(b)  //NOTE: add mod() will cause problems
+    }
+
+    // Perform Taylor expansion (assemble coefficients and variables)
+    val powersOfVariable = (0 to Mediator.K_TAYLOR_PLACES).map( i => alpha2.pow(i) ).toArray
+
+    (powersOfVariable zip coefficients).foldLeft(BigInteger.ZERO) ((a, x) => a.add(x._1.multiply(x._2)))
+  }
+
+
+  def ln() = {
+    val (aliceOutputs, bobOutputs) = fairplay(6, (3, 2, 5))
+    val taylorResult = taylorExpansion(bobOutputs._1, aliceOutputs._1)
+
+    val betaSum = BigInteger.valueOf(2).pow(Mediator.MaxN * (Mediator.K_TAYLOR_PLACES - 1)).multiply(BigInteger.valueOf(Mediator.LCM)).multiply(aliceOutputs._2.add(bobOutputs._2))
+
+    val tmp = taylorResult.add(betaSum)
+
+    val divisor = new BigInteger("%.0f" format Mediator.POWER_OF_TWO).pow(Mediator.K_TAYLOR_PLACES).multiply(BigInteger.valueOf(Mediator.LCM))
+    new BigDecimal(tmp).divide(new BigDecimal(divisor), 6, BigDecimal.ROUND_HALF_UP).doubleValue()
+  }
 
   /**
    * Entrance function
@@ -107,6 +176,7 @@ object FairplaySimulator {
     val startedAt = System.currentTimeMillis()
 
 
+    /*
     val randoms = (BigInteger.valueOf(1), BigInteger.valueOf(1))
     val (a1, b1) = randoms
     println("2^N = 2^" + N + " = " + Factor)
@@ -132,6 +202,8 @@ object FairplaySimulator {
 
     println("Est: " + new BigDecimal(u1.add(u2)).divide(new BigDecimal(Factor)).divide(new BigDecimal(multiple)))
     println("Act: " + (math.log(x.doubleValue())))
+    */
+
 
     println("\nProcess finished in " + (System.currentTimeMillis() - startedAt) / 1000.0 + " seconds.")
   }
