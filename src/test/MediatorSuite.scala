@@ -119,7 +119,7 @@ class MediatorSuite extends FunSuite {
     val (_, bobOutput) = readOutputs()
     val expected = math.log(aliceInput(0) + bobInput(0))
 
-    assert((Mediator.secureLn(bobOutput(0), bobOutput(1)).doubleValue() - expected).abs <= 0.001)
+    assert((Mediator.actualLn(bobOutput(0), bobOutput(1)).doubleValue() - expected).abs <= 0.001)
   }
 
 }

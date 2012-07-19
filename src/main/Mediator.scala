@@ -263,19 +263,39 @@ object Mediator {
   }
 
 
-  // alpha and beta belong to Bob
-  def secureLn(alpha: BigInteger, beta: BigInteger, scale: Int = 6) = {
+  /**
+   * Compute ln(x) securely
+   * @param alpha  Bob's input alpha
+   * @param beta  Bob's input beta
+   * @return  encryption of scaled-up ln(x)
+   */
+  def secureLn(alpha: BigInteger, beta: BigInteger) = {
     val someone = new Paillier(getPublicKey())
 
     val taylorResult = taylorExpansion(alpha)
 
     val betas = (for (i <- Array("Alice", "Bob")) yield MyUtil.readResult(MyUtil.pathFile(FairplayFile) + "." + i + ".beta")(0)).asInstanceOf[Array[BigInteger]]
     var tmp = someone.add(betas(0), betas(1))
-    tmp = someone.add(taylorResult, tmp)
+    someone.add(taylorResult, tmp)
+  }
 
+
+  /**
+   * Remember to modify multiplier in Sub.txt when customizing param *scale*
+   * @alpha
+   * @beta
+   * @return  decrypted value of ln(x)
+   */
+  def actualLn(alpha: BigInteger, beta: BigInteger, scale: Int = 6) = {
+    val tmp = secureLn(alpha, beta)
     val divisor = new BigInteger("%.0f" format Mediator.POWER_OF_TWO).pow(Mediator.K_TAYLOR_PLACES).multiply(BigInteger.valueOf(Mediator.LCM))
+    new BigDecimal(decryptData(tmp)).divide(new BigDecimal(divisor), scale, BigDecimal.ROUND_HALF_UP).doubleValue()
+  }
 
-    new BigDecimal(decryptData(tmp)).divide(new BigDecimal(divisor), scale, BigDecimal.ROUND_HALF_UP)
+
+  def divide(numerator: BigInteger, denominator: BigInteger) = {
+    val someone = new Paillier(getPublicKey())
+    val diff = someone.add(numerator, someone.multiply(denominator, -1))
   }
 
 
@@ -301,7 +321,7 @@ object Mediator {
     // Run Fairplay
     FairplayFile = "progs/Sub.txt"
 
-    compile()
+    //compile()
 
     //TODO actually can discard return values, as they're the same as input from Bob
     val Array(alpha, beta) = runBob()
@@ -310,7 +330,7 @@ object Mediator {
 
     Thread.sleep(4000) // wait for Alice to finish post-processing
 
-    secureLn(alpha, beta)
+    actualLn(alpha, beta)
 
 
     println("\nProcess finished in " + (System.currentTimeMillis() - startedAt) / 1000.0 + " seconds.")

@@ -23,6 +23,20 @@ object Experiment {
   }
 
 
+  // For testing only. will write .input files
+  //TODO use true rand()
+  def prepareInputs(xValue: Int) = {
+    val writers = Array("Bob", "Alice").map(a => new PrintWriter(new File(MyUtil.pathFile("progs/Sub.txt." + a + ".input"))))
+    val shareRand = 3  //rnd.nextInt(rndRange)
+    writers(0).println(shareRand)
+    writers(0).println(2)  //(rnd.nextInt(rndRange))
+    writers(0).println(5)  //(rnd.nextInt(rndRange))
+
+    writers(1).println(xValue - shareRand)
+    writers.map(a => a.close())
+  }
+
+
   def main(args: Array[String]) = {
     val startedAt = System.currentTimeMillis()
 
@@ -38,25 +52,18 @@ object Experiment {
     resultWriter.println(""""input x","secure ln(x)","actual ln(x)","absolute error","relative error"""")
 
     var count = 0
-    for (xValue <- 1 to 80) {
+    for (xValue <- 9 to 80) {
       println(">> Experiment with x = " + xValue)
       count += 1
-      // Generate test cases for Bob and Alice
-      val writers = Array("Bob", "Alice").map(a => new PrintWriter(new File(MyUtil.pathFile("progs/Sub.txt." + a + ".input"))))
-      val shareRand = 3  //rnd.nextInt(rndRange)
-      writers(0).println(shareRand)
-      writers(0).println(2)  //(rnd.nextInt(rndRange))
-      writers(0).println(5)  //(rnd.nextInt(rndRange))
 
-      writers(1).println(xValue - shareRand)
-      writers.map(a => a.close())
+      prepareInputs(xValue)
 
       // Run Bob and Alice
       AutomatedTest.main(Array())
 
       val (_, bobOutputs) = readOutputs()
 
-      val computedResult = Mediator.secureLn(bobOutputs(0), bobOutputs(1), 10).doubleValue()
+      val computedResult = Mediator.actualLn(bobOutputs(0), bobOutputs(1), 10).doubleValue()
       val expectedResult = math.log(xValue)
 
       resultWriter.println(xValue + "," + computedResult + "," + expectedResult + "," +
@@ -65,7 +72,8 @@ object Experiment {
       if (xValue % 10 == 0) {
         resultWriter.flush()
         val inSeconds = (System.currentTimeMillis() - startedAt) / 1000
-        timeWriter.println("\r# of values tested: " + count + "\nTotal time: " + inSeconds + " seconds.\nAverage time per value: " + inSeconds.toDouble / count + " seconds.")
+        timeWriter.println("# of values tested: " + count + "\nTotal time: " + inSeconds + " seconds.\nAverage time per value: " + inSeconds.toDouble / count + " seconds.\n")
+        timeWriter.flush()
       }
     }
 
