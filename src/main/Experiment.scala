@@ -25,14 +25,14 @@ object Experiment {
 
   // For testing only. will write .input files
   //TODO use true rand()
-  def prepareInputs(xValue: Int) = {
+  def prepareInputs(xValue: BigInteger) = {
     val writers = Array("Bob", "Alice").map(a => new PrintWriter(new File(MyUtil.pathFile("progs/Sub.txt." + a + ".input"))))
-    val shareRand = 3  //rnd.nextInt(rndRange)
+    val shareRand = BigInteger.valueOf(3)  //rnd.nextInt(rndRange)
     writers(0).println(shareRand)
     writers(0).println(2)  //(rnd.nextInt(rndRange))
     writers(0).println(5)  //(rnd.nextInt(rndRange))
 
-    writers(1).println(xValue - shareRand)
+    writers(1).println(xValue.subtract(shareRand))
     writers.map(a => a.close())
   }
 
@@ -40,8 +40,6 @@ object Experiment {
   def main(args: Array[String]) = {
     val startedAt = System.currentTimeMillis()
 
-
-    val rnd = new Random(System.currentTimeMillis())
 
     val dataDir = "data" + PathPrefix.substring(PathPrefix.lastIndexOf("/"))
     val timeWriter = new PrintWriter(new File(dataDir + "time"))
@@ -51,12 +49,14 @@ object Experiment {
     resultWriter.println(""""accuracy: ","1E-6"""")
     resultWriter.println(""""input x","secure ln(x)","actual ln(x)","absolute error","relative error"""")
 
+    Mediator.compile()
+
     var count = 0
-    for (xValue <- 9 to 80) {
+    for (xValue <- 1 to 530) {
       println(">> Experiment with x = " + xValue)
       count += 1
 
-      prepareInputs(xValue)
+      prepareInputs(BigInteger.valueOf(xValue))
 
       // Run Bob and Alice
       AutomatedTest.main(Array())

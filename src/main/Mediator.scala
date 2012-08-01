@@ -105,25 +105,11 @@ object Mediator {
    * @param inputFile  file containing encrypted data
    */
   def inverseVariance(inputFile: String = "data/encrypted_data.csv") = {
-    //var publicKey = getPublicKey()
-
-    // Read in private keys
-    //var buffer = new java.io.BufferedInputStream(new java.io.FileInputStream("data/private_keys.bin"))
-    //var input = new java.io.ObjectInputStream(buffer)
-    //val keys = input.readObject().asInstanceOf[Array[PaillierPrivateThresholdKey]].slice(0, 5)
-
-    //TODO read from file (below is a work-around)
-    val privateKeys = Provider.prepareData(toVerifyEncryption = false)
-    val publicKey = privateKeys(0).getPublicKey
-
-    println("Keys loaded. Now start SMC...")
-
-    val someone = new Paillier(publicKey)
+    val someone = new Paillier(getPublicKey())
+    // denominator, numerator
     var weightSum, betaWeightSum = someone.encrypt(BigInteger.ZERO)
     //for verification only
     var testWeightSum, testBetaWeightSum = 0.0
-
-    val thresholdParties: Array[PaillierThreshold] = for (k <- privateKeys.take(Provider.PartiesNumberThreshold)) yield new PaillierThreshold(k)
 
     var indx = 0
     var multiplier = 0.0
@@ -138,8 +124,8 @@ object Mediator {
         val betaWeightI = someone.add(new BigInteger(record(1)), someone.multiply(new BigInteger(record(2)), BigInteger.valueOf(-1)))
         betaWeightSum = someone.add(betaWeightSum, betaWeightI)
 
-        val decryptedWeightSum = Provider.decryptData(weightSum, thresholdParties)
-        val decryptedBetaWeightSum = Provider.decryptData(betaWeightSum, thresholdParties)
+        val decryptedWeightSum = decryptData(weightSum)
+        val decryptedBetaWeightSum = decryptData(betaWeightSum)
         val computedResult = decryptedBetaWeightSum.multiply(decryptedBetaWeightSum).doubleValue() / (decryptedWeightSum).doubleValue() / multiplier
 
         //for result verification only
@@ -149,6 +135,10 @@ object Mediator {
         println(computedResult)
         println(expectedResult)
         println()
+
+        // test with Secure ln(x)
+        val numerator = decryptedBetaWeightSum.multiply(decryptedBetaWeightSum)
+
       }
 
       indx += 1
@@ -200,6 +190,7 @@ object Mediator {
   }
 
 
+  /*
   def dotProduct(coefficients: Array[BigInteger], encryptedPowers: Array[BigInteger]) = {
     //TODO reduncancy
     val privateKeys = Provider.prepareData(toVerifyEncryption = false)
@@ -208,6 +199,7 @@ object Mediator {
 
     (for ((a, b) <- coefficients zip encryptedPowers) yield someone.multiply(b, a)).foldLeft(someone.encrypt(BigInteger.ZERO))((m, x) => someone.add(m, x))
   }
+  */
 
 
   /**
@@ -296,6 +288,10 @@ object Mediator {
   def divide(numerator: BigInteger, denominator: BigInteger) = {
     val someone = new Paillier(getPublicKey())
     val diff = someone.add(numerator, someone.multiply(denominator, -1))
+
+    // Get ln(x) first
+    val bobOutput = MyUtil.readResult(FairplayFile + ".Bob.output").filter(_ != null).asInstanceOf[Array[BigInteger]]
+    secureLn(bobOutput(0), bobOutput(1))
   }
 
 
@@ -318,6 +314,7 @@ object Mediator {
     //inverseVariance()
     //distributeKeys()
 
+
     // Run Fairplay
     FairplayFile = "progs/Sub.txt"
 
@@ -328,9 +325,11 @@ object Mediator {
 
     storeBeta("Bob", beta)
 
+    /*
     Thread.sleep(4000) // wait for Alice to finish post-processing
 
     actualLn(alpha, beta)
+    */
 
 
     println("\nProcess finished in " + (System.currentTimeMillis() - startedAt) / 1000.0 + " seconds.")
