@@ -13,27 +13,52 @@ import test.AutomatedTest
 import java.math.BigInteger
 
 object Experiment {
-  val PathPrefix = "run/progs/Sub.txt."
+  val PathPrefix = MyUtil.pathFile(Helpers.property("fairplay_script")) + "."
 
-  def readOutputs() = {
-    val aliceOutput = MyUtil.readResult(PathPrefix + "Alice.output").filter(_ != null).asInstanceOf[Array[BigInteger]]
-    val bobOutput = MyUtil.readResult(PathPrefix + "Bob.output").filter(_ != null).asInstanceOf[Array[BigInteger]]
-
-    (aliceOutput, bobOutput)
+  /**
+   * Get directory containing experiment-specific data files
+   * @return  string of directory name
+   */
+  def getPrefix() = {
+    val scriptFile = Helpers.property("fairplay_script")
+    new File(Helpers.property("data_directory"), scriptFile.substring(scriptFile.lastIndexOf("/") + 1)).toString + "."
   }
 
 
-  // For testing only. will write .input files
-  //TODO use true rand()
+  // Return: (AliceOutput, BobOutput)
+  def readOutputs() = {
+    ( MyUtil.readResult(PathPrefix + "Alice.output").filter(_ != null).asInstanceOf[Array[BigInteger]],
+      MyUtil.readResult(PathPrefix + "Bob.output").filter(_ != null).asInstanceOf[Array[BigInteger]] )
+  }
+
+
+  /**
+   * For test only. Generates .input files for Fairplay
+   * @param xValue  the x value as in ln(x)
+   * @return  no return. Will create related files
+   */
   def prepareInputs(xValue: BigInteger) = {
-    val writers = Array("Bob", "Alice").map(a => new PrintWriter(new File(MyUtil.pathFile("progs/Sub.txt." + a + ".input"))))
-    val shareRand = BigInteger.valueOf(3)  //rnd.nextInt(rndRange)
+    val writers = Array("Bob", "Alice").map(a => new PrintWriter(new File(PathPrefix + a + ".input")))
+    val shareRand = BigInteger.valueOf(3)  //TODO use real rand like: rnd.nextInt(rndRange)
     writers(0).println(shareRand)
-    writers(0).println(2)  //(rnd.nextInt(rndRange))
-    writers(0).println(5)  //(rnd.nextInt(rndRange))
+    writers(0).println(2)  //TODO (rnd.nextInt(rndRange))
+    writers(0).println(5)  //TODO (rnd.nextInt(rndRange))
 
     writers(1).println(xValue.subtract(shareRand))
     writers.map(a => a.close())
+  }
+
+
+  /**
+   * Create data directory for current experiment
+   * @return  no return. Will create related directory
+   */
+  def createDataDir() = {
+    val dataDir = Helpers.property("data_directory")
+    val dataHandler = new File(dataDir)
+    if (!dataHandler.exists()) dataHandler.mkdir()
+
+    dataDir
   }
 
 
@@ -41,18 +66,23 @@ object Experiment {
     val startedAt = System.currentTimeMillis()
 
 
-    val dataDir = "data" + PathPrefix.substring(PathPrefix.lastIndexOf("/"))
+    createDataDir()
+
+    Mediator.compile()  //compile once
+
+    val dataDir = getPrefix()
+    // track run time
     val timeWriter = new PrintWriter(new File(dataDir + "time"))
-    // Run multiple experiments
+    // store results from multiple experiments
     val resultWriter = new PrintWriter(new File(dataDir + "lnx.csv"))
 
     resultWriter.println(""""accuracy: ","1E-6"""")
     resultWriter.println(""""input x","secure ln(x)","actual ln(x)","absolute error","relative error"""")
 
-    Mediator.compile()
-
-    var count = 0
-    for (xValue <- 1 to 530) {
+    // Run multiple experiments
+    var count = 0  //experiment index
+    val (startValue, endValue) = (Helpers.property("start_value").toInt, Helpers.property("end_value").toInt)
+    for (xValue <- startValue to endValue) {
       println(">> Experiment with x = " + xValue)
       count += 1
 
@@ -69,14 +99,13 @@ object Experiment {
       resultWriter.println(xValue + "," + computedResult + "," + expectedResult + "," +
         (computedResult - expectedResult) + "," + (computedResult - expectedResult)/expectedResult)
 
-      if (xValue % 10 == 0) {
+      if (xValue % Helpers.property("flush_per_iterations").toInt == 0 || xValue.equals(endValue)) {
         resultWriter.flush()
         val inSeconds = (System.currentTimeMillis() - startedAt) / 1000
-        timeWriter.println("# of values tested: " + count + "\nTotal time: " + inSeconds + " seconds.\nAverage time per value: " + inSeconds.toDouble / count + " seconds.\n")
+        timeWriter.println("Processed till value: " + xValue + "\nTotal time: " + inSeconds + " seconds.\n")
         timeWriter.flush()
       }
     }
-
 
     resultWriter.close()
     timeWriter.close()
