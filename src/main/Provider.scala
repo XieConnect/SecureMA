@@ -131,16 +131,9 @@ object Provider {
     val writer = new java.io.PrintWriter(new java.io.File(EncryptedDataFile))
     // Input: file row contains labels
     val lines = io.Source.fromFile(fileName).getLines.drop(1).toArray
-    val NUMBER_OF_PARTIES = lines.length
 
-    //TODO distribute key generation
-    val privateKeys = KeyGen.PaillierThresholdKey(128, NUMBER_OF_PARTIES, PartiesNumberThreshold, (new Random).nextLong())
-    println("# Number of keys generated: " + NUMBER_OF_PARTIES + "  Threshold: " + PartiesNumberThreshold)
 
-    saveKeys(privateKeys)
-
-    val publicKey = privateKeys(0).getPublicKey()
-    val someone = new paillierp.Paillier(publicKey)
+    val someone = new paillierp.Paillier(Mediator.getPublicKey())
 
     writer.println("Multiplier:" + Delimiter + MULTIPLIER)
     // TODO use Delimiter instead of ","
@@ -176,6 +169,7 @@ object Provider {
 
     writer.close()
 
+    /*
     if (toVerifyEncryption) {
       verifyEncryption(EncryptedDataFile, privateKeys)
     }
@@ -184,6 +178,7 @@ object Provider {
 
     //TODO for test only. will move to file later
     privateKeys
+    */
   }
 
 
@@ -217,8 +212,11 @@ object Provider {
   def main(args: Array[String]) = {
     val startedAt = System.currentTimeMillis()
 
+
+    //Mediator.generateKeys()
     //prepareData()
     //receiveKey()
+
 
     FairplayFile = "progs/Sub.txt"
 
@@ -229,6 +227,7 @@ object Provider {
     MyUtil.saveResult(encryptedPowers, MyUtil.pathFile(FairplayFile) + ".Alice.power")
 
     Mediator.storeBeta("Alice", beta)
+
 
 
     println("\nProcess finished in " + (System.currentTimeMillis - startedAt) / 1000.0 + " seconds.")
