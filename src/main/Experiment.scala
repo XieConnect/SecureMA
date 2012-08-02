@@ -62,10 +62,42 @@ object Experiment {
   }
 
 
+  def generateReadme() = {
+    val writer = new PrintWriter(new File(getPrefix() + "README"))
+    writer.println("Start value: " + Helpers.property("start_value") + "\n" +
+      "End value: " + Helpers.property("end_value") + "\n" +
+      "Note: " + Helpers.property("readme")
+    )
+    writer.close()
+  }
+
+
+  /**
+   * Generate test cases given the start and end values of N (from config file)
+   * Will only include values from (2^n - 1) to (3 * 2^(n-1) + 1)
+   * @return  array of all candidate values
+   */
+  def generateTestCases() = {
+    var result = collection.mutable.ArrayBuffer[Int]()
+    for (n <- Helpers.property("start_value").toInt to Helpers.property("end_value").toInt) {
+      result ++= ((math.pow(2, n) - 1).toInt to (3 * math.pow(2, n - 1) + 1).toInt)
+      if (n < 4) result = result.distinct
+    }
+    println(result.size + " values to process...")
+
+    result
+  }
+
+
   def main(args: Array[String]) = {
     val startedAt = System.currentTimeMillis()
 
 
+    // Run current data batch in multi-threaded
+    val perIterations = Helpers.property("flush_per_iterations").toInt
+
+
+    /*
     createDataDir()
 
     Mediator.compile()  //compile once
@@ -81,8 +113,9 @@ object Experiment {
 
     // Run multiple experiments
     var count = 0  //experiment index
-    val (startValue, endValue) = (Helpers.property("start_value").toInt, Helpers.property("end_value").toInt)
-    for (xValue <- startValue to endValue) {
+    val testCases = generateTestCases()
+    val endValue = testCases.last
+    for (xValue <- testCases) {
       println(">> Experiment with x = " + xValue)
       count += 1
 
@@ -109,6 +142,9 @@ object Experiment {
 
     resultWriter.close()
     timeWriter.close()
+
+    generateReadme()
+    */
 
 
     println("\nProcess finished in " + (System.currentTimeMillis() - startedAt) / 1000 + " seconds.")
