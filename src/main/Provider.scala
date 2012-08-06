@@ -5,7 +5,7 @@ package main
  * Final data will be stored in file specified by EncryptedDataFile below
  */
 
-import java.io.ObjectInputStream
+import java.io.{ObjectOutputStream, ObjectInputStream}
 import java.math.BigInteger
 import java.net.Socket
 import java.util.Random
@@ -209,6 +209,18 @@ object Provider {
   }
 
 
+  def sendData(powers: Array[BigInteger], beta: BigInteger) = {
+    val ss = new Socket("localhost", 3497);
+    val os = new ObjectOutputStream(ss.getOutputStream())
+    os.writeObject(powers)
+    os.writeObject(beta)
+    os.flush()
+
+    os.close()
+    ss.close()
+  }
+
+
   def main(args: Array[String]) = {
     val startedAt = System.currentTimeMillis()
 
@@ -224,9 +236,12 @@ object Provider {
 
     val encryptedPowers = encryptPowers(alpha)
     //TODO send to Mediator via network
-    MyUtil.saveResult(encryptedPowers, MyUtil.pathFile(FairplayFile) + ".Alice.power")
+    //MyUtil.saveResult(encryptedPowers, MyUtil.pathFile(FairplayFile) + ".Alice.power")
+    println("Provider: about to send data...")
+    sendData(encryptedPowers, beta)
+    println("Provider: finished send data...")
 
-    Mediator.storeBeta("Alice", beta)
+    //Mediator.storeBeta("Alice", beta)
 
 
 

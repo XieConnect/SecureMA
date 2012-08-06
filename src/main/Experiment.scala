@@ -93,14 +93,7 @@ object Experiment {
     val startedAt = System.currentTimeMillis()
 
 
-    // Run current data batch in multi-threaded
-    val perIterations = Helpers.property("flush_per_iterations").toInt
-
-
-    /*
     createDataDir()
-
-    Mediator.compile()  //compile once
 
     val dataDir = getPrefix()
     // track run time
@@ -114,7 +107,7 @@ object Experiment {
     // Run multiple experiments
     var count = 0  //experiment index
     val testCases = generateTestCases()
-    val endValue = testCases.last
+    val (startValue, endValue) = (testCases.head, testCases.last)
     for (xValue <- testCases) {
       println(">> Experiment with x = " + xValue)
       count += 1
@@ -122,10 +115,15 @@ object Experiment {
       prepareInputs(BigInteger.valueOf(xValue))
 
       // Run Bob and Alice
-      AutomatedTest.main(Array())
+      var bobArgs = Array[String]()
+      if (xValue.equals(startValue)) bobArgs :+= "true"  //compile and generate keys only once
+      AutomatedTest.main(bobArgs)
 
-      val (_, bobOutputs) = readOutputs()
+      println("Actual: " + math.log(xValue) + "\n")
 
+      //val (_, bobOutputs) = readOutputs()
+
+      /*
       val computedResult = Mediator.actualLn(bobOutputs(0), bobOutputs(1), 10).doubleValue()
       val expectedResult = math.log(xValue)
 
@@ -138,13 +136,13 @@ object Experiment {
         timeWriter.println("Processed till value: " + xValue + "\nTotal time: " + inSeconds + " seconds.\n")
         timeWriter.flush()
       }
+      */
     }
 
     resultWriter.close()
     timeWriter.close()
 
     generateReadme()
-    */
 
 
     println("\nProcess finished in " + (System.currentTimeMillis() - startedAt) / 1000 + " seconds.")
