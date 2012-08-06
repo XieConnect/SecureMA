@@ -6,9 +6,9 @@ package main
  * @version 5/24/12
  */
 
-import java.io.ObjectOutputStream
+import java.io.{ObjectInputStream, File, ObjectOutputStream}
 import java.math.BigInteger
-import java.net.ServerSocket
+import java.net.{Socket, ServerSocket}
 import java.util
 import java.util.Random
 import org.apache.commons.math3.linear.{RealVector, ArrayRealVector}
@@ -24,6 +24,9 @@ import org.apache.commons.math3.util.ArithmeticUtils
 
 import SFE.BOAL.{Bob, MyUtil}
 
+import java.net.UnknownHostException
+import java.io.IOException
+
 object Mediator {
   val K_TAYLOR_PLACES = 10
   val LCM = (2 to K_TAYLOR_PLACES).foldLeft(1)((a, x) => ArithmeticUtils.lcm(a, x))
@@ -38,15 +41,15 @@ object Mediator {
 
   /**
    * Generate and store Paillier Threshold keys to file
-   * @param privateKeyFile
-   * @param publicKeyFile
-   * @param length
-   * @param totalParties
-   * @param thresholdParties
-   * @param seed
+   * @param length  field length as in Paillier encryption. Refer to KeyGen.PaillierThresholdKey
+   * @param seed  random seed in Paillier encryption
+   * @return  file path to private and public keys
    */
-  def generateKeys(privateKeyFile: String = "data/private.keys", publicKeyFile: String = "data/public.keys", length: Int = FieldBitsMax,
-                   totalParties: Int = 6, thresholdParties: Int = 3, seed: Long = new util.Random().nextLong()) = {
+  def generateKeys(length: Int = FieldBitsMax, seed: Long = new util.Random().nextLong()) = {
+    val privateKeyFile = Helpers.property("private_keys")
+    val publicKeyFile = Helpers.property("public_keys")
+    val totalParties = Helpers.property("total_parties").toInt
+    val thresholdParties = Helpers.property("threshold_parties").toInt
 
     // Generate and store private keys
     KeyGen.PaillierThresholdKey(privateKeyFile, length, totalParties, thresholdParties, seed)
@@ -56,7 +59,7 @@ object Mediator {
     val buffer = new java.io.BufferedOutputStream(new java.io.FileOutputStream(publicKeyFile))
     val output = new java.io.ObjectOutputStream(buffer)
     output.writeObject(publicKey)
-    output.close
+    output.close()
     buffer.close()
 
     (privateKeyFile, publicKeyFile)
@@ -70,7 +73,7 @@ object Mediator {
    * @param verifyPublicKey  whether to verify correctness of public key or not
    * @return
    */
-  def getPublicKey(filename: String = "data/public.keys", verifyPublicKey: Boolean = false) = {
+  def getPublicKey(filename: String = Helpers.property("public_keys"), verifyPublicKey: Boolean = false) = {
     val buffer = new java.io.BufferedInputStream(new java.io.FileInputStream(filename))
     val input = new java.io.ObjectInputStream(buffer)
     val publicKey = input.readObject().asInstanceOf[PaillierKey]
@@ -79,7 +82,7 @@ object Mediator {
     buffer.close()
 
     // To verify that public key is correct
-    //TODO for debug only
+    // for debug only
     if (verifyPublicKey) {
       val tmp = BigInteger.valueOf(10)
       var encryptedTmp = BigInteger.ZERO
@@ -237,7 +240,7 @@ object Mediator {
    * @param constA  alpha1 as in binomial expansion
    * @return  encrypted result of Taylor expansion
    */
-  def taylorExpansion(constA: BigInteger) = {
+  def taylorExpansion(constA: BigInteger, encryptedPowers: Array[BigInteger]) = {
     // Prepare constant coefficients
     var coefficients = polynomialCoefficients(constA, 1)
 
@@ -248,7 +251,7 @@ object Mediator {
 
     // Perform Taylor expansion (assemble coefficients and variables)
     //TODO read Alice's input via network
-    val encryptedPowers = MyUtil.readResult(MyUtil.pathFile(FairplayFile) + ".Alice.power")
+    //val encryptedPowers = MyUtil.readResult(MyUtil.pathFile(FairplayFile) + ".Alice.power")
     val someone = new Paillier(getPublicKey())
 
     (encryptedPowers zip coefficients).foldLeft(someone.encrypt(BigInteger.ZERO)) ((a, x) => someone.add(a, someone.multiply(x._1, x._2)))
@@ -262,9 +265,36 @@ object Mediator {
    * @return  encryption of scaled-up ln(x)
    */
   def secureLn(alpha: BigInteger, beta: BigInteger) = {
-    val someone = new Paillier(getPublicKey())
+    // Obtain Alice's alpha and beta
+    // Wait for Bob socket server to start
+    var connected: Boolean = false
+    var socket: Socket = null
 
-    val taylorResult = taylorExpansion(alpha)
+    while (!connected) {
+      try {
+        socket = new Socket("localhost", 3497)
+        connected = true
+      } catch {
+        case e: UnknownHostException => {
+          System.err.println("Alice: Don't know host: " + "localhost")
+          System.exit(-1)
+        }
+        case e: IOException => {
+          System.out.print("\rWaiting for data server to start...")
+          Thread.sleep(100)
+        }
+      }
+    }
+
+
+    val fromOrigin = new ObjectInputStream(socket.getInputStream())
+    val (alicePowers, aliceBeta) = (fromOrigin.readObject().asInstanceOf[Array[BigInteger]], fromOrigin.readObject().asInstanceOf[BigInteger])
+
+    val someone = new Paillier(getPublicKey())
+    val taylorResult = taylorExpansion(alpha, alicePowers)
+
+    socket.close()
+    fromOrigin.close()
 
     val betas = (for (i <- Array("Alice", "Bob")) yield MyUtil.readResult(MyUtil.pathFile(FairplayFile) + "." + i + ".beta")(0)).asInstanceOf[Array[BigInteger]]
     var tmp = someone.add(betas(0), betas(1))
@@ -273,9 +303,9 @@ object Mediator {
 
 
   /**
-   * Remember to modify multiplier in Sub.txt when customizing param *scale*
-   * @alpha
-   * @beta
+   * Remember to modify multiplier in Fairplay script when customizing param *scale*
+   * @alpha Bob's alpha
+   * @beta Bob's beta
    * @return  decrypted value of ln(x)
    */
   def actualLn(alpha: BigInteger, beta: BigInteger, scale: Int = 6) = {
@@ -305,32 +335,28 @@ object Mediator {
   }
 
 
+  // args = [firstRun?]
   def main(args: Array[String]) = {
     val startedAt = System.currentTimeMillis()
 
 
-    generateKeys()
+    FairplayFile = Helpers.property("fairplay_script")
+
+    // Generate keys for first trial
+    if ( (!args.isEmpty) && args(0).equals("true") ||
+          (! new File(Helpers.property("private_keys")).exists()) ) {
+      generateKeys()
+      compile()
+    }
+
     //getPublicKey()
     //inverseVariance()
     //distributeKeys()
 
-
-    // Run Fairplay
-    FairplayFile = "progs/Sub.txt"
-
-    //compile()
-
-    //TODO actually can discard return values, as they're the same as input from Bob
     val Array(alpha, beta) = runBob()
 
     storeBeta("Bob", beta)
-
-    /*
-    Thread.sleep(4000) // wait for Alice to finish post-processing
-
-    actualLn(alpha, beta)
-    */
-
+    println("Computed: " + actualLn(alpha, beta, 10))
 
     println("\nProcess finished in " + (System.currentTimeMillis() - startedAt) / 1000.0 + " seconds.")
   }

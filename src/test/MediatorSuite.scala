@@ -103,6 +103,7 @@ class MediatorSuite extends FunSuite {
     }
   }
 
+  /* TODO taylorExpansion
   test("verify Taylor expansion result") {
     val (_, bobOutput) = readOutputs()
     val taylorResult = Mediator.taylorExpansion(bobOutput(0))
@@ -113,6 +114,7 @@ class MediatorSuite extends FunSuite {
     val divisor = new BigInteger("%.0f" format Mediator.POWER_OF_TWO).pow(Mediator.K_TAYLOR_PLACES).multiply(BigInteger.valueOf(Mediator.LCM))
     expect(BigInteger.ZERO) (result.divide(divisor))
   }
+  */
 
   test("verify final result") {
     val (aliceInput, bobInput) = readInputs()
