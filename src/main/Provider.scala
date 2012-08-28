@@ -236,12 +236,13 @@ object Provider {
 
     val encryptedPowers = encryptPowers(alpha)
     //TODO send to Mediator via network
-    //MyUtil.saveResult(encryptedPowers, MyUtil.pathFile(FairplayFile) + ".Alice.power")
-    println("Provider: about to send data...")
-    sendData(encryptedPowers, beta)
-    println("Provider: finished send data...")
+    MyUtil.saveResult(encryptedPowers, MyUtil.pathFile(FairplayFile) + ".Alice.power")
 
-    //Mediator.storeBeta("Alice", beta)
+    //println("Provider: about to send data...")
+    //sendData(encryptedPowers, beta)
+    //println("Provider: finished send data...")
+
+    Mediator.storeBeta("Alice", beta)
 
 
 

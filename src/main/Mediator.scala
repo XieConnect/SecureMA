@@ -36,7 +36,7 @@ object Mediator {
   val FieldBitsMax = (MaxN + 2) * K_TAYLOR_PLACES + (math.log(MaxN) / math.log(2)).ceil.toInt
   val FieldMax = new BigInteger("%.0f".format(math.pow(2, FieldBitsMax)))
 
-  var FairplayFile = "progs/Sub.txt"
+  var FairplayFile = Helpers.property("fairplay_script")
 
 
   /**
@@ -265,38 +265,13 @@ object Mediator {
    * @return  encryption of scaled-up ln(x)
    */
   def secureLn(alpha: BigInteger, beta: BigInteger) = {
-    // Obtain Alice's alpha and beta
-    // Wait for Bob socket server to start
-    var connected: Boolean = false
-    var socket: Socket = null
-
-    while (!connected) {
-      try {
-        socket = new Socket("localhost", 3497)
-        connected = true
-      } catch {
-        case e: UnknownHostException => {
-          System.err.println("Alice: Don't know host: " + "localhost")
-          System.exit(-1)
-        }
-        case e: IOException => {
-          System.out.print("\rWaiting for data server to start...")
-          Thread.sleep(100)
-        }
-      }
-    }
-
-
-    val fromOrigin = new ObjectInputStream(socket.getInputStream())
-    val (alicePowers, aliceBeta) = (fromOrigin.readObject().asInstanceOf[Array[BigInteger]], fromOrigin.readObject().asInstanceOf[BigInteger])
+    //TODO via socket: to obtain Alice's alpha and beta
+    val alicePowers: Array[BigInteger] = MyUtil.readResult(MyUtil.pathFile(FairplayFile) + ".Alice.power")
 
     val someone = new Paillier(getPublicKey())
     val taylorResult = taylorExpansion(alpha, alicePowers)
 
-    socket.close()
-    fromOrigin.close()
-
-    val betas = (for (i <- Array("Alice", "Bob")) yield MyUtil.readResult(MyUtil.pathFile(FairplayFile) + "." + i + ".beta")(0)).asInstanceOf[Array[BigInteger]]
+    val betas = (for (i <- Array("Alice", "Bob")) yield MyUtil.readResult(MyUtil.pathFile(FairplayFile) + "." + i + ".beta")(0))
     var tmp = someone.add(betas(0), betas(1))
     someone.add(taylorResult, tmp)
   }
@@ -340,10 +315,8 @@ object Mediator {
     val startedAt = System.currentTimeMillis()
 
 
-    FairplayFile = Helpers.property("fairplay_script")
-
     // Generate keys for first trial
-    if ( (!args.isEmpty) && args(0).equals("true") ||
+    if ( (!args.isEmpty) && args(0).equals("init") ||
           (! new File(Helpers.property("private_keys")).exists()) ) {
       generateKeys()
       compile()
