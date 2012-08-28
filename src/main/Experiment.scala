@@ -106,8 +106,10 @@ object Experiment {
 
     // Run multiple experiments
     var count = 0  //experiment index
+    val flushPerIterations = Helpers.property("flush_per_iterations").toInt
     val testCases = generateTestCases()
     val (startValue, endValue) = (testCases.head, testCases.last)
+
     for (xValue <- testCases) {
       println(">> Experiment with x = " + xValue)
       count += 1
@@ -116,27 +118,25 @@ object Experiment {
 
       // Run Bob and Alice
       var bobArgs = Array[String]()
-      if (xValue.equals(startValue)) bobArgs :+= "true"  //compile and generate keys only once
+      if (xValue.equals(startValue)) bobArgs :+= "init"  //compile and generate keys only once
       AutomatedTest.main(bobArgs)
 
-      println("Actual: " + math.log(xValue) + "\n")
+      val (_, bobOutputs) = readOutputs()
 
-      //val (_, bobOutputs) = readOutputs()
-
-      /*
       val computedResult = Mediator.actualLn(bobOutputs(0), bobOutputs(1), 10).doubleValue()
       val expectedResult = math.log(xValue)
 
       resultWriter.println(xValue + "," + computedResult + "," + expectedResult + "," +
         (computedResult - expectedResult) + "," + (computedResult - expectedResult)/expectedResult)
 
-      if (xValue % Helpers.property("flush_per_iterations").toInt == 0 || xValue.equals(endValue)) {
+      if (count % flushPerIterations == 0 || xValue.equals(endValue)) {
         resultWriter.flush()
         val inSeconds = (System.currentTimeMillis() - startedAt) / 1000
-        timeWriter.println("Processed till value: " + xValue + "\nTotal time: " + inSeconds + " seconds.\n")
+        timeWriter.println("Processed " + count + " values.\nTotal time: " + inSeconds + " seconds.\n")
         timeWriter.flush()
       }
-      */
+
+
     }
 
     resultWriter.close()
