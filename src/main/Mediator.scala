@@ -6,7 +6,7 @@ package main
  * @version 5/24/12
  */
 
-import java.io.{ObjectInputStream, File, ObjectOutputStream}
+import java.io._
 import java.math.BigInteger
 import java.net.{Socket, ServerSocket}
 import java.util
@@ -25,7 +25,6 @@ import org.apache.commons.math3.util.ArithmeticUtils
 import SFE.BOAL.{Bob, MyUtil}
 
 import java.net.UnknownHostException
-import java.io.IOException
 
 object Mediator {
   val K_TAYLOR_PLACES = 10
@@ -36,7 +35,7 @@ object Mediator {
   val FieldBitsMax = (MaxN + 2) * K_TAYLOR_PLACES + (math.log(MaxN) / math.log(2)).ceil.toInt
   val FieldMax = new BigInteger("%.0f".format(math.pow(2, FieldBitsMax)))
 
-  var FairplayFile = Helpers.property("fairplay_script")
+  var FairplayFile = "progs/Sub.txt"
 
 
   /**
@@ -46,8 +45,9 @@ object Mediator {
    * @return  file path to private and public keys
    */
   def generateKeys(length: Int = FieldBitsMax, seed: Long = new util.Random().nextLong()) = {
-    val privateKeyFile = Helpers.property("private_keys")
-    val publicKeyFile = Helpers.property("public_keys")
+    val dataDir = Helpers.property("data_directory")
+    val privateKeyFile = new File(dataDir, Helpers.property("private_keys")).toString
+    val publicKeyFile = new File(dataDir, Helpers.property("public_keys")).toString
     val totalParties = Helpers.property("total_parties").toInt
     val thresholdParties = Helpers.property("threshold_parties").toInt
 
@@ -73,8 +73,14 @@ object Mediator {
    * @param verifyPublicKey  whether to verify correctness of public key or not
    * @return
    */
-  def getPublicKey(filename: String = Helpers.property("public_keys"), verifyPublicKey: Boolean = false) = {
-    val buffer = new java.io.BufferedInputStream(new java.io.FileInputStream(filename))
+  def getPublicKey(filename: String = "", verifyPublicKey: Boolean = false) = {
+    val filename_ = if (filename.equals("")) {
+      new File(Helpers.property("data_directory"), Helpers.property("public_keys")).toString
+    } else {
+      filename
+    }
+
+    val buffer = new java.io.BufferedInputStream(new java.io.FileInputStream(filename_))
     val input = new java.io.ObjectInputStream(buffer)
     val publicKey = input.readObject().asInstanceOf[PaillierKey]
 
@@ -92,7 +98,7 @@ object Mediator {
           val someone = new Paillier(publicKey)
           encryptedTmp = someone.encrypt(tmp)
         } else {
-          val privateKeys = KeyGen.PaillierThresholdKeyLoad("data/private.keys")
+          val privateKeys = KeyGen.PaillierThresholdKeyLoad(new File(Helpers.property("data_directory"), Helpers.property("private_keys")).toString)
           val parties = for (k <- privateKeys.take(3)) yield new PaillierThreshold(k)
           println(">> Public Key Correctness: " + tmp.equals(parties(0).combineShares((for (p <- parties) yield p.decrypt(encryptedTmp)): _*)))
         }
@@ -151,26 +157,6 @@ object Mediator {
   }
 
 
-  //TODO move to separate class
-  //TODO send actual keys; config port and hostname, etc
-  /**
-   * Distribute private keys to participants
-   */
-  def distributeKeys() = {
-    val ss = new ServerSocket(3497)
-    println("Host waiting...")
-    val socket = ss.accept()
-    //TODO convert to array of streams
-    val toParties = new ObjectOutputStream(socket.getOutputStream())
-    toParties.writeInt(333) // send test data
-    toParties.flush()
-
-    toParties.close()
-    socket.close()
-    ss.close()
-  }
-
-
   /**
    * Obtain coefficients for binomial expansion
    * @param constA  constant alpha1 as in binomial polynomial
@@ -221,15 +207,13 @@ object Mediator {
    * TODO read filename from config
    */
   def runBob() = {
-    Bob.main(Array("-r", "progs/Sub.txt", "dj2j", "4"))
-    MyUtil.readResult(MyUtil.pathFile(FairplayFile) + ".Bob.output").filter(_ != null).asInstanceOf[Array[BigInteger]]
   }
 
 
   def decryptData(encrypted: BigInteger, negative: Boolean = false) = {
-    val privateKeys = KeyGen.PaillierThresholdKeyLoad("data/private.keys")
+    val privateKeys = KeyGen.PaillierThresholdKeyLoad(new File(Helpers.property("data_directory"), Helpers.property("private_keys")).toString)
     val parties = for (k <- privateKeys.take(3)) yield new PaillierThreshold(k)
-    var decrypted = parties(0).combineShares((for (p <- parties) yield p.decrypt(encrypted)): _*)
+    val decrypted = parties(0).combineShares((for (p <- parties) yield p.decrypt(encrypted)): _*)
 
     if (negative) decrypted.subtract(privateKeys(0).getN) else decrypted
   }
@@ -265,14 +249,14 @@ object Mediator {
    * @return  encryption of scaled-up ln(x)
    */
   def secureLn(alpha: BigInteger, beta: BigInteger) = {
-    //TODO via socket: to obtain Alice's alpha and beta
-    val alicePowers: Array[BigInteger] = MyUtil.readResult(MyUtil.pathFile(FairplayFile) + ".Alice.power")
+    val alicePowers = MyUtil.readResult(MyUtil.pathFile(FairplayFile) + ".Alice.power")
 
     val someone = new Paillier(getPublicKey())
     val taylorResult = taylorExpansion(alpha, alicePowers)
 
+    //TODO transfer from socket
     val betas = (for (i <- Array("Alice", "Bob")) yield MyUtil.readResult(MyUtil.pathFile(FairplayFile) + "." + i + ".beta")(0))
-    var tmp = someone.add(betas(0), betas(1))
+    val tmp = someone.add(betas(0), betas(1))
     someone.add(taylorResult, tmp)
   }
 
@@ -285,6 +269,7 @@ object Mediator {
    */
   def actualLn(alpha: BigInteger, beta: BigInteger, scale: Int = 6) = {
     val tmp = secureLn(alpha, beta)
+
     val divisor = new BigInteger("%.0f" format Mediator.POWER_OF_TWO).pow(Mediator.K_TAYLOR_PLACES).multiply(BigInteger.valueOf(Mediator.LCM))
     new BigDecimal(decryptData(tmp)).divide(new BigDecimal(divisor), scale, BigDecimal.ROUND_HALF_UP).doubleValue()
   }
@@ -295,7 +280,7 @@ object Mediator {
     val diff = someone.add(numerator, someone.multiply(denominator, -1))
 
     // Get ln(x) first
-    val bobOutput = MyUtil.readResult(FairplayFile + ".Bob.output").filter(_ != null).asInstanceOf[Array[BigInteger]]
+    val bobOutput = MyUtil.readResult(FairplayFile + ".Bob.output").filter(_ != null)
     secureLn(bobOutput(0), bobOutput(1))
   }
 
@@ -310,26 +295,69 @@ object Mediator {
   }
 
 
+  /**
+   * Receive intermediate result from Provider
+   * @return
+   */
+  def receiveData() = {
+    // Read content
+    //val fromOrigin = new ObjectInputStream(socket.getInputStream())
+    //val (alicePowers, aliceBeta) = (fromOrigin.readObject().asInstanceOf[Array[BigInteger]], fromOrigin.readObject().asInstanceOf[BigInteger])
+
+    // Receive data file
+    //is = new ObjectInputStream(new BufferedInputStream(socket.getInputStream))
+    //val result = is.readObject().asInstanceOf[Array[BigInteger]]
+    //MyUtil.saveResult(result, MyUtil.pathFile(FairplayFile) + ".Alice.power.transferred")
+    //is.close()
+    //socket.close()
+
+    //val someone = new Paillier(getPublicKey())
+    //val taylorResult = taylorExpansion(alpha, alicePowers)
+
+    //socket.close()
+    //fromOrigin.close()
+  }
+
+
   // args = [firstRun?]
   def main(args: Array[String]) = {
     val startedAt = System.currentTimeMillis()
 
+    println("To run Bob...")
 
-    // Generate keys for first trial
-    if ( (!args.isEmpty) && args(0).equals("init") ||
-          (! new File(Helpers.property("private_keys")).exists()) ) {
-      generateKeys()
-      compile()
+    //TODO handle args.isEmpty
+    //--- Run Fairplay ---
+    if ( args.length > 0 && args(0).equals("fairplay") ) {
+      if ( args.length > 1 && args(1).equals("init") || (! new File(Helpers.property("data_directory"), Helpers.property("private_keys")).exists()) ) {
+        generateKeys()
+        compile()
+      }
+
+      // Will store output to file
+      val socketPort = Helpers.property("socket_port")
+      Bob.main(Array("-r", Helpers.property("fairplay_script"), "dj2j", "4", socketPort))
+
+      try {
+        val Array(_, beta) = MyUtil.readResult(MyUtil.pathFile(FairplayFile) + ".Bob.output").filter(_ != null)
+        storeBeta("Bob", beta)
+      } catch {
+        case e: Exception => e.printStackTrace()
+      }
+
+    } else if (args(0).equals("ln")) {
+      //--- Compute ln(x) ---
+      val Array(alpha, beta) = MyUtil.readResult(MyUtil.pathFile(FairplayFile) + ".Bob.output").filter(_ != null)
+      println("Computed: " + actualLn(alpha, beta, 10))
     }
+
+
+    FairplayFile = Helpers.property("fairplay_script")
+
 
     //getPublicKey()
     //inverseVariance()
     //distributeKeys()
 
-    val Array(alpha, beta) = runBob()
-
-    storeBeta("Bob", beta)
-    println("Computed: " + actualLn(alpha, beta, 10))
 
     println("\nProcess finished in " + (System.currentTimeMillis() - startedAt) / 1000.0 + " seconds.")
   }

@@ -3,3 +3,12 @@ Distributed Secure Meta-analysis
 == Files
 - data/Sub.txt.lnx.overest.csv  ln(x) result for over-estimates of n;
 - data/Sub.txt.overest.time  Run time analysis for over-estimate;
+
+
+== Note
+- API for Alice and Bob has changed a little from original one (to config server and port to run socket)
+- Check if current port available: lsof -i :3496  (3496 is port you desire)
+
+
+== Bugfix
+- Error when running multiple test cases (first case OK, following crash with NullPointerException);

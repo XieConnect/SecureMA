@@ -108,18 +108,20 @@ object Experiment {
     var count = 0  //experiment index
     val flushPerIterations = Helpers.property("flush_per_iterations").toInt
     val testCases = generateTestCases()
-    val (startValue, endValue) = (testCases.head, testCases.last)
+    val endValue = testCases.last
 
     for (xValue <- testCases) {
-      println(">> Experiment with x = " + xValue)
+      println("> x = " + xValue)
       count += 1
 
       prepareInputs(BigInteger.valueOf(xValue))
 
       // Run Bob and Alice
       var bobArgs = Array[String]()
-      if (xValue.equals(startValue)) bobArgs :+= "init"  //compile and generate keys only once
+      if (count == 1) bobArgs :+= "init"  //compile and generate keys only once
+
       AutomatedTest.main(bobArgs)
+      Thread.sleep(2000)
 
       val (_, bobOutputs) = readOutputs()
 
