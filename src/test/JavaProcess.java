@@ -15,7 +15,7 @@ import java.util.Arrays;
 // Execute Java class in separate process
 // NOTE: some parameters inside are project-specific
 public class JavaProcess {
-    public Process exec(Class klass, String[] args) throws IOException,
+    public static Process exec(Class klass, String[] args) throws IOException,
             InterruptedException {
         Process process = null;
         String javaHome = System.getProperty("java.home");

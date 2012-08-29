@@ -35,8 +35,7 @@ object Mediator {
   val FieldBitsMax = (MaxN + 2) * K_TAYLOR_PLACES + (math.log(MaxN) / math.log(2)).ceil.toInt
   val FieldMax = new BigInteger("%.0f".format(math.pow(2, FieldBitsMax)))
 
-  var FairplayFile = "progs/Sub.txt"
-
+  val FairplayFile = Helpers.property("fairplay_script")
 
   /**
    * Generate and store Paillier Threshold keys to file
@@ -323,36 +322,26 @@ object Mediator {
   def main(args: Array[String]) = {
     val startedAt = System.currentTimeMillis()
 
-    println("To run Bob...")
-
-    //TODO handle args.isEmpty
     //--- Run Fairplay ---
-    if ( args.length > 0 && args(0).equals("fairplay") ) {
-      if ( args.length > 1 && args(1).equals("init") || (! new File(Helpers.property("data_directory"), Helpers.property("private_keys")).exists()) ) {
-        generateKeys()
-        compile()
-      }
-
-      // Will store output to file
-      val socketPort = Helpers.property("socket_port")
-      Bob.main(Array("-r", Helpers.property("fairplay_script"), "dj2j", "4", socketPort))
-
-      try {
-        val Array(_, beta) = MyUtil.readResult(MyUtil.pathFile(FairplayFile) + ".Bob.output").filter(_ != null)
-        storeBeta("Bob", beta)
-      } catch {
-        case e: Exception => e.printStackTrace()
-      }
-
-    } else if (args(0).equals("ln")) {
-      //--- Compute ln(x) ---
-      val Array(alpha, beta) = MyUtil.readResult(MyUtil.pathFile(FairplayFile) + ".Bob.output").filter(_ != null)
-      println("Computed: " + actualLn(alpha, beta, 10))
+    if ( args.length > 0 && args(0).equals("init") || (! new File(Helpers.property("data_directory"), Helpers.property("private_keys")).exists()) ) {
+      generateKeys()
+      compile()
     }
 
+    // Will store output to file
+    val socketPort = Helpers.property("socket_port")
+    Bob.main(Array("-r", Helpers.property("fairplay_script"), "dj2j", "4", socketPort))
 
-    FairplayFile = Helpers.property("fairplay_script")
+    try {
+      val Array(_, beta) = MyUtil.readResult(MyUtil.pathFile(FairplayFile) + ".Bob.output").filter(_ != null)
+      storeBeta("Bob", beta)
+    } catch {
+      case e: Exception => e.printStackTrace()
+    }
 
+    //--- Compute ln(x) ---
+    val Array(alpha, beta) = MyUtil.readResult(MyUtil.pathFile(FairplayFile) + ".Bob.output").filter(_ != null)
+    println("Computed: " + actualLn(alpha, beta, 10))
 
     //getPublicKey()
     //inverseVariance()
