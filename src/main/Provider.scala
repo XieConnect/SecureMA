@@ -187,7 +187,9 @@ object Provider {
    * TODO read filename from config
    */
   def runAlice() = {
-    Alice.main(Array("-r", FairplayFile, "djdj", "localhost"))
+    val socketServer = Helpers.property("socket_server")
+    val socketPort = Helpers.property("socket_port")
+    Alice.main(Array("-r", FairplayFile, "djdj", socketServer, socketPort))
     MyUtil.readResult(MyUtil.pathFile(FairplayFile) + ".Alice.output").filter(_ != null).asInstanceOf[Array[BigInteger]]
   }
 
@@ -228,7 +230,6 @@ object Provider {
     //Mediator.generateKeys()
     //prepareData()
     //receiveKey()
-
 
     FairplayFile = "progs/Sub.txt"
 
