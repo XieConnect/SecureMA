@@ -121,7 +121,6 @@ object Experiment {
       if (count == 1) bobArgs :+= "init"  //compile and generate keys only once
 
       AutomatedTest.main(bobArgs)
-      Thread.sleep(2000)
 
       val (_, bobOutputs) = readOutputs()
 
@@ -137,8 +136,6 @@ object Experiment {
         timeWriter.println("Processed " + count + " values.\nTotal time: " + inSeconds + " seconds.\n")
         timeWriter.flush()
       }
-
-
     }
 
     resultWriter.close()
