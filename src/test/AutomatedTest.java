@@ -16,7 +16,7 @@ public class AutomatedTest {
 
         // Run Alice
         try {
-            System.out.println("Running Provider...");
+            System.out.println("  Running Provider...");
             providerProcess = JavaProcess.exec(Provider.class, args);
         } catch (Exception e) {
             System.out.println("Error running Provider: " + e.getMessage());
@@ -24,7 +24,7 @@ public class AutomatedTest {
 
         // Run Bob
         try {
-            System.out.println("Running Mediator...");
+            System.out.println("  Running Mediator...");
             mediatorProcess = JavaProcess.exec(Mediator.class, args);
         } catch (Exception e) {
             System.out.println("Error running Mediator: " + e.getMessage());
@@ -38,7 +38,7 @@ public class AutomatedTest {
             if (providerProcess != null)
                 providerProcess.waitFor();
 
-            System.out.println("> Both processes finished.");
+            System.out.println("  Both processes finished.");
         } catch (Exception e) {
             System.out.println("Error terminating process: " + e.getMessage());
         } finally {
