@@ -64,8 +64,8 @@ object Experiment {
 
   def generateReadme() = {
     val writer = new PrintWriter(new File(getPrefix() + "README"))
-    writer.println("Start value: " + Helpers.property("start_value") + "\n" +
-      "End value: " + Helpers.property("end_value") + "\n" +
+    writer.println("Start n: " + Helpers.property("start_n") + "\n" +
+      "End n: " + Helpers.property("end_n") + "\n" +
       "Note: " + Helpers.property("readme")
     )
     writer.close()
@@ -74,20 +74,29 @@ object Experiment {
 
   /**
    * Generate test cases given the start and end values of N (from config file)
-   * Will only include values from (2^n - 1) to (3 * 2^(n-1) + 1)
+   * Will only include values from (2^n + n) to (2^(n-2) * 5)
    * @return  array of all candidate values
    */
-  def generateTestCases() = {
-    var result = collection.mutable.ArrayBuffer[Int]()
-    for (n <- Helpers.property("start_value").toInt to Helpers.property("end_value").toInt) {
-      result ++= ((math.pow(2, n) - 1).toInt to (3 * math.pow(2, n - 1) + 1).toInt)
-      if (n < 4) result = result.distinct
-    }
-    println(result.size + " values to process...")
-
-    result
+  def generateTestCases(startN: Int, endN: Int) = {
+    (startN to endN).map { n =>
+      val tmp = math.pow(2, n - 2).toInt
+      (4 * tmp + 3 * n - 8) to (tmp * 5)
+    }.flatten.distinct
   }
 
+  def perInstanceCases(startN: Int, endN: Int) = {
+    val cases = generateTestCases(startN, endN)
+    val perInstance = cases.length / Helpers.property("total_instances").toInt
+    val currentIndex = Helpers.property("current_instance").toInt * perInstance
+    cases.slice(currentIndex, currentIndex + perInstance)
+  }
+
+  def pointsAroundTurning(startN: Int, endN: Int) = {
+    (startN to endN).map { n =>
+      val tmp = math.pow(2, n - 2).toInt * 5
+      tmp - 1 to tmp + 5
+    }.flatten.distinct
+  }
 
   def main(args: Array[String]) = {
     val startedAt = System.currentTimeMillis()
@@ -97,7 +106,7 @@ object Experiment {
 
     val dataDir = getPrefix()
     // track run time
-    val timeWriter = new PrintWriter(new File(dataDir + "time"))
+    val timeWriter = new PrintWriter(new File(dataDir + "time.csv"))
     // store results from multiple experiments
     val resultWriter = new PrintWriter(new File(dataDir + "lnx.csv"))
 
@@ -107,8 +116,15 @@ object Experiment {
     // Run multiple experiments
     var count = 0  //experiment index
     val flushPerIterations = Helpers.property("flush_per_iterations").toInt
-    val testCases = generateTestCases()
+    val List(startN, endN) = List("start_n", "end_n").map(i => Helpers.property(i).toInt)
+
+    val testCases = perInstanceCases(startN, endN)  //pointsAroundTurning(startN, endN)  //generateTestCases()
+
     val endValue = testCases.last
+    println("> " + testCases.length + " test cases to process [" + testCases.head + "..." + endValue + "]...")
+
+    timeWriter.println(""""start value:",""" + testCases.head + ""","end value:",""" + endValue)
+    timeWriter.println(""""aggregate number of values","aggregate seconds"""")
 
     for (xValue <- testCases) {
       println("> x = " + xValue)
@@ -133,7 +149,8 @@ object Experiment {
       if (count % flushPerIterations == 0 || xValue.equals(endValue)) {
         resultWriter.flush()
         val inSeconds = (System.currentTimeMillis() - startedAt) / 1000
-        timeWriter.println("Processed " + count + " values.\nTotal time: " + inSeconds + " seconds.\n")
+        //timeWriter.println("Processed " + count + " values till now.\nAggregate time: " + inSeconds + " seconds.\n")
+        timeWriter.println(count + "," + inSeconds)
         timeWriter.flush()
       }
     }
