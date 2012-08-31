@@ -25,6 +25,7 @@ import org.apache.commons.math3.util.ArithmeticUtils
 import SFE.BOAL.{Bob, MyUtil}
 
 import java.net.UnknownHostException
+import test.AutomatedTest
 
 object Mediator {
   val K_TAYLOR_PLACES = 10
@@ -259,6 +260,16 @@ object Mediator {
     someone.add(taylorResult, tmp)
   }
 
+  def decryptLn(encryptedLn: BigInteger, scale: Int = 6, negative: Boolean = false) = {
+    var tmp = decryptData(encryptedLn)
+    if (negative) {
+      val fieldN = KeyGen.PaillierThresholdKeyLoad(new File(Helpers.property("data_directory"), Helpers.property("private_keys")).toString)(0).getN
+      tmp = tmp.subtract(fieldN)
+    }
+
+    val divisor = new BigInteger("%.0f" format Mediator.POWER_OF_TWO).pow(Mediator.K_TAYLOR_PLACES).multiply(BigInteger.valueOf(Mediator.LCM))
+    new BigDecimal(tmp).divide(new BigDecimal(divisor), scale, BigDecimal.ROUND_HALF_UP).doubleValue()
+  }
 
   /**
    * Remember to modify multiplier in Fairplay script when customizing param *scale*
@@ -269,11 +280,11 @@ object Mediator {
   def actualLn(alpha: BigInteger, beta: BigInteger, scale: Int = 6) = {
     val tmp = secureLn(alpha, beta)
 
-    val divisor = new BigInteger("%.0f" format Mediator.POWER_OF_TWO).pow(Mediator.K_TAYLOR_PLACES).multiply(BigInteger.valueOf(Mediator.LCM))
-    new BigDecimal(decryptData(tmp)).divide(new BigDecimal(divisor), scale, BigDecimal.ROUND_HALF_UP).doubleValue()
+    decryptLn(tmp)
   }
 
-
+/*
+  //TODO for testing only
   def divide(numerator: BigInteger, denominator: BigInteger) = {
     val someone = new Paillier(getPublicKey())
     val diff = someone.add(numerator, someone.multiply(denominator, -1))
@@ -281,7 +292,20 @@ object Mediator {
     // Get ln(x) first
     val bobOutput = MyUtil.readResult(FairplayFile + ".Bob.output").filter(_ != null)
     secureLn(bobOutput(0), bobOutput(1))
+
+    Experiment.prepareInputs(BigInteger.valueOf(xValue))
+
+    // Run Bob and Alice
+    var bobArgs = Array[String]()
+    bobArgs :+= "init"  //compile and generate keys only once
+
+    AutomatedTest.main(bobArgs)
+
+    val (_, bobOutputs) = readOutputs()
+
+    val computedResult = Mediator.actualLn(bobOutputs(0), bobOutputs(1), 10).doubleValue()
   }
+  */
 
 
   // Scale-up and store beta
