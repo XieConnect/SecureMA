@@ -10,5 +10,11 @@ Distributed Secure Meta-analysis
 - Check if current port available: lsof -i :3496  (3496 is port you desire)
 
 
+== Todo
+- Analyze secure division result
+- Experiment whole protocol with real data
+- Follow security rules strictly
+
+
 == Bugfix
 - Error when running multiple test cases (first case OK, following crash with NullPointerException);
