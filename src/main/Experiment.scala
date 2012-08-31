@@ -11,6 +11,8 @@ import java.io.{PrintWriter, File}
 import SFE.BOAL.MyUtil
 import test.AutomatedTest
 import java.math.BigInteger
+import paillierp.Paillier
+import paillierp.key.KeyGen
 
 object Experiment {
   val PathPrefix = MyUtil.pathFile(Helpers.property("fairplay_script")) + "."
@@ -61,7 +63,9 @@ object Experiment {
     dataDir
   }
 
-
+  /**
+   * Generate README in experiment data directory for better description of data
+   */
   def generateReadme() = {
     val writer = new PrintWriter(new File(getPrefix() + "README"))
     writer.println("Start n: " + Helpers.property("start_n") + "\n" +
@@ -74,7 +78,6 @@ object Experiment {
 
   /**
    * Generate test cases given the start and end values of N (from config file)
-   * Will only include values from (2^n + n) to (2^(n-2) * 5)
    * @return  array of all candidate values
    */
   def generateTestCases(startN: Int, endN: Int) = {
@@ -84,6 +87,13 @@ object Experiment {
     }.flatten.distinct
   }
 
+  /**
+   * Split large list of test cases into smaller shares and distribute computation
+   * TODO remove dependency on global conf param
+   * @param startN minimum n as in 2^n
+   * @param endN maximum n as in 2^n
+   * @return collection of test cases for this running instance
+   */
   def perInstanceCases(startN: Int, endN: Int) = {
     val cases = generateTestCases(startN, endN)
     val perInstance = cases.length / Helpers.property("total_instances").toInt
@@ -91,6 +101,12 @@ object Experiment {
     cases.slice(currentIndex, currentIndex + perInstance)
   }
 
+  /**
+   * Selectively generate test cases to find optimal turning points
+   * @param startN minimum n as in 2^n
+   * @param endN maximum n as in 2^n
+   * @return collection of semi-optimal test cases
+   */
   def pointsAroundTurning(startN: Int, endN: Int) = {
     (startN to endN).map { n =>
       val tmp = math.pow(2, n - 2).toInt * 5
@@ -98,10 +114,12 @@ object Experiment {
     }.flatten.distinct
   }
 
-  def main(args: Array[String]) = {
-    val startedAt = System.currentTimeMillis()
-
-
+  /**
+   * Experiment with secure ln(x) computation
+   * TODO re-use lnWrapper()
+   * @param startedAt
+   */
+  def runLn(startedAt: Long) = {
     createDataDir()
 
     val dataDir = getPrefix()
@@ -141,6 +159,8 @@ object Experiment {
       val (_, bobOutputs) = readOutputs()
 
       val computedResult = Mediator.actualLn(bobOutputs(0), bobOutputs(1), 10).doubleValue()
+
+
       val expectedResult = math.log(xValue)
 
       resultWriter.println(xValue + "," + computedResult + "," + expectedResult + "," +
@@ -159,7 +179,52 @@ object Experiment {
     timeWriter.close()
 
     generateReadme()
+  }
 
+  /**
+   * Input x, compute ln(x) encryption result
+   * @param xValue x as in ln(x)
+   * @param toInit whether to generate keys/compile Fairplay script or not
+   * @return encryption of ln(x) result
+   */
+  def lnWrapper(xValue: BigInteger, toInit: Boolean = false): BigInteger = {
+    prepareInputs(xValue)
+
+    // Run Bob and Alice
+    var bobArgs = Array[String]()
+    if (toInit) bobArgs :+= "init"  //compile and generate keys only once
+
+    AutomatedTest.main(bobArgs)
+
+    val (_, bobOutputs) = readOutputs()
+
+    Mediator.secureLn(bobOutputs(0), bobOutputs(1))
+  }
+
+  /**
+   * Given numerator, denominator, compute actual division result
+   * @param numerator numerator in plain value
+   * @param denominator denominator in plain value
+   * @param toInit whether or not to generate keys/compile Fairplay
+   */
+  //TODO remove cheat about determining result sign
+  def runDivision(numerator: BigInteger, denominator: BigInteger, toInit: Boolean = false) = {
+    val numeratorLn = lnWrapper(numerator, toInit)
+    val denominatorLn = lnWrapper(denominator, false)
+    val someone = new Paillier(Mediator.getPublicKey())
+    val fieldN = KeyGen.PaillierThresholdKeyLoad(new File(Helpers.property("data_directory"), Helpers.property("private_keys")).toString)(0).getN
+    val diff = someone.add(numeratorLn, someone.multiply(denominatorLn, -1))
+
+    val negative = if (numerator.compareTo(denominator) >= 0) false else true
+    println(math.exp(Mediator.decryptLn(diff, 10, negative)))
+  }
+
+  def main(args: Array[String]) = {
+    val startedAt = System.currentTimeMillis()
+
+    //runLn(startedAt)
+
+    runDivision(new BigInteger("4000000"), new BigInteger("400"), toInit = false)
 
     println("\nProcess finished in " + (System.currentTimeMillis() - startedAt) / 1000 + " seconds.")
   }
