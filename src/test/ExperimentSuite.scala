@@ -39,8 +39,10 @@ class ExperimentSuite extends FunSuite {
     val perInstance = cases.length / instances
     val currentIndex = Helpers.property("current_instance").toInt * perInstance
     val currentInstances = cases.slice(currentIndex, currentIndex + perInstance)
-    
+
     expect(perInstance)(currentInstances.length)
     expect(false)(currentInstances.isEmpty)
   }
+
+  test("secure division works")
 }
