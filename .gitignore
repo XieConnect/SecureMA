@@ -27,3 +27,6 @@ data/*
 *.output
 run/progs/*.txt.*
 run/progs/*.txt.*.input
+
+# doc
+doc/build/*
