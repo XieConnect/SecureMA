@@ -1,8 +1,13 @@
 Distributed Secure Meta-analysis
 
+== Dependencies
+- UMLGraph: for sequence diagram generation in doc/*
+
+
 == Files
 - data/Sub.txt.lnx.overest.csv  ln(x) result for over-estimates of n;
 - data/Sub.txt.overest.time  Run time analysis for over-estimate;
+- doc/* : documentary for whole protocol
 
 
 == Note
@@ -18,3 +23,9 @@ Distributed Secure Meta-analysis
 
 == Bugfix
 - Error when running multiple test cases (first case OK, following crash with NullPointerException);
+
+
+== For Developers
+- Generate documents
+  - doc/draw_graph : draw sequence diagram for whole protocol;
+  - details.tex: technical details for whole protocol;
