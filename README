@@ -1,7 +1,10 @@
 Distributed Secure Meta-analysis
 
 == Dependencies
+### Documentation Related ###
 - UMLGraph: for sequence diagram generation in doc/*
+- texlive: for LaTeX (large package!)
+- texlive-fonts-recommended required fonts
 
 
 == Files
