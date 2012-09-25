@@ -1,15 +1,21 @@
 Distributed Secure Meta-analysis
+--------------------------------
+
+== Description
+- Owner.scala : data owners encrypt and contribute their data;
+- Mediator.scala : secure computation (aggregation); run as Bob in Fairplay in estimating ln(x);
+- Manager.scala : collects data encryptions from data owners; run as Alice in Fairplay;
 
 == Dependencies
 ### Documentation Related ###
 - UMLGraph: for sequence diagram generation in doc/*
 - texlive: for LaTeX (large package!)
-- texlive-fonts-recommended required fonts
+- texlive-fonts-recommended: required fonts
 
 
 == Files
-- data/Sub.txt.lnx.overest.csv  ln(x) result for over-estimates of n;
-- data/Sub.txt.overest.time  Run time analysis for over-estimate;
+- data/Sub.txt.lnx.overest.csv : ln(x) result for over-estimates of n;
+- data/Sub.txt.overest.time : Run time analysis for over-estimate;
 - doc/* : documentary for whole protocol
 
 

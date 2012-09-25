@@ -33,7 +33,7 @@ class MediatorSuite extends FunSuite {
   }
 
 
-  test("Mediator and Provider run correctly") {
+  test("Mediator and Manager run correctly") {
     AutomatedTest.main(Array())
   }
 

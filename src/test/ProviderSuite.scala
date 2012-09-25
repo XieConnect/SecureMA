@@ -8,10 +8,10 @@ package test
 
 import org.scalatest.FunSuite
 import java.math.BigInteger
-import main.{Mediator, Provider}
+import main.{Mediator, Manager}
 
 class ProviderSuite extends FunSuite {
-  test("Provider correctly encrypts powers of variable") {
+  test("Manager correctly encrypts powers of variable") {
     for (variableA <- 1 to 3) {
       val encrypted = Provider.encryptPowers(BigInteger.valueOf(variableA))
       expect(Mediator.K_TAYLOR_PLACES + 1)(encrypted.size)

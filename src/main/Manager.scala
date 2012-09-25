@@ -19,7 +19,7 @@ import java.math.{BigDecimal, RoundingMode}
 
 import SFE.BOAL.{MyUtil, Alice}
 
-object Provider {
+object Manager {
   //TODO Read config file
   val MULTIPLIER: Double = math.pow(10, 10)
   // to hard-code if needed
@@ -239,9 +239,9 @@ object Provider {
     //TODO send to Mediator via network
     MyUtil.saveResult(encryptedPowers, MyUtil.pathFile(FairplayFile) + ".Alice.power")
 
-    //println("Provider: about to send data...")
+    //println("Manager: about to send data...")
     //sendData(encryptedPowers, beta)
-    //println("Provider: finished send data...")
+    //println("Manager: finished send data...")
 
     Mediator.storeBeta("Alice", beta)
 
