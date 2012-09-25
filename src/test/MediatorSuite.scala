@@ -8,7 +8,7 @@ package test
 
 import org.scalatest.FunSuite
 import java.math.BigInteger
-import main.Mediator
+import main.{Helpers, Mediator}
 import paillierp.Paillier
 import SFE.BOAL.MyUtil
 import io.Source
@@ -89,7 +89,7 @@ class MediatorSuite extends FunSuite {
 
   //TODO delete. for dev only
   test("decryption works correctly") {
-    val pubkey = Mediator.getPublicKey()
+    val pubkey = Helpers.getPublicKey()
     val someone = new Paillier(pubkey)
 
     // there is hacking involved in getting negatives to work in Paillier

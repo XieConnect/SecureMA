@@ -211,7 +211,7 @@ object Experiment {
   def runDivision(numerator: BigInteger, denominator: BigInteger, toInit: Boolean = false) = {
     val numeratorLn = lnWrapper(numerator, toInit)
     val denominatorLn = lnWrapper(denominator, false)
-    val someone = new Paillier(Mediator.getPublicKey())
+    val someone = new Paillier(Helpers.getPublicKey())
     val fieldN = KeyGen.PaillierThresholdKeyLoad(new File(Helpers.property("data_directory"), Helpers.property("private_keys")).toString)(0).getN
     val diff = someone.add(numeratorLn, someone.multiply(denominatorLn, -1))
 
