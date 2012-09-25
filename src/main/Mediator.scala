@@ -65,56 +65,12 @@ object Mediator {
     (privateKeyFile, publicKeyFile)
   }
 
-
-  /**
-   * Read in public keys from file
-   * TODO remove verifyPublicKey
-   * @param filename  file storing public key
-   * @param verifyPublicKey  whether to verify correctness of public key or not
-   * @return
-   */
-  def getPublicKey(filename: String = "", verifyPublicKey: Boolean = false) = {
-    val filename_ = if (filename.equals("")) {
-      new File(Helpers.property("data_directory"), Helpers.property("public_keys")).toString
-    } else {
-      filename
-    }
-
-    val buffer = new java.io.BufferedInputStream(new java.io.FileInputStream(filename_))
-    val input = new java.io.ObjectInputStream(buffer)
-    val publicKey = input.readObject().asInstanceOf[PaillierKey]
-
-    input.close()
-    buffer.close()
-
-    // To verify that public key is correct
-    // for debug only
-    if (verifyPublicKey) {
-      val tmp = BigInteger.valueOf(10)
-      var encryptedTmp = BigInteger.ZERO
-
-      for (i <- 1 to 2) {
-        if (i == 1) {
-          val someone = new Paillier(publicKey)
-          encryptedTmp = someone.encrypt(tmp)
-        } else {
-          val privateKeys = KeyGen.PaillierThresholdKeyLoad(new File(Helpers.property("data_directory"), Helpers.property("private_keys")).toString)
-          val parties = for (k <- privateKeys.take(3)) yield new PaillierThreshold(k)
-          println(">> Public Key Correctness: " + tmp.equals(parties(0).combineShares((for (p <- parties) yield p.decrypt(encryptedTmp)): _*)))
-        }
-      }
-    }
-
-    publicKey
-  }
-
-
   /**
    * Inverse-variance (Effect-size) based approach for Meta-analysis
    * @param inputFile  file containing encrypted data
    */
   def inverseVariance(inputFile: String = "data/encrypted_data.csv") = {
-    val someone = new Paillier(getPublicKey())
+    val someone = new Paillier(Helpers.getPublicKey())
     // denominator, numerator
     var weightSum, betaWeightSum = someone.encrypt(BigInteger.ZERO)
     //for verification only
@@ -210,9 +166,15 @@ object Mediator {
   }
 
 
+  /**
+   * Decrypt ciphertext
+   * @param encrypted encryption
+   * @param negative whether the final result is going to be negative
+   * @return plain value result
+   */
   def decryptData(encrypted: BigInteger, negative: Boolean = false) = {
     val privateKeys = KeyGen.PaillierThresholdKeyLoad(new File(Helpers.property("data_directory"), Helpers.property("private_keys")).toString)
-    val parties = for (k <- privateKeys.take(3)) yield new PaillierThreshold(k)
+    val parties = for (k <- privateKeys.take(Helpers.property("threshold_parties").toInt)) yield new PaillierThreshold(k)
     val decrypted = parties(0).combineShares((for (p <- parties) yield p.decrypt(encrypted)): _*)
 
     if (negative) decrypted.subtract(privateKeys(0).getN) else decrypted
@@ -236,7 +198,7 @@ object Mediator {
     // Perform Taylor expansion (assemble coefficients and variables)
     //TODO read Alice's input via network
     //val encryptedPowers = MyUtil.readResult(MyUtil.pathFile(FairplayFile) + ".Alice.power")
-    val someone = new Paillier(getPublicKey())
+    val someone = new Paillier(Helpers.getPublicKey())
 
     (encryptedPowers zip coefficients).foldLeft(someone.encrypt(BigInteger.ZERO)) ((a, x) => someone.add(a, someone.multiply(x._1, x._2)))
   }
@@ -251,7 +213,7 @@ object Mediator {
   def secureLn(alpha: BigInteger, beta: BigInteger) = {
     val alicePowers = MyUtil.readResult(MyUtil.pathFile(FairplayFile) + ".Alice.power")
 
-    val someone = new Paillier(getPublicKey())
+    val someone = new Paillier(Helpers.getPublicKey())
     val taylorResult = taylorExpansion(alpha, alicePowers)
 
     //TODO transfer from socket
@@ -311,7 +273,7 @@ object Mediator {
   // Scale-up and store beta
   //TODO move to common utils
   def storeBeta(who: String = "Bob", beta: BigInteger) = {
-    val someone = new Paillier(Mediator.getPublicKey())
+    val someone = new Paillier(Helpers.getPublicKey())
     var scaledBeta = someone.encrypt(BigInteger.valueOf(2).pow(Mediator.MaxN * (Mediator.K_TAYLOR_PLACES - 1)).multiply(BigInteger.valueOf(Mediator.LCM)).multiply(beta.abs))
     if (beta.compareTo(BigInteger.ZERO) < 0) scaledBeta = someone.multiply(scaledBeta, BigInteger.valueOf(-1))
     MyUtil.saveResult(Array[BigInteger](scaledBeta), MyUtil.pathFile(FairplayFile) + "." + who + ".beta")

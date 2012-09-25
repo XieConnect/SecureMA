@@ -120,66 +120,7 @@ object Manager {
   }
 
 
-  /**
-   * Prepare (encrypted) data for sharing
-   * @param fileName  path to file containing raw data
-   * @param toVerifyEncryption  if set to true, will decrypt to verify encryption (for testing)
-   * @return  all private keys (for dev only)
-   */
-  def prepareData(fileName: String = "data/raw_data_sorted.csv", toVerifyEncryption: Boolean = true) = {
-    // to store encrypted data
-    val writer = new java.io.PrintWriter(new java.io.File(EncryptedDataFile))
-    // Input: file row contains labels
-    val lines = io.Source.fromFile(fileName).getLines.drop(1).toArray
 
-
-    val someone = new paillierp.Paillier(Mediator.getPublicKey())
-
-    writer.println("Multiplier:" + Delimiter + MULTIPLIER)
-    // TODO use Delimiter instead of ","
-    writer.println( """"encrypted weight_i","encrypted positive beta*weight","encrypted negative beta*weight","weight_i","beta*weight","positive beta*weight","negative beta*weight"""")
-
-    for (line <- lines; record = line.split(Delimiter)) {
-      val weightI = 1.0 / math.pow(record(11).toDouble, 2)
-      val betaWeight = record(10).toDouble * weightI
-
-      val raisedWeightI = new BigInteger("%.0f".format(weightI * MULTIPLIER))
-      val raisedBetaWeight = new BigInteger("%.0f".format(betaWeight * MULTIPLIER))
-
-      val splitBetaWeight = Array(BigInteger.ZERO, BigInteger.ZERO)
-      if (betaWeight >= 0) {
-        splitBetaWeight(0) = raisedBetaWeight
-      } else {
-        splitBetaWeight(1) = raisedBetaWeight.abs
-      }
-
-      val encryptedWeight = someone.encrypt(raisedWeightI)
-      val encryptedBetaWeightPositive = someone.encrypt(splitBetaWeight(0))
-      val encryptedBetaWeightNegative = someone.encrypt(splitBetaWeight(1))
-      writer.print(encryptedWeight + Delimiter +
-        encryptedBetaWeightPositive + Delimiter +
-        encryptedBetaWeightNegative + Delimiter)
-
-      // Store plain values (for testing)
-      writer.print(weightI + Delimiter +
-        betaWeight + Delimiter +
-        splitBetaWeight(0) + Delimiter +
-        splitBetaWeight(1) + "\n")
-    }
-
-    writer.close()
-
-    /*
-    if (toVerifyEncryption) {
-      verifyEncryption(EncryptedDataFile, privateKeys)
-    }
-
-    println("Saved encrypted data in: " + EncryptedDataFile)
-
-    //TODO for test only. will move to file later
-    privateKeys
-    */
-  }
 
 
   /**
@@ -200,7 +141,7 @@ object Manager {
    * @return  vector of encrypted powers
    */
   def encryptPowers(baseValue: BigInteger) = {
-    val someone = new Paillier(Mediator.getPublicKey())
+    val someone = new Paillier(Helpers.getPublicKey())
     val powers = Array.fill[BigInteger](Mediator.K_TAYLOR_PLACES + 1)(BigInteger.ZERO)
 
     //TODO read size K (of places) from shared config

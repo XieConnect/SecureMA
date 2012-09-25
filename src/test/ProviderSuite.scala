@@ -13,7 +13,7 @@ import main.{Mediator, Manager}
 class ProviderSuite extends FunSuite {
   test("Manager correctly encrypts powers of variable") {
     for (variableA <- 1 to 3) {
-      val encrypted = Provider.encryptPowers(BigInteger.valueOf(variableA))
+      val encrypted = Manager.encryptPowers(BigInteger.valueOf(variableA))
       expect(Mediator.K_TAYLOR_PLACES + 1)(encrypted.size)
 
       val decrypted = encrypted.map(a => Mediator.decryptData(a))

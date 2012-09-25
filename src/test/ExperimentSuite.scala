@@ -2,7 +2,6 @@ package test
 
 import org.scalatest.FunSuite
 import main.{Helpers, Experiment}
-import java.math.BigInteger
 
 /**
  * @description Refer to README
