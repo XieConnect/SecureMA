@@ -124,7 +124,7 @@ object Mediator {
     var multiplier = 0.0
 
     for (line <- io.Source.fromFile(inputFile).getLines()) {
-      val record = line.split(Provider.Delimiter)
+      val record = line.split(Manager.Delimiter)
 
       if (indx == 0) {
         multiplier = record(1).toDouble
@@ -182,7 +182,7 @@ object Mediator {
   /*
   def dotProduct(coefficients: Array[BigInteger], encryptedPowers: Array[BigInteger]) = {
     //TODO reduncancy
-    val privateKeys = Provider.prepareData(toVerifyEncryption = false)
+    val privateKeys = Manager.prepareData(toVerifyEncryption = false)
     val publicKey = privateKeys(0).getPublicKey
     val someone = new Paillier(publicKey)
 
@@ -319,7 +319,7 @@ object Mediator {
 
 
   /**
-   * Receive intermediate result from Provider
+   * Receive intermediate result from Manager
    * @return
    */
   def receiveData() = {

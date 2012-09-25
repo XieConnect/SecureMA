@@ -43,6 +43,4 @@ class ExperimentSuite extends FunSuite {
     expect(perInstance)(currentInstances.length)
     expect(false)(currentInstances.isEmpty)
   }
-
-  test("secure division works")
 }

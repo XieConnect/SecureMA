@@ -6,8 +6,8 @@
 
 package test;
 
+import main.Manager$;
 import main.Mediator;
-import main.Provider;
 
 public class AutomatedTest {
     public static void main(String[] args) {
@@ -16,10 +16,10 @@ public class AutomatedTest {
 
         // Run Alice
         try {
-            System.out.println("  Running Provider...");
-            providerProcess = JavaProcess.exec(Provider.class, args);
+            System.out.println("  Running Manager...");
+            providerProcess = JavaProcess.exec(Manager$.class, args);
         } catch (Exception e) {
-            System.out.println("Error running Provider: " + e.getMessage());
+            System.out.println("Error running Manager: " + e.getMessage());
         }
 
         // Run Bob
