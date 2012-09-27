@@ -8,12 +8,43 @@ package test
 
 import org.scalatest.FunSuite
 import java.math.BigInteger
-import main.{Helpers, Mediator}
+import main.{Owner, Helpers, Mediator}
 import paillierp.Paillier
 import SFE.BOAL.MyUtil
 import io.Source
+import java.io.File
 
 class MediatorSuite extends FunSuite {
+  // We only test if keys are generated and stored. Correctness of keys are checked in HelpersSuite
+  test("generates and stores keys") {
+    Mediator.generateKeys()
+    assert(new File(Helpers.propertyFullPath("private_keys")).exists())
+    assert(new File(Helpers.propertyFullPath("public_keys")).exists())
+  }
+
+  //NOTE: this test take time!
+  test("inverse-variance computes numerator and denominator correctly") {
+    //We need to re-encrypt data, as keys may have changed since last time
+    Owner.prepareData(Helpers.property("raw_data_file"), Helpers.property("encrypted_data_file"))
+    Mediator.inverseVariance(Helpers.property("encrypted_data_file"), Helpers.property("final_result_file"), true)
+
+    var multiplier = 0.0
+    for ((line, indx) <- io.Source.fromFile(Helpers.property("final_result_file")).getLines().zipWithIndex; record = line.split(",")) {
+      if (indx == 0) {
+        multiplier = record(2).toDouble
+      } else if (indx > 1) {
+        val expectedNumerator = record(5).toDouble
+        val expectedDenominator = record(6).toDouble
+        val computedNumerator = (if (expectedNumerator >= 0) record(2) else record(3)).toDouble
+
+        //Ensure computed numerator/denominator fall into expected error range
+        assert( (computedNumerator - expectedNumerator).abs / multiplier  < 0.01)
+        assert( (record(4).toDouble - expectedDenominator).abs / multiplier  < 0.01)
+      }
+    }
+  }
+
+  /*
   //TODO config file path
   val PathPrefix = "run/progs/Sub.txt."
 
@@ -123,5 +154,6 @@ class MediatorSuite extends FunSuite {
 
     assert((Mediator.actualLn(bobOutput(0), bobOutput(1)).doubleValue() - expected).abs <= 0.001)
   }
+  */
 
 }
