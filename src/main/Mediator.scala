@@ -66,50 +66,68 @@ object Mediator {
   }
 
   /**
+   * Aggregate study results from various sites
    * Inverse-variance (Effect-size) based approach for Meta-analysis
    * @param inputFile  file containing encrypted data
    */
-  def inverseVariance(inputFile: String = "data/encrypted_data.csv") = {
-    val someone = new Paillier(Helpers.getPublicKey())
-    // denominator, numerator
+  def inverseVariance(inputFile: String = Helpers.property("encrypted_data_file"),
+                       resultFile: String = Helpers.property("final_result_file"),
+                       toVerify: Boolean = false) = {
+    val writer = new java.io.PrintWriter(new java.io.File(resultFile))
+    val publicKey = Helpers.getPublicKey()
+
+    val someone = new Paillier(publicKey)
+    // denominator (sum(w_i)), numerator (sum(beta * w_i))
     var weightSum, betaWeightSum = someone.encrypt(BigInteger.ZERO)
     //for verification only
     var testWeightSum, testBetaWeightSum = 0.0
-
-    var indx = 0
     var multiplier = 0.0
 
-    for (line <- io.Source.fromFile(inputFile).getLines()) {
-      val record = line.split(Manager.Delimiter)
+    val flushPerIterations = Helpers.property("flush_per_iterations").toInt
+    writer.print("\"Inverse variance results\"")
+
+    for ((line, indx) <- io.Source.fromFile(inputFile).getLines().zipWithIndex) {
+      val record = line.split(",")
 
       if (indx == 0) {
         multiplier = record(1).toDouble
-      } else if (indx > 1) {
+        writer.println(",Multiplier:," + record(1) + ",\"public key:\"," + publicKey)
+      } else if (indx == 1) {
+        writer.print(""""encrypted numerator","encrypted denominator"""")
+
+        if (toVerify) writer.print(""","numerator(+)","numerator(-)",denominator,"expected numerator","expected denominator"""")
+
+        writer.println
+      } else {
+        // Notes on input data: column #0: E(w_i); #1: E(beta*w_i, positive part); #2: E(beta*w_i, negative part)
+        // to sum up w_i
         weightSum = someone.add(weightSum, new BigInteger(record(0)))
-        val betaWeightI = someone.add(new BigInteger(record(1)), someone.multiply(new BigInteger(record(2)), BigInteger.valueOf(-1)))
+        val betaWeightI = someone.add( new BigInteger(record(1)),
+          someone.multiply(new BigInteger(record(2)), BigInteger.valueOf(-1)) )
         betaWeightSum = someone.add(betaWeightSum, betaWeightI)
+        writer.print(betaWeightSum + "," + weightSum)
 
-        val decryptedWeightSum = decryptData(weightSum)
-        val decryptedBetaWeightSum = decryptData(betaWeightSum)
-        val computedResult = decryptedBetaWeightSum.multiply(decryptedBetaWeightSum).doubleValue() / (decryptedWeightSum).doubleValue() / multiplier
+        //DEBUG for verification only
+        if (toVerify) {
+          writer.print("," + decryptData(betaWeightSum) + "," + decryptData(betaWeightSum, true) + "," + decryptData(weightSum))
 
-        //for result verification only
-        testBetaWeightSum += record(4).toDouble
-        testWeightSum += record(3).toDouble
-        val expectedResult = math.pow(testBetaWeightSum, 2) / testWeightSum
-        println(computedResult)
-        println(expectedResult)
-        println()
+          testWeightSum += record(3).toDouble
+          testBetaWeightSum += record(4).toDouble
+          writer.print("," + testBetaWeightSum * multiplier + "," + testWeightSum * multiplier)
+        }
+
+        writer.println
 
         // test with Secure ln(x)
-        val numerator = decryptedBetaWeightSum.multiply(decryptedBetaWeightSum)
-
+        //val numerator = decryptedBetaWeightSum.multiply(decryptedBetaWeightSum)
       }
 
-      indx += 1
+      //NOTE: this counter is inaccurate, as it won't imply specific end point
+      if (indx % flushPerIterations == 0) print("\rRecords processded: ~" + indx)
     }
 
-    println("Totally " + indx + " records.")
+    writer.close()
+    println(" Result saved in " + resultFile)
   }
 
 
@@ -308,6 +326,9 @@ object Mediator {
   def main(args: Array[String]) = {
     val startedAt = System.currentTimeMillis()
 
+
+    inverseVariance(Helpers.property("encrypted_data_file"), Helpers.property("final_result_file"), true)
+
     //--- Run Fairplay ---
     if ( args.length > 0 && args(0).equals("init") || (! new File(Helpers.property("data_directory"), Helpers.property("private_keys")).exists()) ) {
       generateKeys()
@@ -332,6 +353,7 @@ object Mediator {
     //getPublicKey()
     //inverseVariance()
     //distributeKeys()
+
 
 
     println("\nProcess finished in " + (System.currentTimeMillis() - startedAt) / 1000.0 + " seconds.")
