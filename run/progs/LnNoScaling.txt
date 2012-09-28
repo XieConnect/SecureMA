@@ -1,0 +1,83 @@
+program LnNoScaling {
+  const MaxN = 20;  //max N
+  const Nln2 = 726817;  // ~ 2^N * ln 2
+
+  type int = Int<64>;
+
+  type AliceInput = int;
+  type BobInput = struct {int randb, int randa, int share};
+
+  type AliceOutput = struct {int a, int b};
+  type BobOutput = struct {int aa, int bb};
+
+  type Input = struct {AliceInput alice, BobInput bob};
+  type Output = struct {AliceOutput alice, BobOutput bob};
+
+
+  function Output output(Input input) {
+    var int est;
+    var int n;
+    // for-loop indices
+    var int i;
+    var int j;
+    var int k;
+    var int l;
+    var int jEnd;
+    var int nlnSum;
+    var int x;
+    var int preEst;
+
+    est = 1;
+    preEst = 1;
+    n = 0;
+
+    x = input.bob.share + input.alice;
+
+    for(i=1 to MaxN) {
+      if (est < x)
+      {
+        preEst = est;
+        est = est + est;
+        n = n + 1;
+      }
+    }
+
+    // under-estimate
+    //est = preEst;
+    //n = n - 1;
+
+    // estimate optimal n
+    //if ((x - preEst) < (est - x - 1)) {
+    //  est = preEst;
+    //  n = n - 1;
+    //}
+
+    // calculate 2^N * epsilon
+    est = x - est;  // epsilon
+    jEnd = MaxN - n;
+
+    for(j=1 to MaxN) {
+      if (j <= jEnd)
+      {
+        est = est + est;
+      }
+    }
+
+
+    // calculate n * 2^N * ln 2
+    nlnSum = 0;
+    for (k = 1 to MaxN) {
+      if (k <= n)
+      {
+        nlnSum = nlnSum + Nln2;
+      }
+    }
+
+    output.alice.a = est - input.bob.randa;
+    output.alice.b = nlnSum - input.bob.randb;
+
+    output.bob.aa = input.bob.randa;
+    output.bob.bb = input.bob.randb;
+  }
+
+}

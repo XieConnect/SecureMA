@@ -327,11 +327,11 @@ object Mediator {
     val startedAt = System.currentTimeMillis()
 
 
-    inverseVariance(Helpers.property("encrypted_data_file"), Helpers.property("final_result_file"), true)
+    //inverseVariance(Helpers.property("encrypted_data_file"), Helpers.property("final_result_file"), true)
 
     //--- Run Fairplay ---
     if ( args.length > 0 && args(0).equals("init") || (! new File(Helpers.property("data_directory"), Helpers.property("private_keys")).exists()) ) {
-      generateKeys()
+      //generateKeys()
       compile()
     }
 
