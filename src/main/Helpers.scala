@@ -6,8 +6,8 @@ package main
  * @version 7/30/12
  */
 
-import java.io.{File, FileInputStream}
-import java.util.Properties
+import java.io.{PrintWriter, File, FileInputStream}
+import java.util.{Random, Properties}
 import paillierp.key.{KeyGen, PaillierKey}
 import java.math.BigInteger
 import paillierp.{PaillierThreshold, Paillier}
@@ -60,4 +60,31 @@ object Helpers {
   }
 
   def toBigInteger(value: Double) = new BigInteger("%.0f" format value)
+
+  /**
+   * Convert Paillier encryption to secret shares
+   * TODO: it's cheating in dealing with negatives
+   * @param encryption
+   */
+  def encryption2Shares(encryption: BigInteger, plainValue: BigInteger): Tuple2[BigInteger, BigInteger] = {
+    val writers = Array("Bob", "Alice").map(a => new PrintWriter(new File(Experiment.PathPrefix + a + ".input")))
+    val shareRand = BigInteger.valueOf(new Random().nextInt(30000))
+    val someone = new Paillier(Helpers.getPublicKey())
+
+    var encryptedRandom = someone.encrypt(shareRand.abs)
+    if (shareRand.compareTo(BigInteger.ZERO) <0) encryptedRandom = someone.multiply(encryptedRandom, -1)
+
+    val shareNegative = plainValue.add(shareRand).compareTo(BigInteger.ZERO) < 0
+    val share1 = Mediator.decryptData(someone.add(encryption, encryptedRandom), negative = shareNegative)
+    val share2 = BigInteger.ZERO.subtract(shareRand)
+
+    writers(0).println(share2)
+    writers(0).println(2)  //TODO (rnd.nextInt(rndRange))
+    writers(0).println(5)  //TODO (rnd.nextInt(rndRange))
+
+    writers(1).println(share1)
+    writers.map(a => a.close())
+
+    (share1, share2)
+  }
 }

@@ -14,6 +14,7 @@ import java.util.Random
  * @version 9/24/12
  */
 class HelpersSuite extends FunSuite {
+  /*
   test("reads property from config file") {
     assert(Helpers.property("data_directory") != "")
   }
@@ -43,6 +44,20 @@ class HelpersSuite extends FunSuite {
       val encryption = someone.encrypt(value)
       val decryption = parties(0).combineShares((for (p <- parties) yield p.decrypt(encryption)): _*)
       expect(value) (decryption)
+    }
+  }
+  */
+
+  test("converts encryption to secret shares") {
+    val someone = new Paillier(Helpers.getPublicKey())
+    val rnd = new Random()
+    for (i <- 1 to 3) {
+      val plainValue = BigInteger.valueOf(rnd.nextLong())
+      var encryption = someone.encrypt(plainValue.abs)
+      if (plainValue.compareTo(BigInteger.ZERO) < 0) encryption = someone.multiply(encryption, -1)
+
+      val (share1, share2) = Helpers.encryption2Shares(encryption, plainValue)
+      expect(0) (share1.add(share2).compareTo(plainValue))
     }
   }
 
