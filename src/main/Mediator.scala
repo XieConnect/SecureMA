@@ -28,13 +28,14 @@ import java.net.UnknownHostException
 import test.AutomatedTest
 
 object Mediator {
-  val K_TAYLOR_PLACES = 10
+  val K_TAYLOR_PLACES = 7  //it seems to be the cap. Larger number causes out-of-range crash
   val LCM = (2 to K_TAYLOR_PLACES).foldLeft(1)((a, x) => ArithmeticUtils.lcm(a, x))
   val MaxN = 20
   val POWER_OF_TWO = math.pow(2, MaxN)
   //2^N
-  val FieldBitsMax = (MaxN + 2) * K_TAYLOR_PLACES + (math.log(MaxN) / math.log(2)).ceil.toInt
-  val FieldMax = new BigInteger("%.0f".format(math.pow(2, FieldBitsMax)))
+  //Currently Paillier max field bit size is set to 2048. A size > 1024 would be really slow
+  val FieldBitsMax = 512 //((MaxN + 2) * K_TAYLOR_PLACES + (math.log(MaxN) / math.log(2) + math.log(Owner.MULTIPLIER  * 100) / math.log(2)).ceil.toInt) * 5
+  //val FieldMax = new BigInteger("%.0f".format(math.pow(2, FieldBitsMax)))
 
   val FairplayFile = Helpers.property("fairplay_script")
 
@@ -105,6 +106,7 @@ object Mediator {
         val betaWeightI = someone.add( new BigInteger(record(1)),
           someone.multiply(new BigInteger(record(2)), BigInteger.valueOf(-1)) )
         betaWeightSum = someone.add(betaWeightSum, betaWeightI)
+        // Output encryptions of numerator/denominator
         writer.print(betaWeightSum + "," + weightSum)
 
         //DEBUG for verification only
@@ -325,7 +327,6 @@ object Mediator {
   // args = [firstRun?]
   def main(args: Array[String]) = {
     val startedAt = System.currentTimeMillis()
-
 
     //inverseVariance(Helpers.property("encrypted_data_file"), Helpers.property("final_result_file"), true)
 
