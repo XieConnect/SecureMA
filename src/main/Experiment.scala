@@ -114,10 +114,17 @@ object Experiment {
     }.flatten.distinct
   }
 
+  // ln(x) accuracy will be a little lower than (less accurate) the value calculated below, given number of Taylor expansions
+  // Refer to Lindell's paper for more details
+  def getAccuracy() = {
+    val powerExponent = Helpers.property("max_exponent_n").toInt
+    4 / math.log(2) / (math.pow(2, powerExponent) * powerExponent)
+  }
+
   /**
    * Experiment with secure ln(x) computation
    * TODO re-use lnWrapper()
-   * @param startedAt
+   * @param startedAt  when the experiment starts
    */
   def runLn(startedAt: Long) = {
     createDataDir()
@@ -128,7 +135,7 @@ object Experiment {
     // store results from multiple experiments
     val resultWriter = new PrintWriter(new File(dataDir + "lnx.csv"))
 
-    resultWriter.println(""""accuracy: ","1E-6"""")
+    resultWriter.println("\"less accurate than: \"," + getAccuracy())
     resultWriter.println(""""input x","secure ln(x)","actual ln(x)","absolute error","relative error"""")
 
     // Run multiple experiments
@@ -222,9 +229,9 @@ object Experiment {
   def main(args: Array[String]) = {
     val startedAt = System.currentTimeMillis()
 
-    //runLn(startedAt)
+    runLn(startedAt)
 
-    runDivision(new BigInteger("4000000"), new BigInteger("400"), toInit = false)
+    //runDivision(new BigInteger("4000000"), new BigInteger("400"), toInit = false)
 
     println("\nProcess finished in " + (System.currentTimeMillis() - startedAt) / 1000 + " seconds.")
   }
