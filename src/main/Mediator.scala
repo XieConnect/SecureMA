@@ -34,7 +34,8 @@ object Mediator {
   val POWER_OF_TWO = math.pow(2, MaxN)
   //2^N
   //Currently Paillier max field bit size is set to 2048. A size > 1024 would be really slow
-  val FieldBitsMax = 512 //((MaxN + 2) * K_TAYLOR_PLACES + (math.log(MaxN) / math.log(2) + math.log(Owner.MULTIPLIER  * 100) / math.log(2)).ceil.toInt) * 5
+  //512
+  val FieldBitsMax = 800  //((MaxN + 2) * K_TAYLOR_PLACES + (math.log(MaxN) / math.log(2) + math.log(Owner.MULTIPLIER  * 100) / math.log(2)).ceil.toInt)
   //val FieldMax = new BigInteger("%.0f".format(math.pow(2, FieldBitsMax)))
 
   val FairplayFile = Helpers.property("fairplay_script")
@@ -96,7 +97,8 @@ object Mediator {
       } else if (indx == 1) {
         writer.print(""""encrypted numerator","encrypted denominator"""")
 
-        if (toVerify) writer.print(""","numerator(+)","numerator(-)",denominator,"expected numerator","expected denominator"""")
+        if (toVerify)
+          writer.print(""","numerator(+)","numerator(-)",denominator,"expected numerator","expected denominator"""")
 
         writer.println
       } else {
@@ -332,7 +334,7 @@ object Mediator {
 
     //--- Run Fairplay ---
     if ( args.length > 0 && args(0).equals("init") || (! new File(Helpers.property("data_directory"), Helpers.property("private_keys")).exists()) ) {
-      //generateKeys()
+      generateKeys()
       compile()
     }
 
