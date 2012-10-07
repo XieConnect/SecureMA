@@ -35,9 +35,9 @@ object Experiment {
 
 
   /**
-   * For test only. Generates .input files for Fairplay
+   * Simulate input shares generation for Fairplay
    * @param xValue  the x value as in ln(x)
-   * @return  no return. Will create related files
+   * @return  no direct return. Will create .input files
    */
   def prepareInputs(xValue: BigInteger) = {
     val writers = Array("Bob", "Alice").map(a => new PrintWriter(new File(PathPrefix + a + ".input")))
@@ -47,6 +47,7 @@ object Experiment {
     writers(0).println(5)  //TODO (rnd.nextInt(rndRange))
 
     writers(1).println(xValue.subtract(shareRand))
+
     writers.map(a => a.close())
   }
 
@@ -85,6 +86,10 @@ object Experiment {
       val tmp = math.pow(2, n - 2).toInt
       (4 * tmp + 3 * n - 8) to (tmp * 5)
     }.flatten.distinct
+  }
+
+  def generateAllCases(startN: Int, endN: Int) = {
+    startN to endN
   }
 
   /**
@@ -143,7 +148,7 @@ object Experiment {
     val flushPerIterations = Helpers.property("flush_per_iterations").toInt
     val List(startN, endN) = List("start_n", "end_n").map(i => Helpers.property(i).toInt)
 
-    val testCases = perInstanceCases(startN, endN)  //pointsAroundTurning(startN, endN)  //generateTestCases()
+    val testCases = generateAllCases(startN, endN) //perInstanceCases(startN, endN)  //pointsAroundTurning(startN, endN)  //generateTestCases()
 
     val endValue = testCases.last
     println("> " + testCases.length + " test cases to process [" + testCases.head + "..." + endValue + "]...")
@@ -166,7 +171,6 @@ object Experiment {
       val (_, bobOutputs) = readOutputs()
 
       val computedResult = Mediator.actualLn(bobOutputs(0), bobOutputs(1), 10).doubleValue()
-
 
       val expectedResult = math.log(xValue)
 
