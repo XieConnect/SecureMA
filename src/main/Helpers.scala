@@ -63,12 +63,13 @@ object Helpers {
 
   /**
    * Convert Paillier encryption to secret shares
+   * For E(x), we return (in plain value): x1 = x + r1, x2 = - r1
    * TODO: it's cheating in dealing with negatives
-   * @param encryption
+   * @param encryption  Paillier encrypted input to be randomized
    */
   def encryption2Shares(encryption: BigInteger, plainValue: BigInteger): Tuple2[BigInteger, BigInteger] = {
     val writers = Array("Bob", "Alice").map(a => new PrintWriter(new File(Experiment.PathPrefix + a + ".input")))
-    val shareRand = BigInteger.valueOf(new Random().nextInt(30000))
+    val shareRand = BigInteger.valueOf(new Random().nextInt(10000))
     val someone = new Paillier(Helpers.getPublicKey())
 
     var encryptedRandom = someone.encrypt(shareRand.abs)
