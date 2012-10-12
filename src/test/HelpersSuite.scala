@@ -1,12 +1,13 @@
 package test
 
 import org.scalatest.FunSuite
-import main.Helpers
+import main.{Experiment, Helpers}
 import java.io.File
 import paillierp.key.KeyGen
 import paillierp.{PaillierThreshold, Paillier}
 import java.math.BigInteger
 import java.util.Random
+import io.Source
 
 /**
  * @description Refer to README
@@ -51,13 +52,26 @@ class HelpersSuite extends FunSuite {
   test("converts encryption to secret shares") {
     val someone = new Paillier(Helpers.getPublicKey())
     val rnd = new Random()
-    for (i <- 1 to 3) {
+    for (_ <- 1 to 5) {
       val plainValue = BigInteger.valueOf(rnd.nextLong())
       var encryption = someone.encrypt(plainValue.abs)
       if (plainValue.compareTo(BigInteger.ZERO) < 0) encryption = someone.multiply(encryption, -1)
 
       val (share1, share2) = Helpers.encryption2Shares(encryption, plainValue)
       expect(0) (share1.add(share2).compareTo(plainValue))
+    }
+  }
+
+  test("prepares correct inputs for Fairplay") {
+    // test multiple times
+    for (count <- 1 to 5) {
+      val i = BigInteger.valueOf(new Random().nextInt(10000))
+      Helpers.prepareInputs(i)
+      val inputs = Array("Alice", "Bob").map( a =>
+        new BigInteger(Source.fromFile(Experiment.PathPrefix + a + ".input").getLines().toArray.head)
+      )
+
+      expect(0) (inputs(0).add(inputs(1)).compareTo(i))
     }
   }
 

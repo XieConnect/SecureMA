@@ -62,6 +62,25 @@ object Helpers {
   def toBigInteger(value: Double) = new BigInteger("%.0f" format value)
 
   /**
+   * Simulate input shares generation for Fairplay
+   * @param xValue  the x value as in ln(x)
+   * @return  creates .input files
+   */
+  def prepareInputs(xValue: BigInteger) = {
+    val writers = Array("Bob", "Alice").map(a => new PrintWriter(new File(Experiment.PathPrefix + a + ".input")))
+    val shareRand = BigInteger.valueOf(3)  //TODO use real rand like: rnd.nextInt(rndRange)
+    // input for party 1
+    writers(0).println(shareRand.negate())
+    writers(0).println(2)  //TODO (rnd.nextInt(rndRange))
+    writers(0).println(5)  //TODO (rnd.nextInt(rndRange))
+
+    // input for party 2
+    writers(1).println(xValue.add(shareRand))
+
+    writers.map(a => a.close())
+  }
+
+  /**
    * Convert Paillier encryption to secret shares
    * For E(x), we return (in plain value): x1 = x + r1, x2 = - r1
    * TODO: it's cheating in dealing with negatives
@@ -70,14 +89,15 @@ object Helpers {
   def encryption2Shares(encryption: BigInteger, plainValue: BigInteger): Tuple2[BigInteger, BigInteger] = {
     val writers = Array("Bob", "Alice").map(a => new PrintWriter(new File(Experiment.PathPrefix + a + ".input")))
     val shareRand = BigInteger.valueOf(new Random().nextInt(10000))
-    val someone = new Paillier(Helpers.getPublicKey())
+    val someone = new Paillier(getPublicKey())
 
     var encryptedRandom = someone.encrypt(shareRand.abs)
     if (shareRand.compareTo(BigInteger.ZERO) <0) encryptedRandom = someone.multiply(encryptedRandom, -1)
 
+    // need to determine whether output is to be negative
     val shareNegative = plainValue.add(shareRand).compareTo(BigInteger.ZERO) < 0
     val share1 = Mediator.decryptData(someone.add(encryption, encryptedRandom), negative = shareNegative)
-    val share2 = BigInteger.ZERO.subtract(shareRand)
+    val share2 = shareRand.negate()
 
     writers(0).println(share2)
     writers(0).println(2)  //TODO (rnd.nextInt(rndRange))

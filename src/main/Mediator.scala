@@ -35,7 +35,7 @@ object Mediator {
   //2^N
   //Currently Paillier max field bit size is set to 2048. A size > 1024 would be really slow
   //512
-  val FieldBitsMax = 800  //((MaxN + 2) * K_TAYLOR_PLACES + (math.log(MaxN) / math.log(2) + math.log(Owner.MULTIPLIER  * 100) / math.log(2)).ceil.toInt)
+  val FieldBitsMax = 512  //((MaxN + 2) * K_TAYLOR_PLACES + (math.log(MaxN) / math.log(2) + math.log(Owner.MULTIPLIER  * 100) / math.log(2)).ceil.toInt)
   //val FieldMax = new BigInteger("%.0f".format(math.pow(2, FieldBitsMax)))
 
   val FairplayFile = Helpers.property("fairplay_script")
@@ -333,6 +333,7 @@ object Mediator {
     //inverseVariance(Helpers.property("encrypted_data_file"), Helpers.property("final_result_file"), true)
 
     //--- Run Fairplay ---
+    // Generate keys only when forced to or no keys exist
     if ( args.length > 0 && args(0).equals("init") || (! new File(Helpers.property("data_directory"), Helpers.property("private_keys")).exists()) ) {
       generateKeys()
       compile()

@@ -18,39 +18,20 @@ object Experiment {
   val PathPrefix = MyUtil.pathFile(Helpers.property("fairplay_script")) + "."
 
   /**
-   * Get directory containing experiment-specific data files
-   * @return  string of directory name
+   * Directory path containing data for current experiment
+   * @return  directory name string
    */
-  def getPrefix() = {
+  def getPrefix(): String = {
     val scriptFile = Helpers.property("fairplay_script")
     new File(Helpers.property("data_directory"), scriptFile.substring(scriptFile.lastIndexOf("/") + 1)).toString + "."
   }
 
 
   // Return: (AliceOutput, BobOutput)
-  def readOutputs() = {
+  def readOutputs(): Tuple2[Array[BigInteger], Array[BigInteger]] = {
     ( MyUtil.readResult(PathPrefix + "Alice.output").filter(_ != null).asInstanceOf[Array[BigInteger]],
       MyUtil.readResult(PathPrefix + "Bob.output").filter(_ != null).asInstanceOf[Array[BigInteger]] )
   }
-
-
-  /**
-   * Simulate input shares generation for Fairplay
-   * @param xValue  the x value as in ln(x)
-   * @return  no direct return. Will create .input files
-   */
-  def prepareInputs(xValue: BigInteger) = {
-    val writers = Array("Bob", "Alice").map(a => new PrintWriter(new File(PathPrefix + a + ".input")))
-    val shareRand = BigInteger.valueOf(3)  //TODO use real rand like: rnd.nextInt(rndRange)
-    writers(0).println(shareRand)
-    writers(0).println(2)  //TODO (rnd.nextInt(rndRange))
-    writers(0).println(5)  //TODO (rnd.nextInt(rndRange))
-
-    writers(1).println(xValue.subtract(shareRand))
-
-    writers.map(a => a.close())
-  }
-
 
   /**
    * Create data directory for current experiment
@@ -143,28 +124,33 @@ object Experiment {
     resultWriter.println("\"less accurate than: \"," + getAccuracy())
     resultWriter.println(""""input x","secure ln(x)","actual ln(x)","absolute error","relative error"""")
 
-    // Run multiple experiments
-    var count = 0  //experiment index
+    var count = 0  //experiment count
     val flushPerIterations = Helpers.property("flush_per_iterations").toInt
     val List(startN, endN) = List("start_n", "end_n").map(i => Helpers.property(i).toInt)
 
-    val testCases = generateAllCases(startN, endN) //perInstanceCases(startN, endN)  //pointsAroundTurning(startN, endN)  //generateTestCases()
+    val testCases = generateAllCases(startN, endN)
+    //perInstanceCases(startN, endN)  //pointsAroundTurning(startN, endN)  //generateTestCases()
 
     val endValue = testCases.last
     println("> " + testCases.length + " test cases to process [" + testCases.head + "..." + endValue + "]...")
 
     timeWriter.println(""""start value:",""" + testCases.head + ""","end value:",""" + endValue)
-    timeWriter.println(""""aggregate number of values","aggregate seconds"""")
+    timeWriter.println(""""aggregated number of values","aggregated seconds"""")
+
+    if (Helpers.property("to_generate_keys").equals("true")) {
+      Mediator.generateKeys()
+      Mediator.compile()
+    }
 
     for (xValue <- testCases) {
       println("> x = " + xValue)
       count += 1
 
-      prepareInputs(BigInteger.valueOf(xValue))
+      Helpers.prepareInputs(BigInteger.valueOf(xValue))
 
       // Run Bob and Alice
-      var bobArgs = Array[String]()
-      if (count == 1) bobArgs :+= "init"  //compile and generate keys only once
+      val bobArgs = Array[String]()
+      //if (count == 1) bobArgs :+= "init"  //compile and generate keys only once
 
       AutomatedTest.main(bobArgs)
 
@@ -199,7 +185,7 @@ object Experiment {
    * @return encryption of ln(x) result
    */
   def lnWrapper(xValue: BigInteger, toInit: Boolean = false): BigInteger = {
-    prepareInputs(xValue)
+    Helpers.prepareInputs(xValue)
 
     // Run Bob and Alice
     var bobArgs = Array[String]()
