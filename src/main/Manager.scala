@@ -146,7 +146,7 @@ object Manager {
 
     //TODO read size K (of places) from shared config
     (0 to Mediator.K_TAYLOR_PLACES).map { i =>
-        val t = baseValue.pow(i);
+        val t = baseValue.pow(i)
         if (t.signum() >= 0) someone.encrypt(t) else someone.multiply(someone.encrypt(t.abs()), BigInteger.valueOf(-1))
     }.toArray
   }
