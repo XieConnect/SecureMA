@@ -70,12 +70,13 @@ object Helpers {
     val writers = Array("Bob", "Alice").map(a => new PrintWriter(new File(Experiment.PathPrefix + a + ".input")))
     val shareRand = BigInteger.valueOf(3)  //TODO use real rand like: rnd.nextInt(rndRange)
     // input for party 1
-    writers(0).println(shareRand.negate())
+    //writers(0).println(shareRand.negate())
+    writers(0).println(shareRand)
     writers(0).println(2)  //TODO (rnd.nextInt(rndRange))
     writers(0).println(5)  //TODO (rnd.nextInt(rndRange))
 
     // input for party 2
-    writers(1).println(xValue.add(shareRand))
+    writers(1).println(xValue.subtract(shareRand))
 
     writers.map(a => a.close())
   }
