@@ -28,14 +28,14 @@ import java.net.UnknownHostException
 import test.AutomatedTest
 
 object Mediator {
-  val K_TAYLOR_PLACES = 7  //it seems to be the cap. Larger number causes out-of-range crash
+  val K_TAYLOR_PLACES = 5  //it seems 7 is the cap. Larger number causes out-of-range crash
   val LCM = (2 to K_TAYLOR_PLACES).foldLeft(1)((a, x) => ArithmeticUtils.lcm(a, x))
   val MaxN = 20
   val POWER_OF_TWO = math.pow(2, MaxN)
   //2^N
   //Currently Paillier max field bit size is set to 2048. A size > 1024 would be really slow
   //512
-  val FieldBitsMax = 512  //((MaxN + 2) * K_TAYLOR_PLACES + (math.log(MaxN) / math.log(2) + math.log(Owner.MULTIPLIER  * 100) / math.log(2)).ceil.toInt)
+  val FieldBitsMax = 512 //((MaxN + 2) * K_TAYLOR_PLACES + (math.log(MaxN) / math.log(2) + math.log(Owner.MULTIPLIER  * 100) / math.log(2)).ceil.toInt)
   //val FieldMax = new BigInteger("%.0f".format(math.pow(2, FieldBitsMax)))
 
   val FairplayFile = Helpers.property("fairplay_script")
@@ -222,7 +222,18 @@ object Mediator {
     //val encryptedPowers = MyUtil.readResult(MyUtil.pathFile(FairplayFile) + ".Alice.power")
     val someone = new Paillier(Helpers.getPublicKey())
 
-    (encryptedPowers zip coefficients).foldLeft(someone.encrypt(BigInteger.ZERO)) ((a, x) => someone.add(a, someone.multiply(x._1, x._2)))
+    //(encryptedPowers zip coefficients).foldLeft(someone.encrypt(BigInteger.ZERO)) ((a, x) => someone.add(a, someone.multiply(x._1, x._2)))
+    val paillierN = someone.getPublicKey.getN
+    var tmpResult = someone.encrypt(BigInteger.ZERO)  //.mod(someone.getPublicKey.getN)
+    val nSquared = someone.getPublicKey.getN.multiply(someone.getPublicKey.getN)
+    for (i <- 0 to encryptedPowers.size) {
+      println("Before: " + tmpResult.compareTo(someone.getPublicKey.getN))
+      val tmpMultiple = someone.multiply(encryptedPowers(i), coefficients(i))
+      tmpResult = someone.add(tmpResult, tmpMultiple)
+      println("after: " + tmpResult.compareTo(someone.getPublicKey.getN))
+    }
+
+    tmpResult
   }
 
 

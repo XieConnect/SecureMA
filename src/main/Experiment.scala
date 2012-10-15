@@ -137,6 +137,7 @@ object Experiment {
     timeWriter.println(""""start value:",""" + testCases.head + ""","end value:",""" + endValue)
     timeWriter.println(""""aggregated number of values","aggregated seconds"""")
 
+    // Generate keys and compile Fairplay script
     if (Helpers.property("to_generate_keys").equals("true")) {
       Mediator.generateKeys()
       Mediator.compile()
