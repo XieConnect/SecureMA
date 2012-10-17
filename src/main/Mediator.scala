@@ -221,12 +221,16 @@ object Mediator {
     //TODO read Alice's input via network
     //val encryptedPowers = MyUtil.readResult(MyUtil.pathFile(FairplayFile) + ".Alice.power")
     val someone = new Paillier(Helpers.getPublicKey())
+    val paillierNSquared = someone.getPublicKey.getN.pow(2)
 
-    //(encryptedPowers zip coefficients).foldLeft(someone.encrypt(BigInteger.ZERO)) ((a, x) => someone.add(a, someone.multiply(x._1, x._2)))
+    (encryptedPowers zip coefficients).foldLeft(someone.encrypt(BigInteger.ZERO)) ((a, x) => someone.add(a, someone.multiply(x._1, x._2).mod(paillierNSquared)))
+
+    /*
     val paillierN = someone.getPublicKey.getN
+    println("Paillier N: " + paillierN.bitCount())
     var tmpResult = someone.encrypt(BigInteger.ZERO)  //.mod(someone.getPublicKey.getN)
     val nSquared = someone.getPublicKey.getN.multiply(someone.getPublicKey.getN)
-    for (i <- 0 to encryptedPowers.size) {
+    for (i <- 0 to encryptedPowers.size - 1) {
       println("Before: " + tmpResult.compareTo(someone.getPublicKey.getN))
       val tmpMultiple = someone.multiply(encryptedPowers(i), coefficients(i))
       tmpResult = someone.add(tmpResult, tmpMultiple)
@@ -234,6 +238,7 @@ object Mediator {
     }
 
     tmpResult
+    */
   }
 
 
