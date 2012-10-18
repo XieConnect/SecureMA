@@ -122,6 +122,20 @@ object Helpers {
     MyUtil.readResult(MyUtil.pathFile(property("fairplay_script")) + "." + whichParty + ".output").filter(_ != null)
   }
 
+  /**
+   * Further scale-up and store beta
+   * Scaling factor from 2^N increased to 2^(Nk) * lcm(2,...,k)
+   * @param who  can either be "Bob" or "Alice"
+   * @param beta  the originally scaled-up Beta output by Fairplay
+   */
+  def storeBeta(who: String = "Bob", beta: BigInteger) = {
+    val someone = new Paillier(Helpers.getPublicKey())
+    var scaledBeta = someone.encrypt(BigInteger.valueOf(2).pow(Mediator.MaxN * (Mediator.K_TAYLOR_PLACES - 1)).multiply(BigInteger.valueOf(Mediator.LCM)).multiply(beta.abs))
+    // handle negatives separately
+    if (beta.compareTo(BigInteger.ZERO) < 0) scaledBeta = someone.multiply(scaledBeta, BigInteger.valueOf(-1))
+    MyUtil.saveResult(Array[BigInteger](scaledBeta), MyUtil.pathFile(property("fairplay_script")) + "." + who + ".beta")
+  }
+
 
   // for DEBUG only
   // Simulate specialized Fairplay script and verify output

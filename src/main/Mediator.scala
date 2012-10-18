@@ -307,17 +307,6 @@ object Mediator {
   }
   */
 
-
-  // Scale-up and store beta
-  //TODO move to common utils
-  def storeBeta(who: String = "Bob", beta: BigInteger) = {
-    val someone = new Paillier(Helpers.getPublicKey())
-    var scaledBeta = someone.encrypt(BigInteger.valueOf(2).pow(Mediator.MaxN * (Mediator.K_TAYLOR_PLACES - 1)).multiply(BigInteger.valueOf(Mediator.LCM)).multiply(beta.abs))
-    if (beta.compareTo(BigInteger.ZERO) < 0) scaledBeta = someone.multiply(scaledBeta, BigInteger.valueOf(-1))
-    MyUtil.saveResult(Array[BigInteger](scaledBeta), MyUtil.pathFile(FairplayFile) + "." + who + ".beta")
-  }
-
-
   /**
    * Receive intermediate result from Manager
    * @return
@@ -341,7 +330,6 @@ object Mediator {
     //fromOrigin.close()
   }
 
-
   // args = [firstRun?]
   def main(args: Array[String]) = {
     val startedAt = System.currentTimeMillis()
@@ -358,19 +346,16 @@ object Mediator {
     val socketPort = Helpers.property("socket_port")
     // Will store output to file
     Bob.main(Array("-r", Helpers.property("fairplay_script"), "dj2j", "4", socketPort))
+    val Array(alpha, beta) = Helpers.getFairplayResult("Bob")
+    // store my beta shares
+    Helpers.storeBeta("Bob", beta)
 
-    val Array(_, beta) = Helpers.getFairplayResult("Bob")
-    storeBeta("Bob", beta)
-
-    /*
     //--- Compute ln(x) ---
-    val Array(alpha, beta) = MyUtil.readResult(MyUtil.pathFile(FairplayFile) + ".Bob.output").filter(_ != null)
     println("Computed: " + actualLn(alpha, beta, 10))
 
     //getPublicKey()
     //inverseVariance()
     //distributeKeys()
-*/
 
 
     println("\nProcess finished in " + (System.currentTimeMillis() - startedAt) / 1000.0 + " seconds.")
