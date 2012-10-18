@@ -138,12 +138,12 @@ object Manager {
 
   /**
    * Compute encryptions of powers of alpha2
+   * NOTE: there is chance baseValue may be negative
    * @param baseValue  alpha2
    * @return  vector of encrypted powers
    */
   def encryptPowers(baseValue: BigInteger) = {
     val someone = new Paillier(Helpers.getPublicKey())
-    val powers = Array.fill[BigInteger](Mediator.K_TAYLOR_PLACES + 1)(BigInteger.ZERO)
     val paillierN = someone.getPublicKey.getN
     val paillierNSquared = paillierN.multiply(paillierN)
 
@@ -152,7 +152,7 @@ object Manager {
         val t = baseValue.pow(i)
         if (t.abs.compareTo(paillierN) > 0) {
           println("!!! Error. Taylor power LARGER than Paillier field size")
-          exit()
+          sys.exit()
         }
 
         if (t.signum() >= 0) someone.encrypt(t) else someone.multiply(someone.encrypt(t.abs()), BigInteger.valueOf(-1)).mod(paillierNSquared)
@@ -183,12 +183,7 @@ object Manager {
     FairplayFile = "progs/Sub.txt"
 
     val Array(alpha, beta) = runAlice()
-    //DEBUG
-    println("alpha: " + alpha)
-    println("beta: " + beta)
 
-
-    /*
     val encryptedPowers = encryptPowers(alpha)
     //TODO send to Mediator via network
     MyUtil.saveResult(encryptedPowers, MyUtil.pathFile(FairplayFile) + ".Alice.power")
@@ -197,8 +192,7 @@ object Manager {
     //sendData(encryptedPowers, beta)
     //println("Manager: finished send data...")
 
-    Mediator.storeBeta("Alice", beta)
-*/
+    Helpers.storeBeta("Alice", beta)
 
 
     println("\nProcess finished in " + (System.currentTimeMillis - startedAt) / 1000.0 + " seconds.")
