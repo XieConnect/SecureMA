@@ -355,17 +355,14 @@ object Mediator {
       compile()
     }
 
-    // Will store output to file
     val socketPort = Helpers.property("socket_port")
+    // Will store output to file
     Bob.main(Array("-r", Helpers.property("fairplay_script"), "dj2j", "4", socketPort))
 
-    try {
-      val Array(_, beta) = MyUtil.readResult(MyUtil.pathFile(FairplayFile) + ".Bob.output").filter(_ != null)
-      storeBeta("Bob", beta)
-    } catch {
-      case e: Exception => e.printStackTrace()
-    }
+    val Array(_, beta) = Helpers.getFairplayResult("Bob")
+    storeBeta("Bob", beta)
 
+    /*
     //--- Compute ln(x) ---
     val Array(alpha, beta) = MyUtil.readResult(MyUtil.pathFile(FairplayFile) + ".Bob.output").filter(_ != null)
     println("Computed: " + actualLn(alpha, beta, 10))
@@ -373,7 +370,7 @@ object Mediator {
     //getPublicKey()
     //inverseVariance()
     //distributeKeys()
-
+*/
 
 
     println("\nProcess finished in " + (System.currentTimeMillis() - startedAt) / 1000.0 + " seconds.")

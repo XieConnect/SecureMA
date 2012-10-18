@@ -1,8 +1,8 @@
 package main
 
 /**
- * Data Providers pre-process and upload data
- * Final data will be stored in file specified by EncryptedDataFile below
+ * Data Managers pre-process and submit encrypted data for computation
+ * It runs Alice
  */
 
 import java.io.{ObjectOutputStream, ObjectInputStream}
@@ -24,10 +24,11 @@ object Manager {
   val MULTIPLIER: Double = math.pow(10, 10)
   // to hard-code if needed
   val PartiesNumberThreshold = 3
+  // experiment results
   val EncryptedDataFile = "data/encrypted_data.csv"
   val Delimiter = "," // how is raw data file delimited
 
-  var FairplayFile = "progs/Sub.txt"
+  var FairplayFile = Helpers.property("fairplay_script")
 
   /**
    * Receive private keys from the mediator
@@ -125,15 +126,15 @@ object Manager {
 
   /**
    * Run Alice (communicate with Bob)
-   * TODO read filename from config
+   * @return  Alice's shares of alpha and beta
    */
   def runAlice() = {
     val socketServer = Helpers.property("socket_server")
     val socketPort = Helpers.property("socket_port")
-    Alice.main(Array("-r", FairplayFile, "djdj", socketServer, socketPort))
-    MyUtil.readResult(MyUtil.pathFile(FairplayFile) + ".Alice.output").filter(_ != null).asInstanceOf[Array[BigInteger]]
-  }
+    Alice.main(Array("-r", Helpers.property("fairplay_script"), "djdj", socketServer, socketPort))
 
+    Helpers.getFairplayResult("Alice")
+  }
 
   /**
    * Compute encryptions of powers of alpha2
@@ -182,7 +183,12 @@ object Manager {
     FairplayFile = "progs/Sub.txt"
 
     val Array(alpha, beta) = runAlice()
+    //DEBUG
+    println("alpha: " + alpha)
+    println("beta: " + beta)
 
+
+    /*
     val encryptedPowers = encryptPowers(alpha)
     //TODO send to Mediator via network
     MyUtil.saveResult(encryptedPowers, MyUtil.pathFile(FairplayFile) + ".Alice.power")
@@ -192,7 +198,7 @@ object Manager {
     //println("Manager: finished send data...")
 
     Mediator.storeBeta("Alice", beta)
-
+*/
 
 
     println("\nProcess finished in " + (System.currentTimeMillis - startedAt) / 1000.0 + " seconds.")
