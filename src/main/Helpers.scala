@@ -11,6 +11,8 @@ import java.util.{Random, Properties}
 import paillierp.key.{KeyGen, PaillierKey}
 import java.math.BigInteger
 import paillierp.{PaillierThreshold, Paillier}
+import SFE.BOAL.MyUtil
+import io.Source
 
 object Helpers {
   val MyProperties = new Properties()
@@ -108,5 +110,60 @@ object Helpers {
     writers.map(a => a.close())
 
     (share1, share2)
+  }
+
+  /**
+   * Read out stored Fairplay outputs
+   * @param whichParty whose output to read out? (either Alice or Bob)
+   * @return  shares of Alpha, and Beta
+   */
+  def getFairplayResult(whichParty: String = "Bob"): Array[BigInteger] = {
+    // path of the form: run/progs/Sub.txt.Alice.output
+    MyUtil.readResult(MyUtil.pathFile(property("fairplay_script")) + "." + whichParty + ".output").filter(_ != null)
+  }
+
+
+  // for DEBUG only
+  // Simulate specialized Fairplay script and verify output
+  // NOTE need customization for different cases (over-, under- and optimal-estimate)
+  def simulateFairplay() = {
+    // Need to be consistent with current Fairplay script
+    val MaxN = 20
+    val Nln2 = 726817  // = 2^N * ln 2
+
+    val pathPrefix = MyUtil.pathFile(property("fairplay_script"))
+    val Array(aliceInput: Array[BigInteger], bobInput: Array[BigInteger]) = for (who <- Array("Alice", "Bob")) yield
+      Source.fromFile(pathPrefix + "." + who + ".input").getLines().map(a => new BigInteger(a)).toArray
+
+    // estimate n (as in x = 2^n)
+    var nEstimate = 0
+    var tmpEstimate = BigInteger.ONE
+    val xInput = aliceInput(0).add(bobInput(0))
+    while (nEstimate <= MaxN && tmpEstimate.compareTo(xInput) < 0) {
+      tmpEstimate = tmpEstimate.add(tmpEstimate)
+      nEstimate += 1
+    }
+
+    tmpEstimate = xInput.subtract(tmpEstimate)
+    // compute alpha = epsilon * 2^N
+    for (i <- 1 to MaxN - nEstimate) (tmpEstimate = tmpEstimate.multiply(BigInteger.valueOf(2)))
+
+    val beta = BigInteger.valueOf(nEstimate).multiply(BigInteger.valueOf(Nln2))
+
+    // Output simulation result (expected values)
+    println("> Expected Fairplay results:")
+    println("Alice.a = " + tmpEstimate.subtract(bobInput(1)))
+    println("Alice.b = " + beta.subtract(bobInput(2)))
+    println("Bob.a = " + bobInput(1))
+    println("Bob.b = " + bobInput(2))
+
+    // Output actual running result
+    println("\n> Fairplay actual running result:")
+    getFairplayResult("Alice").map(println)
+    getFairplayResult("Bob").map(println)
+  }
+
+  def main(args: Array[String]) = {
+    simulateFairplay()
   }
 }
