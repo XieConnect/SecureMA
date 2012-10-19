@@ -28,14 +28,15 @@ import java.net.UnknownHostException
 import test.AutomatedTest
 
 object Mediator {
-  val K_TAYLOR_PLACES = 5  //it seems 7 is the cap. Larger number causes out-of-range crash
+  val K_TAYLOR_PLACES = 7  //it seems 7 is the cap. Larger number causes out-of-range crash
   val LCM = (2 to K_TAYLOR_PLACES).foldLeft(1)((a, x) => ArithmeticUtils.lcm(a, x))
   val MaxN = 20
   val POWER_OF_TWO = math.pow(2, MaxN)
   //2^N
   //Currently Paillier max field bit size is set to 2048. A size > 1024 would be really slow
   //512
-  val FieldBitsMax = 512 //((MaxN + 2) * K_TAYLOR_PLACES + (math.log(MaxN) / math.log(2) + math.log(Owner.MULTIPLIER  * 100) / math.log(2)).ceil.toInt)
+  val FieldBitsMax = ((MaxN + 2) * K_TAYLOR_PLACES +
+    (math.log(MaxN) / math.log(2) + math.log(Owner.MULTIPLIER  * 100) / math.log(2)).ceil.toInt)
   //val FieldMax = new BigInteger("%.0f".format(math.pow(2, FieldBitsMax)))
 
   val FairplayFile = Helpers.property("fairplay_script")
@@ -150,7 +151,7 @@ object Mediator {
     tmp = tmp.multiply(BigInteger.valueOf(LCM/powerI))
 
     for (j <- 0 to powerI) {
-      coefficients(j) = constA.pow(powerI - j).multiply(BigInteger.valueOf(ArithmeticUtils.binomialCoefficient(powerI, j))).multiply(tmp)  //.mod(FieldMax)
+      coefficients(j) = constA.pow(powerI - j).multiply(BigInteger.valueOf(ArithmeticUtils.binomialCoefficient(powerI, j))).multiply(tmp)
     }
 
     coefficients
@@ -211,19 +212,25 @@ object Mediator {
   def taylorExpansion(constA: BigInteger, encryptedPowers: Array[BigInteger]) = {
     // Prepare constant coefficients
     var coefficients = polynomialCoefficients(constA, 1)
+    val paillierNSquared = Helpers.getPublicKey().getN.pow(2)
 
+    // combine coefficients of the same power sizes
     for (variableI <- 2 to K_TAYLOR_PLACES) {
       val nextVector = polynomialCoefficients(constA, variableI)
-      coefficients = for ((a, b) <- coefficients zip nextVector) yield a.add(b)  //NOTE: add mod() will cause problems
+      coefficients = for ((a, b) <- coefficients zip nextVector) yield a.add(b)
     }
 
     // Perform Taylor expansion (assemble coefficients and variables)
     //TODO read Alice's input via network
     //val encryptedPowers = MyUtil.readResult(MyUtil.pathFile(FairplayFile) + ".Alice.power")
     val someone = new Paillier(Helpers.getPublicKey())
-    val paillierNSquared = someone.getPublicKey.getN.pow(2)
 
-    (encryptedPowers zip coefficients).foldLeft(someone.encrypt(BigInteger.ZERO)) ((a, x) => someone.add(a, someone.multiply(x._1, x._2).mod(paillierNSquared)))
+    var tmpCount = 0
+    (encryptedPowers zip coefficients).foldLeft(someone.encrypt(BigInteger.ZERO)) { (a, x) =>
+      println("Count: " + tmpCount + "; In range: " + (a.compareTo(paillierNSquared) <= 0))
+      tmpCount += 1
+      someone.add(a, someone.multiply(x._1, x._2).mod(paillierNSquared)).mod(paillierNSquared)
+    }
 
     /*
     val paillierN = someone.getPublicKey.getN
