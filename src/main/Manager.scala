@@ -183,6 +183,7 @@ object Manager {
     FairplayFile = "progs/Sub.txt"
 
     val Array(alpha, beta) = runAlice()
+    Helpers.storeBeta("Alice", beta)
 
     val encryptedPowers = encryptPowers(alpha)
     //TODO send to Mediator via network
@@ -191,9 +192,6 @@ object Manager {
     //println("Manager: about to send data...")
     //sendData(encryptedPowers, beta)
     //println("Manager: finished send data...")
-
-    Helpers.storeBeta("Alice", beta)
-
 
     println("\nProcess finished in " + (System.currentTimeMillis - startedAt) / 1000.0 + " seconds.")
   }
