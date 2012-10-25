@@ -3,7 +3,6 @@ package main
 /**
  * @description Refer to README
  * @author Wei Xie <wei.xie (at) vanderbilt.edu>
- * @version 5/24/12
  */
 
 import java.io._
@@ -28,9 +27,9 @@ import java.net.UnknownHostException
 import test.AutomatedTest
 
 object Mediator {
-  val K_TAYLOR_PLACES = 7  //it seems 7 is the cap. Larger number causes out-of-range crash
+  val K_TAYLOR_PLACES = Helpers.property("k_taylor_places").toInt  //it seems 7 is the cap. Larger number causes out-of-range crash
   val LCM = (2 to K_TAYLOR_PLACES).foldLeft(1)((a, x) => ArithmeticUtils.lcm(a, x))
-  val MaxN = 20
+  val MaxN = Helpers.property("max_exponent_n").toInt
   val POWER_OF_TWO = math.pow(2, MaxN)
   //2^N
   //Currently Paillier max field bit size is set to 2048. A size > 1024 would be really slow
@@ -225,14 +224,13 @@ object Mediator {
     //val encryptedPowers = MyUtil.readResult(MyUtil.pathFile(FairplayFile) + ".Alice.power")
     val someone = new Paillier(Helpers.getPublicKey())
 
-    var tmpCount = 0
     (encryptedPowers zip coefficients).foldLeft(someone.encrypt(BigInteger.ZERO)) { (a, x) =>
-      println("Count: " + tmpCount + "; In range: " + (a.compareTo(paillierNSquared) <= 0))
-      tmpCount += 1
       someone.add(a, someone.multiply(x._1, x._2).mod(paillierNSquared)).mod(paillierNSquared)
     }
 
-    /*
+
+    /* The verbose version of above
+    //DEBUG only
     val paillierN = someone.getPublicKey.getN
     println("Paillier N: " + paillierN.bitCount())
     var tmpResult = someone.encrypt(BigInteger.ZERO)  //.mod(someone.getPublicKey.getN)
@@ -341,6 +339,9 @@ object Mediator {
   def main(args: Array[String]) = {
     val startedAt = System.currentTimeMillis()
 
+
+    println("> Plain input: " + Helpers.getPlainInput())
+
     //inverseVariance(Helpers.property("encrypted_data_file"), Helpers.property("final_result_file"), true)
 
     //--- Run Fairplay ---
@@ -350,14 +351,24 @@ object Mediator {
       compile()
     }
 
-    val socketPort = Helpers.property("socket_port")
     // Will store output to file
-    Bob.main(Array("-r", Helpers.property("fairplay_script"), "dj2j", "4", socketPort))
+    Bob.main(Array("-r",
+                    Helpers.property("fairplay_script"), "dj2j",
+                    "4",
+                    Helpers.property("socket_port"))
+    )
+
     val Array(alpha, beta) = Helpers.getFairplayResult("Bob")
     // store my beta shares
     Helpers.storeBeta("Bob", beta)
 
     //--- Compute ln(x) ---
+    // First need to make sure Manager finishes running
+    val tmpPowerFile = new File(MyUtil.pathFile(FairplayFile) + ".Alice.power")
+    while (! tmpPowerFile.exists()) {
+      Thread.sleep(100)
+    }
+
     println("Computed: " + actualLn(alpha, beta, 10))
 
     //getPublicKey()
