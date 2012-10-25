@@ -13,19 +13,17 @@ import java.util.Random
 import paillierp.Paillier
 
 class ManagerSuite extends FunSuite {
-  // help verify correctness of powers encryption (both positives and negatives)
+  // helper to verify encryption correctness of powers (positive/negative)
   def verifyEncryptionCorrectness(negative: Boolean = false) = {
     val rand = new Random()
     // Run multiple random tests
     for (i <- 0 to 1) {
       var variableA = rand.nextInt(300)
-      // generate negative cases
-      if (negative) {
-        variableA = - variableA
-        expect(true) (variableA <= 0)
-      } else {
-        expect(true) (variableA >= 0)
-      }
+
+      expect(true) (variableA >= 0)
+
+      // generate negative case
+      if (negative) variableA = - variableA
 
       val decrypted = Manager.encryptPowers(BigInteger.valueOf(variableA)).zipWithIndex.map {
         case (a, indx) => Mediator.decryptData(a, if (negative && indx % 2 == 1) true else false)
@@ -48,19 +46,22 @@ class ManagerSuite extends FunSuite {
   test("encrypted powers are within Paillier range") {
     // get rid of 0
     val rand = new Random().nextInt(300) + 1
+    assert(rand >= 0)
+
     val paillierNSquared = Helpers.getPublicKey().getN.pow(2)
 
+    // test both positive and negative base values
     List(rand, - rand).foreach { a =>
       val encrypted = Manager.encryptPowers(BigInteger.valueOf(a))
       expect(true) (encrypted.forall(b => b.compareTo(paillierNSquared) <= 0))
     }
   }
 
-  test("correctly encrypts powers of positives") {
+  test("correctly encrypts powers of POSITIVE base value") {
     verifyEncryptionCorrectness(false)
   }
 
-  test("correctly encrypts powers of negatives") {
+  test("correctly encrypts powers of NEGATIVE base value") {
     verifyEncryptionCorrectness(true)
   }
 
