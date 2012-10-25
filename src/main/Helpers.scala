@@ -177,6 +177,14 @@ object Helpers {
     getFairplayResult("Bob").map(println)
   }
 
+  def getPlainInput(): BigInteger = {
+    val inputs = Array("Alice", "Bob").map(a =>
+      new BigInteger(Source.fromFile(Experiment.PathPrefix + a + ".input").getLine(1))
+    )
+
+    inputs(0).add(inputs(1))
+  }
+
   def main(args: Array[String]) = {
     simulateFairplay()
   }

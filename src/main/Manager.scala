@@ -5,7 +5,7 @@ package main
  * It runs Alice
  */
 
-import java.io.{ObjectOutputStream, ObjectInputStream}
+import java.io.{FileNotFoundException, File, ObjectOutputStream, ObjectInputStream}
 import java.math.BigInteger
 import java.net.Socket
 import java.util.Random
@@ -176,23 +176,24 @@ object Manager {
     val startedAt = System.currentTimeMillis()
 
 
-    //Mediator.generateKeys()
-    //prepareData()
-    //receiveKey()
+    val powerFile = MyUtil.pathFile(FairplayFile) + ".Alice.power"
 
-    FairplayFile = "progs/Sub.txt"
+    // first need to delete previous .power file
+    try {
+      new File(powerFile).delete()
+    } catch {
+      case ex: Exception => println("Error in deleting .power file!")
+    }
 
     val Array(alpha, beta) = runAlice()
     Helpers.storeBeta("Alice", beta)
 
-    val encryptedPowers = encryptPowers(alpha)
     //TODO send to Mediator via network
-    MyUtil.saveResult(encryptedPowers, MyUtil.pathFile(FairplayFile) + ".Alice.power")
+    val encryptedPowers = encryptPowers(alpha)
+    //NOTE we'll detect this file to determine if Manager (Alice) finishes running
+    MyUtil.saveResult(encryptedPowers, powerFile)
 
-    //println("Manager: about to send data...")
-    //sendData(encryptedPowers, beta)
-    //println("Manager: finished send data...")
 
-    println("\nProcess finished in " + (System.currentTimeMillis - startedAt) / 1000.0 + " seconds.")
+    println("\nManager finished in " + (System.currentTimeMillis - startedAt) / 1000.0 + " seconds.")
   }
 }

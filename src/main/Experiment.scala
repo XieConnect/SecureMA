@@ -7,7 +7,7 @@ package main
  */
 
 import java.util.Random
-import java.io.{PrintWriter, File}
+import java.io.{FileInputStream, FileOutputStream, PrintWriter, File}
 import SFE.BOAL.MyUtil
 import test.AutomatedTest
 import java.math.BigInteger
@@ -107,14 +107,21 @@ object Experiment {
     4 / math.log(2) / (math.pow(2, powerExponent) * powerExponent)
   }
 
+  def copyFiles() = {
+    for (a <- Array("conf.properties", MyUtil.pathFile(Helpers.property("fairplay_script")))) {
+      val filename = a.substring(a.lastIndexOf("/") + 1)
+      new FileOutputStream(Helpers.property("data_directory") + "/" + filename) getChannel() transferFrom(
+        new FileInputStream(a) getChannel(), 0, Long.MaxValue
+      )
+    }
+  }
+
   /**
    * Experiment with secure ln(x) computation
    * TODO re-use lnWrapper()
    * @param startedAt  when the experiment starts
    */
   def runLn(startedAt: Long) = {
-    createDataDir()
-
     val dataDir = getPrefix()
     // track run time
     val timeWriter = new PrintWriter(new File(dataDir + "time.csv"))
@@ -175,8 +182,6 @@ object Experiment {
 
     resultWriter.close()
     timeWriter.close()
-
-    generateReadme()
   }
 
   /**
@@ -219,6 +224,11 @@ object Experiment {
 
   def main(args: Array[String]) = {
     val startedAt = System.currentTimeMillis()
+
+    // document current experiment
+    createDataDir()
+    copyFiles()
+    generateReadme()
 
     runLn(startedAt)
 
