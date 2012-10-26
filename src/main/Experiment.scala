@@ -225,14 +225,16 @@ object Experiment {
   def main(args: Array[String]) = {
     val startedAt = System.currentTimeMillis()
 
+
     // document current experiment
     createDataDir()
     copyFiles()
     generateReadme()
 
-    runLn(startedAt)
+    //runLn(startedAt)
 
-    //runDivision(new BigInteger("4000000"), new BigInteger("400"), toInit = false)
+    runDivision(new BigInteger("400000"), new BigInteger("4"), toInit = false)
+
 
     println("\nProcess finished in " + (System.currentTimeMillis() - startedAt) / 1000 + " seconds.")
   }
