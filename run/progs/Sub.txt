@@ -43,8 +43,8 @@ program Sub {
     }
 
     // under-estimate
-    est = preEst;
-    n = n - 1;
+    //est = preEst;
+    //n = n - 1;
 
     // estimate optimal n
     //if ((x - preEst) < (est - x - 1)) {

@@ -231,11 +231,11 @@ object Experiment {
     copyFiles()
     generateReadme()
 
-    //runLn(startedAt)
+    runLn(startedAt)
 
-    runDivision(new BigInteger("400000"), new BigInteger("4"), toInit = false)
+    //runDivision(new BigInteger("40"), new BigInteger("300000"), toInit = false)
 
 
-    println("\nProcess finished in " + (System.currentTimeMillis() - startedAt) / 1000 + " seconds.")
+    println("\nExperiment process finished in " + (System.currentTimeMillis() - startedAt) / 1000 + " seconds.")
   }
 }
