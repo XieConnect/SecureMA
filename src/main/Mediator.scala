@@ -358,6 +358,7 @@ object Mediator {
                     Helpers.property("socket_port"))
     )
 
+
     val Array(alpha, beta) = Helpers.getFairplayResult("Bob")
     // store my beta shares
     Helpers.storeBeta("Bob", beta)
