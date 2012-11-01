@@ -211,14 +211,21 @@ object Experiment {
    * @param toInit whether or not to generate keys/compile Fairplay
    */
   //TODO remove cheat about determining result sign
-  def runDivision(numerator: BigInteger, denominator: BigInteger, toInit: Boolean = false) = {
+  def runDivision( numerator: BigInteger, denominator: BigInteger, toInit: Boolean = false,
+                  someone: Paillier = new Paillier(Helpers.getPublicKey()) ) = {
+    val paillierNSquared = Helpers.getPublicKey().getN.pow(2)
     val numeratorLn = lnWrapper(numerator, toInit)
     val denominatorLn = lnWrapper(denominator, false)
-    val someone = new Paillier(Helpers.getPublicKey())
     val fieldN = KeyGen.PaillierThresholdKeyLoad(new File(Helpers.property("data_directory"), Helpers.property("private_keys")).toString)(0).getN
-    val diff = someone.add(numeratorLn, someone.multiply(denominatorLn, -1))
+    val diff = someone.add(numeratorLn, someone.multiply(denominatorLn, -1).mod(paillierNSquared)).mod(paillierNSquared)
 
     val negative = if (numerator.compareTo(denominator) >= 0) false else true
+
+    println("Field size = " + fieldN.toString.length)
+    println("> ln(num) = " + Mediator.decryptLn(numeratorLn))
+    println("  ln(den) = " + Mediator.decryptLn(denominatorLn))
+    println("  ln diff = " + Mediator.decryptLn(diff, 10, negative))
+
     println(math.exp(Mediator.decryptLn(diff, 10, negative)))
   }
 
@@ -231,9 +238,9 @@ object Experiment {
     copyFiles()
     generateReadme()
 
-    runLn(startedAt)
+    //runLn(startedAt)
 
-    //runDivision(new BigInteger("40"), new BigInteger("300000"), toInit = false)
+    runDivision(new BigInteger("4000000"), new BigInteger("4"), toInit = false)
 
 
     println("\nExperiment process finished in " + (System.currentTimeMillis() - startedAt) / 1000 + " seconds.")
