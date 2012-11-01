@@ -7,6 +7,9 @@ package main
  */
 object TaskDispatch {
   def main(args: Array[String]) = {
+    println("Preparing files using Bash...")
+    Runtime.getRuntime.exec("/bin/bash prepare_experiment.sh blabla")
+    println("End of bash!")
 
   }
 }
