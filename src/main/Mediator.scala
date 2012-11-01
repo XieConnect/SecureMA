@@ -197,7 +197,7 @@ object Mediator {
   def decryptData(encrypted: BigInteger, negative: Boolean = false) = {
     val privateKeys = KeyGen.PaillierThresholdKeyLoad(new File(Helpers.property("data_directory"), Helpers.property("private_keys")).toString)
     val parties = for (k <- privateKeys.take(Helpers.property("threshold_parties").toInt)) yield new PaillierThreshold(k)
-    val decrypted = parties(0).combineShares((for (p <- parties) yield p.decrypt(encrypted)): _*)
+    val decrypted = parties(0).combineShares((for (p <- parties) yield p.decrypt(encrypted)): _*).mod(privateKeys(0).getN)
 
     if (negative) decrypted.subtract(privateKeys(0).getN) else decrypted
   }
@@ -265,7 +265,7 @@ object Mediator {
     someone.add(taylorResult, tmp)
   }
 
-  def decryptLn(encryptedLn: BigInteger, scale: Int = 6, negative: Boolean = false) = {
+  def decryptLn(encryptedLn: BigInteger, scale: Int = 10, negative: Boolean = false) = {
     var tmp = decryptData(encryptedLn)
     if (negative) {
       val fieldN = KeyGen.PaillierThresholdKeyLoad(new File(Helpers.property("data_directory"), Helpers.property("private_keys")).toString)(0).getN
