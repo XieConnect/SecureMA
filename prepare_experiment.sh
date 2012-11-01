@@ -6,6 +6,12 @@
 # Note:
 #   - no slash in experiment_name
 
+if [ $# -ne 2 ]
+then
+  echo "./prepare_experiment.sh <experiment_name> <number_of_processes>"
+  exit
+fi
+
 basedir=experiment/$1
 mkdir -p $basedir
 
