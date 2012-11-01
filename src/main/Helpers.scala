@@ -6,7 +6,7 @@ package main
  * @version 7/30/12
  */
 
-import java.io.{PrintWriter, File, FileInputStream}
+import java.io.{FileOutputStream, PrintWriter, File, FileInputStream}
 import java.util.{Random, Properties}
 import paillierp.key.{KeyGen, PaillierKey}
 import java.math.BigInteger
@@ -183,6 +183,15 @@ object Helpers {
     )
 
     inputs(0).add(inputs(1))
+  }
+
+  def copyFiles() = {
+    for (a <- Array("conf.properties", MyUtil.pathFile(Helpers.property("fairplay_script")))) {
+      val filename = a.substring(a.lastIndexOf("/") + 1)
+      new FileOutputStream(Helpers.property("data_directory") + "/" + filename) getChannel() transferFrom(
+        new FileInputStream(a) getChannel(), 0, Long.MaxValue
+        )
+    }
   }
 
   def main(args: Array[String]) = {
