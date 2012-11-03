@@ -211,22 +211,29 @@ object Experiment {
    * @param toInit whether or not to generate keys/compile Fairplay
    */
   //TODO remove cheat about determining result sign
-  def runDivision( numerator: BigInteger, denominator: BigInteger, toInit: Boolean = false,
+  def runDivision( numerator: BigInteger, denominator: BigInteger, coefficient: Int = 1, toInit: Boolean = false,
                   someone: Paillier = new Paillier(Helpers.getPublicKey()) ) = {
     val paillierNSquared = Helpers.getPublicKey().getN.pow(2)
     val numeratorLn = lnWrapper(numerator, toInit)
     val denominatorLn = lnWrapper(denominator, false)
     val fieldN = KeyGen.PaillierThresholdKeyLoad(new File(Helpers.property("data_directory"), Helpers.property("private_keys")).toString)(0).getN
-    val diff = someone.add(numeratorLn, someone.multiply(denominatorLn, -1).mod(paillierNSquared)).mod(paillierNSquared)
+    val diff = someone.add( if (coefficient > 1) someone.multiply(numeratorLn, coefficient).mod(paillierNSquared) else numeratorLn,
+                             someone.multiply(denominatorLn, -1).mod(paillierNSquared) ).mod(paillierNSquared)
 
-    val negative = if (numerator.compareTo(denominator) >= 0) false else true
+    val negative = (numerator.pow(2).divide(denominator).compareTo(BigInteger.ONE) < 0)
 
-    println("Field size = " + fieldN.toString.length)
-    println("> ln(num) = " + Mediator.decryptLn(numeratorLn))
+    println("----")
+    println("  NUM: " + numerator.toString.length)
+    println("  DEN: " + denominator.toString.length)
+    println("----")
+
+
+    println("> Field size = " + fieldN.toString.length)
+    println("  ln(num) = " + Mediator.decryptLn(numeratorLn))
     println("  ln(den) = " + Mediator.decryptLn(denominatorLn))
     println("  ln diff = " + Mediator.decryptLn(diff, 10, negative))
 
-    println(math.exp(Mediator.decryptLn(diff, 10, negative)))
+    math.exp(Mediator.decryptLn(diff, 10, negative))
   }
 
   def main(args: Array[String]) = {
@@ -234,13 +241,14 @@ object Experiment {
 
 
     // document current experiment
-    createDataDir()
-    copyFiles()
-    generateReadme()
+    //createDataDir()
+    //copyFiles()
+    //generateReadme()
 
     //runLn(startedAt)
 
-    runDivision(new BigInteger("4000000"), new BigInteger("4"), toInit = false)
+    //runDivision(new BigInteger("4000000"), new BigInteger("4"), toInit = false)
+    Mediator.inverseVariance()
 
 
     println("\nExperiment process finished in " + (System.currentTimeMillis() - startedAt) / 1000 + " seconds.")

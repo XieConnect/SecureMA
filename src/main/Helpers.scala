@@ -194,6 +194,10 @@ object Helpers {
     }
   }
 
+  def paillierNS() = {
+    getPublicKey().getN.pow(2)
+  }
+
   def main(args: Array[String]) = {
     simulateFairplay()
   }
