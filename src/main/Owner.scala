@@ -21,36 +21,38 @@ object Owner {
                   encryptedFile: String = Helpers.property("encrypted_data_file")) = {
     val writer = new java.io.PrintWriter(new java.io.File(encryptedFile))
     val someone = new paillierp.Paillier(Helpers.getPublicKey())
+    val paillierNSquared = someone.getPublicKey.getN.pow(2)
 
     writer.println("Multiplier:," + MULTIPLIER)
-    writer.println(""""encrypted weight_i","encrypted positive beta*weight","encrypted negative beta*weight",""" +
-        """"weight_i","beta*weight","positive beta*weight","negative beta*weight"""")
+    writer.println(""""encrypted weight_i","encrypted beta*weight",""" +
+        "weight_i,beta*weight")
 
     for (line <- io.Source.fromFile(fileName).getLines.drop(1); record = line.split(",")) {
       val weightI = 1.0 / math.pow(record(11).toDouble, 2)
       val betaWeight = record(10).toDouble * weightI
       val raisedWeightI = Helpers.toBigInteger(weightI * MULTIPLIER)
-      val raisedBetaWeight = Helpers.toBigInteger(betaWeight * MULTIPLIER)
+      val raisedBetaWeight = Helpers.toBigInteger(betaWeight * MULTIPLIER).abs()
 
       // For beta * weight, submit both positive and negative parts
-      val splitBetaWeight = Array(BigInteger.ZERO, BigInteger.ZERO)
-      if (betaWeight >= 0) {
-        splitBetaWeight(0) = raisedBetaWeight
-      } else {
-        splitBetaWeight(1) = raisedBetaWeight.abs
-      }
+      //val splitBetaWeight = Array(BigInteger.ZERO, BigInteger.ZERO)
 
-      writer.print(someone.encrypt(raisedWeightI) + "," +
-        someone.encrypt(splitBetaWeight(0)) + "," +
-        someone.encrypt(splitBetaWeight(1)) + ",")
+      var encryptedBetaWeight = someone.encrypt(raisedBetaWeight).mod(paillierNSquared)
+      if (betaWeight < 0) encryptedBetaWeight = someone.multiply(encryptedBetaWeight, -1).mod(paillierNSquared)
+
+      //if (betaWeight >= 0) {
+        //splitBetaWeight(0) = raisedBetaWeight
+      //} else {
+        //splitBetaWeight(1) = raisedBetaWeight.abs
+      //}
+
+      //writer.print(someone.encrypt(raisedWeightI) + "," +
+      //  someone.encrypt(splitBetaWeight(0)) + "," +
+      //  someone.encrypt(splitBetaWeight(1)) + ",")
+      writer.print(someone.encrypt(raisedWeightI).mod(paillierNSquared) + "," + encryptedBetaWeight + ",")
+
 
       // Store plain values (for testing)
-      writer.print(weightI + "," +
-        betaWeight + "," +
-        splitBetaWeight(0) + "," +
-        splitBetaWeight(1))
-
-      writer.print("\n")
+      writer.print(weightI + "," + betaWeight + "\n")
     }
 
     writer.close()
@@ -73,7 +75,7 @@ object Owner {
 
     for ((line, indx) <- lines.drop(2).view.zipWithIndex if multiplierCorrect == true; record = line.split(",")) {
       //verify weight_i
-      if (Mediator.decryptData(new BigInteger(record(0))) != Helpers.toBigInteger(record(3).toDouble * MULTIPLIER)) {
+      if (Mediator.decryptData(new BigInteger(record(0))) != Helpers.toBigInteger(record(2).toDouble * MULTIPLIER)) {
         println("  weight_i error in row " + indx)
         rowsCorrect = false
       }

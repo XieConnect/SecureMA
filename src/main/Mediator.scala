@@ -47,6 +47,7 @@ object Mediator {
    * @return  file path to private and public keys
    */
   def generateKeys(length: Int = FieldBitsMax, seed: Long = new util.Random().nextLong()) = {
+    println("Key bit length: " + length)
     val dataDir = Helpers.property("data_directory")
     val privateKeyFile = new File(dataDir, Helpers.property("private_keys")).toString
     val publicKeyFile = new File(dataDir, Helpers.property("public_keys")).toString
@@ -77,10 +78,12 @@ object Mediator {
                        toVerify: Boolean = false) = {
     val writer = new java.io.PrintWriter(new java.io.File(resultFile))
     val publicKey = Helpers.getPublicKey()
+    val paillierNS = Helpers.paillierNS()
 
     val someone = new Paillier(publicKey)
     // denominator (sum(w_i)), numerator (sum(beta * w_i))
-    var weightSum, betaWeightSum = someone.encrypt(BigInteger.ZERO)
+    var weightSum = someone.encrypt(BigInteger.ZERO).mod(paillierNS)
+    var betaWeightSum = someone.encrypt(BigInteger.ZERO).mod(paillierNS)
     //for verification only
     var testWeightSum, testBetaWeightSum = 0.0
     var multiplier = 0.0
@@ -97,37 +100,44 @@ object Mediator {
       } else if (indx == 1) {
         writer.print(""""encrypted numerator","encrypted denominator"""")
 
-        if (toVerify)
-          writer.print(""","numerator(+)","numerator(-)",denominator,"expected numerator","expected denominator"""")
+        writer.print(""","decrypted numerator","decrypted denominator","expected numerator", "expected denominator",division,"expected division","absolute error"""")
 
         writer.println
+
       } else {
-        // Notes on input data: column #0: E(w_i); #1: E(beta*w_i, positive part); #2: E(beta*w_i, negative part)
         // to sum up w_i
-        weightSum = someone.add(weightSum, new BigInteger(record(0)))
-        val betaWeightI = someone.add( new BigInteger(record(1)),
-          someone.multiply(new BigInteger(record(2)), BigInteger.valueOf(-1)) )
-        betaWeightSum = someone.add(betaWeightSum, betaWeightI)
+        //val betaWeightI = someone.add( new BigInteger(record(1)),
+         // someone.multiply(new BigInteger(record(2)), BigInteger.valueOf(-1)) )
+        betaWeightSum = someone.add(betaWeightSum, new BigInteger(record(1))).mod(paillierNS)
+        weightSum = someone.add(weightSum, new BigInteger(record(0))).mod(paillierNS)
         // Output encryptions of numerator/denominator
         writer.print(betaWeightSum + "," + weightSum)
 
+
         //DEBUG for verification only
-        if (toVerify) {
-          writer.print("," + decryptData(betaWeightSum) + "," + decryptData(betaWeightSum, true) + "," + decryptData(weightSum))
 
-          testWeightSum += record(3).toDouble
-          testBetaWeightSum += record(4).toDouble
-          writer.print("," + testBetaWeightSum * multiplier + "," + testWeightSum * multiplier)
-        }
+        testBetaWeightSum += record(3).toDouble
+        testWeightSum += record(2).toDouble
 
-        writer.println
+        val decryptedNumerator = decryptData(betaWeightSum, (testBetaWeightSum < 0))
+        val decryptedDenominator = decryptData(weightSum, (testWeightSum < 0))
+        val computedDivision = Experiment.runDivision(decryptedNumerator, decryptedDenominator, 2)
+        val expectedDivision = testBetaWeightSum / testWeightSum
+
+        writer.println("," + decryptedNumerator + "," + decryptedDenominator +
+                     "," + testBetaWeightSum * multiplier + "," + testWeightSum * multiplier + "," +
+                      computedDivision + "," +
+                      expectedDivision + "," + (computedDivision - expectedDivision) )
 
         // test with Secure ln(x)
         //val numerator = decryptedBetaWeightSum.multiply(decryptedBetaWeightSum)
       }
 
       //NOTE: this counter is inaccurate, as it won't imply specific end point
-      if (indx % flushPerIterations == 0) print("\rRecords processded: ~" + indx)
+      //if (indx % flushPerIterations == 0) {
+        //print("\rRecords processded: ~" + indx)
+        writer.flush()
+      //}
     }
 
     writer.close()
@@ -258,11 +268,12 @@ object Mediator {
 
     val someone = new Paillier(Helpers.getPublicKey())
     val taylorResult = taylorExpansion(alpha, alicePowers)
+    val paillierNS = Helpers.paillierNS()
 
     //TODO transfer from socket
     val betas = (for (i <- Array("Alice", "Bob")) yield MyUtil.readResult(MyUtil.pathFile(FairplayFile) + "." + i + ".beta")(0))
-    val tmp = someone.add(betas(0), betas(1))
-    someone.add(taylorResult, tmp)
+    val tmp = someone.add(betas(0), betas(1)).mod(paillierNS)
+    someone.add(taylorResult, tmp).mod(paillierNS)
   }
 
   def decryptLn(encryptedLn: BigInteger, scale: Int = 10, negative: Boolean = false) = {
