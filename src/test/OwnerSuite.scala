@@ -23,7 +23,7 @@ class OwnerSuite extends FunSuite {
     Owner.prepareData(rawDataFile, encryptedFile)
     val encryptedLines = io.Source.fromFile(encryptedFile).getLines().toArray
     assert(encryptedLines.size > 1)
-    expect(Owner.MULTIPLIER) (encryptedLines(0).split(",")(1).toDouble)
+    expect(Helpers.MULTIPLIER) (encryptedLines(0).split(",")(1).toDouble)
   }
 
   test("verify correctness of encrypted result") {

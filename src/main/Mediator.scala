@@ -35,7 +35,7 @@ object Mediator {
   //Currently Paillier max field bit size is set to 2048. A size > 1024 would be really slow
   //512
   val FieldBitsMax = ((MaxN + 2) * K_TAYLOR_PLACES +
-    (math.log(MaxN) / math.log(2) + math.log(Owner.MULTIPLIER  * 100) / math.log(2)).ceil.toInt)
+    (math.log(MaxN) / math.log(2) + math.log(Helpers.MULTIPLIER  * 100) / math.log(2)).ceil.toInt)
   //val FieldMax = new BigInteger("%.0f".format(math.pow(2, FieldBitsMax)))
 
   val FairplayFile = Helpers.property("fairplay_script")
@@ -71,16 +71,16 @@ object Mediator {
   /**
    * Aggregate study results from various sites
    * Inverse-variance (Effect-size) based approach for Meta-analysis
+   * Note: (roughly speaking) numerator = sum(beta_i * w_i);  denominator = sum(w_i)
    * @param inputFile  file containing encrypted data
    */
   def inverseVariance(inputFile: String = Helpers.property("encrypted_data_file"),
                        resultFile: String = Helpers.property("final_result_file"),
                        toVerify: Boolean = false) = {
     val writer = new java.io.PrintWriter(new java.io.File(resultFile))
-    val publicKey = Helpers.getPublicKey()
     val paillierNS = Helpers.paillierNS()
 
-    val someone = new Paillier(publicKey)
+    val someone = new Paillier(Helpers.getPublicKey())
     // denominator (sum(w_i)), numerator (sum(beta * w_i))
     var weightSum = someone.encrypt(BigInteger.ZERO).mod(paillierNS)
     var betaWeightSum = someone.encrypt(BigInteger.ZERO).mod(paillierNS)
@@ -94,25 +94,21 @@ object Mediator {
     for ((line, indx) <- io.Source.fromFile(inputFile).getLines().zipWithIndex) {
       val record = line.split(",")
 
+      // deal with headers
       if (indx == 0) {
         multiplier = record(1).toDouble
-        writer.println(",Multiplier:," + record(1) + ",\"public key:\"," + publicKey)
-      } else if (indx == 1) {
-        writer.print(""""encrypted numerator","encrypted denominator"""")
+        writer.println(",Multiplier:," + record(1))
+        writer.println(""""encrypted numerator","encrypted denominator","decrypted numerator","decrypted denominator"""" +
+                       ""","expected numerator", "expected denominator",quotient,"expected quotient","absolute error"""")
 
-        writer.print(""","decrypted numerator","decrypted denominator","expected numerator", "expected denominator",division,"expected division","absolute error"""")
-
-        writer.println
-
-      } else {
+      } else if (indx > 1) {
         // to sum up w_i
         //val betaWeightI = someone.add( new BigInteger(record(1)),
-         // someone.multiply(new BigInteger(record(2)), BigInteger.valueOf(-1)) )
+        // someone.multiply(new BigInteger(record(2)), BigInteger.valueOf(-1)) )
         betaWeightSum = someone.add(betaWeightSum, new BigInteger(record(1))).mod(paillierNS)
         weightSum = someone.add(weightSum, new BigInteger(record(0))).mod(paillierNS)
         // Output encryptions of numerator/denominator
         writer.print(betaWeightSum + "," + weightSum)
-
 
         //DEBUG for verification only
 
@@ -125,7 +121,7 @@ object Mediator {
         val expectedDivision = testBetaWeightSum / testWeightSum
 
         writer.println("," + decryptedNumerator + "," + decryptedDenominator +
-                     "," + testBetaWeightSum * multiplier + "," + testWeightSum * multiplier + "," +
+                     "," + (testBetaWeightSum * multiplier) + "," + (testWeightSum * multiplier) + "," +
                       computedDivision + "," +
                       expectedDivision + "," + (computedDivision - expectedDivision) )
 
@@ -358,7 +354,7 @@ object Mediator {
     //--- Run Fairplay ---
     // Generate keys only when forced to or no keys exist
     if ( args.length > 0 && args(0).equals("init") || (! new File(Helpers.property("data_directory"), Helpers.property("private_keys")).exists()) ) {
-      generateKeys()
+      //generateKeys()
       compile()
     }
 
