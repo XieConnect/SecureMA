@@ -1,6 +1,6 @@
 program Sub {
   const MaxN = 85;  //max N
-  const Nln2 = 11645533900000000000000000;  // ~ 2^N * ln 2   (when 20, = 726817; when 25, = )
+  const Nln2 = 26814832700000000000000000;  // ~ 2^N * ln 2   (when 20, = 726817; when 25, = )
 
   type int = Int<128>;
 

@@ -15,6 +15,8 @@ import SFE.BOAL.MyUtil
 import io.Source
 
 object Helpers {
+  // scaling factor during SMC
+  val MULTIPLIER: Double = math.pow(10, 10)
   val MyProperties = new Properties()
 
   /**
@@ -61,6 +63,7 @@ object Helpers {
     publicKey
   }
 
+  // Convert Double to BigInteger
   def toBigInteger(value: Double) = new BigInteger("%.0f" format value)
 
   /**

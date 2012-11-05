@@ -248,6 +248,7 @@ object Experiment {
     //runLn(startedAt)
 
     //runDivision(new BigInteger("4000000"), new BigInteger("4"), toInit = false)
+
     Mediator.inverseVariance()
 
 
