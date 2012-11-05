@@ -10,34 +10,35 @@ import java.math.BigInteger
 import scala.Array
 
 object Owner {
-  val MULTIPLIER: Double = math.pow(10, 10)
 
   /**
-   * Encrypt data for sharing
-   * @param fileName  path to file containing raw data
+   * Encrypt data for sharing (save encryptions in .csv file)
+   * @param rawFile  path to file containing raw data
    * @param encryptedFile file to store encrypted data
    */
-  def prepareData(fileName: String = Helpers.property("raw_data_file"),
-                  encryptedFile: String = Helpers.property("encrypted_data_file")) = {
+  def prepareData( rawFile: String = Helpers.property("raw_data_file"),
+                  encryptedFile: String = Helpers.property("encrypted_data_file") ) = {
     val writer = new java.io.PrintWriter(new java.io.File(encryptedFile))
     val someone = new paillierp.Paillier(Helpers.getPublicKey())
-    val paillierNSquared = someone.getPublicKey.getN.pow(2)
+    val paillierNS = someone.getPublicKey.getN.pow(2)
 
-    writer.println("Multiplier:," + MULTIPLIER)
+    writer.println("Multiplier:," + Helpers.MULTIPLIER)
     writer.println(""""encrypted weight_i","encrypted beta*weight",""" +
         "weight_i,beta*weight")
+    var indexCount = 0
+    val flushPerIterations = Helpers.property("flush_per_iterations").toInt
 
-    for (line <- io.Source.fromFile(fileName).getLines.drop(1); record = line.split(",")) {
+    for (line <- io.Source.fromFile(rawFile).getLines.drop(1); record = line.split(",")) {
       val weightI = 1.0 / math.pow(record(11).toDouble, 2)
       val betaWeight = record(10).toDouble * weightI
-      val raisedWeightI = Helpers.toBigInteger(weightI * MULTIPLIER)
-      val raisedBetaWeight = Helpers.toBigInteger(betaWeight * MULTIPLIER).abs()
+      val raisedWeightI = Helpers.toBigInteger(weightI * Helpers.MULTIPLIER)
+      val raisedBetaWeight = Helpers.toBigInteger(betaWeight.abs * Helpers.MULTIPLIER)
 
       // For beta * weight, submit both positive and negative parts
       //val splitBetaWeight = Array(BigInteger.ZERO, BigInteger.ZERO)
 
-      var encryptedBetaWeight = someone.encrypt(raisedBetaWeight).mod(paillierNSquared)
-      if (betaWeight < 0) encryptedBetaWeight = someone.multiply(encryptedBetaWeight, -1).mod(paillierNSquared)
+      var encryptedBetaWeight = someone.encrypt(raisedBetaWeight).mod(paillierNS)
+      if (betaWeight < 0) encryptedBetaWeight = someone.multiply(encryptedBetaWeight, -1).mod(paillierNS)
 
       //if (betaWeight >= 0) {
         //splitBetaWeight(0) = raisedBetaWeight
@@ -48,13 +49,18 @@ object Owner {
       //writer.print(someone.encrypt(raisedWeightI) + "," +
       //  someone.encrypt(splitBetaWeight(0)) + "," +
       //  someone.encrypt(splitBetaWeight(1)) + ",")
-      writer.print(someone.encrypt(raisedWeightI).mod(paillierNSquared) + "," + encryptedBetaWeight + ",")
+      writer.println(someone.encrypt(raisedWeightI).mod(paillierNS) + "," + encryptedBetaWeight
+                   + "," + weightI + "," + betaWeight)
 
+      indexCount += 1
 
-      // Store plain values (for testing)
-      writer.print(weightI + "," + betaWeight + "\n")
+      if (indexCount % flushPerIterations == 0) {
+        writer.flush()
+        print("\r Records processed: " + indexCount)
+      }
     }
 
+    println
     writer.close()
 
     println(">> Encrypted data saved in: " + encryptedFile)
@@ -70,32 +76,37 @@ object Owner {
     var multiplierCorrect = true
     var rowsCorrect = true
 
-    if (lines(0).split(",")(1).toDouble != MULTIPLIER)
+    println("> To verify encryptions...")
+    // verify Multiplier
+    if (lines(0).split(",")(1).toDouble != Helpers.MULTIPLIER)
       multiplierCorrect = false
 
+    // Verify record row by row
     for ((line, indx) <- lines.drop(2).view.zipWithIndex if multiplierCorrect == true; record = line.split(",")) {
-      //verify weight_i
-      if (Mediator.decryptData(new BigInteger(record(0))) != Helpers.toBigInteger(record(2).toDouble * MULTIPLIER)) {
-        println("  weight_i error in row " + indx)
+      print("Row # " + indx + " : ")
+
+      // Verify weight_i (note it's non-negative)
+      if (Mediator.decryptData(new BigInteger(record(0))) != Helpers.toBigInteger(record(2).toDouble * Helpers.MULTIPLIER)) {
+        print("  weight_i error; ")
         rowsCorrect = false
       }
 
-      if (Mediator.decryptData(new BigInteger(record(1))) != new BigInteger(record(5))) {
-        println("  positive beta*weight error in row " + indx)
+      val decryptedBetaWeight = Mediator.decryptData(new BigInteger(record(1)), (record(3).toDouble < 0))
+      if (decryptedBetaWeight != Helpers.toBigInteger(record(3).toDouble * Helpers.MULTIPLIER)) {
+        print("  beta*weight error")
         rowsCorrect = false
       }
-
-      if (Mediator.decryptData(new BigInteger(record(2))) != new BigInteger(record(6))) {
-        println("  negative beta*weight error in row " + indx)
-        rowsCorrect = false
-      }
+      println
     }
 
     multiplierCorrect && rowsCorrect
   }
 
+  // call with "verify" if verification on encryption is needed
   def main(args: Array[String]) = {
     prepareData()
-    //verifyEncryption()
+
+    if (args.size > 0 && args(0).equals("verify"))
+      verifyEncryption()
   }
 }
