@@ -190,18 +190,25 @@ object Experiment {
    * @param toInit whether to generate keys/compile Fairplay script or not
    * @return encryption of ln(x) result
    */
-  def lnWrapper(xValue: BigInteger, toInit: Boolean = false): BigInteger = {
+  def lnWrapper(xValue: BigInteger, toInit: Boolean = false, writer: PrintWriter = null): BigInteger = {
     Helpers.prepareInputs(xValue)
 
     // Run Bob and Alice
     var bobArgs = Array[String]()
     if (toInit) bobArgs :+= "init"  //compile and generate keys only once
 
+    val startedAt = System.currentTimeMillis()
+
     AutomatedTest.main(bobArgs)
+    val fairplayTime = System.currentTimeMillis()
 
     val (_, bobOutputs) = readOutputs()
 
-    Mediator.secureLn(bobOutputs(0), bobOutputs(1))
+    val result = Mediator.secureLn(bobOutputs(0), bobOutputs(1))
+
+    if (writer != null) writer.print( (fairplayTime - startedAt) + "," + (System.currentTimeMillis() - fairplayTime) )
+
+    result
   }
 
   /**
@@ -211,11 +218,17 @@ object Experiment {
    * @param toInit whether or not to generate keys/compile Fairplay
    */
   //TODO remove cheat about determining result sign
-  def runDivision( numerator: BigInteger, denominator: BigInteger, coefficient: Int = 1, toInit: Boolean = false,
-                  someone: Paillier = new Paillier(Helpers.getPublicKey()) ): Double = {
+  def runDivision( numerator: BigInteger, denominator: BigInteger, coefficient: Int = 1, timerWriter: PrintWriter = null,
+                   toInit: Boolean = false, someone: Paillier = new Paillier(Helpers.getPublicKey()) ): Double = {
     val paillierNSquared = Helpers.getPublicKey().getN.pow(2)
-    val numeratorLn = lnWrapper(numerator.abs, false)  //DEBUG no init
-    val denominatorLn = lnWrapper(denominator, false)
+
+    if (timerWriter != null) timerWriter.print(denominator + ",")
+    val numeratorLn = lnWrapper(numerator.abs, toInit, timerWriter)  //DEBUG no init
+    // to delimiter time records
+    if (timerWriter != null) timerWriter.print(",")
+    val denominatorLn = lnWrapper(denominator, false, timerWriter)
+    if (timerWriter != null) timerWriter.println
+
     val fieldN = KeyGen.PaillierThresholdKeyLoad(new File(Helpers.property("data_directory"), Helpers.property("private_keys")).toString)(0).getN
     val diff = someone.add( if (coefficient > 1) someone.multiply(numeratorLn, coefficient).mod(paillierNSquared) else numeratorLn,
                              someone.multiply(denominatorLn, -1).mod(paillierNSquared) ).mod(paillierNSquared)
