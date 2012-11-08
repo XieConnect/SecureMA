@@ -212,9 +212,9 @@ object Experiment {
    */
   //TODO remove cheat about determining result sign
   def runDivision( numerator: BigInteger, denominator: BigInteger, coefficient: Int = 1, toInit: Boolean = false,
-                  someone: Paillier = new Paillier(Helpers.getPublicKey()) ) = {
+                  someone: Paillier = new Paillier(Helpers.getPublicKey()) ): Double = {
     val paillierNSquared = Helpers.getPublicKey().getN.pow(2)
-    val numeratorLn = lnWrapper(numerator, toInit)
+    val numeratorLn = lnWrapper(numerator.abs, false)  //DEBUG no init
     val denominatorLn = lnWrapper(denominator, false)
     val fieldN = KeyGen.PaillierThresholdKeyLoad(new File(Helpers.property("data_directory"), Helpers.property("private_keys")).toString)(0).getN
     val diff = someone.add( if (coefficient > 1) someone.multiply(numeratorLn, coefficient).mod(paillierNSquared) else numeratorLn,
@@ -222,16 +222,18 @@ object Experiment {
 
     val negative = (numerator.pow(2).divide(denominator).compareTo(BigInteger.ONE) < 0)
 
-    println("----")
-    println("  NUM: " + numerator.toString.length)
-    println("  DEN: " + denominator.toString.length)
-    println("----")
+    //DEBUG only (change to true for debug purpose)
+    if (false) {
+      println("----Begin DEBUG: ")
+      println("  NUM length: " + numerator.toString.length)
+      println("  DEN length: " + denominator.toString.length)
+      println("----")
+      println("> Field size = " + fieldN.toString.length)
+      println("  ln(num) = " + Mediator.decryptLn(numeratorLn))
+      println("  ln(den) = " + Mediator.decryptLn(denominatorLn))
+      println("  ln diff = " + Mediator.decryptLn(diff, 10, negative))
+    }
 
-
-    println("> Field size = " + fieldN.toString.length)
-    println("  ln(num) = " + Mediator.decryptLn(numeratorLn))
-    println("  ln(den) = " + Mediator.decryptLn(denominatorLn))
-    println("  ln diff = " + Mediator.decryptLn(diff, 10, negative))
 
     math.exp(Mediator.decryptLn(diff, 10, negative))
   }

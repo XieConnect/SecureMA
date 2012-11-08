@@ -117,16 +117,16 @@ object Mediator {
 
         val decryptedNumerator = decryptData(betaWeightSum, (testBetaWeightSum < 0))
         val decryptedDenominator = decryptData(weightSum, (testWeightSum < 0))
-        val computedDivision = Experiment.runDivision(decryptedNumerator, decryptedDenominator, 2)
-        val expectedDivision = testBetaWeightSum / testWeightSum
+
+        val expectedDivision = testBetaWeightSum / math.sqrt(testWeightSum)
+        var computedDivision = math.sqrt(Experiment.runDivision(decryptedNumerator, decryptedDenominator, 2) / multiplier)
+        // to determine the sign of final result
+        if (expectedDivision < 0) computedDivision = - computedDivision
 
         writer.println("," + decryptedNumerator + "," + decryptedDenominator +
                      "," + (testBetaWeightSum * multiplier) + "," + (testWeightSum * multiplier) + "," +
                       computedDivision + "," +
                       expectedDivision + "," + (computedDivision - expectedDivision) )
-
-        // test with Secure ln(x)
-        //val numerator = decryptedBetaWeightSum.multiply(decryptedBetaWeightSum)
       }
 
       //NOTE: this counter is inaccurate, as it won't imply specific end point
@@ -196,9 +196,10 @@ object Mediator {
 
   /**
    * Decrypt ciphertext
-   * @param encrypted encryption
+   * @param encrypted ciphertext
    * @param negative whether the final result is going to be negative
    * @return plain value result
+   * TODO remove the "negative" signal parameter
    */
   def decryptData(encrypted: BigInteger, negative: Boolean = false) = {
     val privateKeys = KeyGen.PaillierThresholdKeyLoad(new File(Helpers.property("data_directory"), Helpers.property("private_keys")).toString)
@@ -272,7 +273,7 @@ object Mediator {
     someone.add(taylorResult, tmp).mod(paillierNS)
   }
 
-  def decryptLn(encryptedLn: BigInteger, scale: Int = 10, negative: Boolean = false) = {
+  def decryptLn(encryptedLn: BigInteger, scale: Int = 10, negative: Boolean = false): Double = {
     var tmp = decryptData(encryptedLn)
     if (negative) {
       val fieldN = KeyGen.PaillierThresholdKeyLoad(new File(Helpers.property("data_directory"), Helpers.property("private_keys")).toString)(0).getN

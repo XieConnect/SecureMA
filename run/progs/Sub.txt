@@ -1,6 +1,9 @@
 program Sub {
-  const MaxN = 85;  //max N
-  const Nln2 = 26814832700000000000000000;  // ~ 2^N * ln 2   (when 20, = 726817; when 25, = )
+  // candidate pairs (20 ; 726817)
+  // 85 ; 26814832747904221180368795
+
+  const MaxN = 60;  //max N:
+  const Nln2 = 799144290325171387;  // ~ 2^N * ln 2
 
   type int = Int<128>;
 
@@ -15,6 +18,7 @@ program Sub {
 
 
   function Output output(Input input) {
+    //var int Nln2;
     var int est;
     var int n;
     // for-loop indices
@@ -26,6 +30,8 @@ program Sub {
     var int nlnSum;
     var int x;
     var int preEst;
+
+    //Nln2 = 799144290325171387;
 
     est = 1;
     preEst = 1;
