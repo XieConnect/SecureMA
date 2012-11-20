@@ -29,7 +29,7 @@ object Owner {
     val flushPerIterations = Helpers.property("flush_per_iterations").toInt
 
     for (line <- io.Source.fromFile(rawFile).getLines.drop(1); record = line.split(",")) {
-      val weightI = 1.0 / math.pow(record(11).toDouble, 2)
+      val weightI = 1.0 / math.pow(record(11).toDouble, 2)  // = 1 / se^2
       val betaWeight = record(10).toDouble * weightI
       val raisedWeightI = Helpers.toBigInteger(weightI * Helpers.MULTIPLIER)
       val raisedBetaWeight = Helpers.toBigInteger(betaWeight.abs * Helpers.MULTIPLIER)
