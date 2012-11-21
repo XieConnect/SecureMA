@@ -22,9 +22,8 @@ object Owner {
     val someone = new paillierp.Paillier(Helpers.getPublicKey())
     val paillierNS = someone.getPublicKey.getN.pow(2)
 
-    writer.println("Multiplier:," + Helpers.MULTIPLIER)
-    writer.println(""""encrypted weight_i","encrypted beta*weight",""" +
-        "weight_i,beta*weight")
+    //writer.println("Multiplier:," + Helpers.MULTIPLIER)
+    writer.println(""""encrypted weight_i","encrypted beta*weight",weight_i,beta*weight,"experiment identifiers"""")
     var indexCount = 0
     val flushPerIterations = Helpers.property("flush_per_iterations").toInt
 
@@ -50,7 +49,8 @@ object Owner {
       //  someone.encrypt(splitBetaWeight(0)) + "," +
       //  someone.encrypt(splitBetaWeight(1)) + ",")
       writer.println(someone.encrypt(raisedWeightI).mod(paillierNS) + "," + encryptedBetaWeight
-                   + "," + weightI + "," + betaWeight)
+                   + "," + weightI + "," + betaWeight
+                   + "," + (record.slice(0, 4) ++ record.slice(5, 10)).mkString(",") )
 
       indexCount += 1
 
