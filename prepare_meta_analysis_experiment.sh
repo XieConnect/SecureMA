@@ -20,7 +20,7 @@ cp out/MetaAnalysis.jar $basedir
 cp conf.properties $basedir
 cp -r run $basedir
 cp start $basedir
-cp prepare_data $basedir
+#cp prepare_data $basedir
 
 newDataDir=$basedir/"data"
 mkdir -p $newDataDir

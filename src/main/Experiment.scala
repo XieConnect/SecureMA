@@ -251,6 +251,111 @@ object Experiment {
     math.exp(Mediator.decryptLn(diff, 10, negative))
   }
 
+  def inverseVarianceExperiment(inputFile: String = Helpers.property("encrypted_data_file"),
+                                resultFile: String = Helpers.property("final_result_file")) = {
+    val writer = new java.io.PrintWriter(new java.io.File(resultFile))
+    val divisionWriter = new java.io.PrintWriter(new java.io.File("data/division_time_breakdown.csv"))
+    divisionWriter.println(""""Division runtime"""")
+    divisionWriter.println(""""denoninator (primary key)","Fairplay (numerator)","oblivious polynomial evaluation (numerator)","Fairplay (denominator)","oblivious polynomial evaluation (denominator)"""")
+
+    // denominator (sum(w_i)), numerator (sum(beta * w_i))
+
+    val flushPerIterations = Helpers.property("flush_per_iterations").toInt
+    writer.println("""quotient(secure),quotient(plain),"absolute error","relative error"""" +
+      ""","decrypted numerator","decrypted denominator","SMC time (seconds)","division time (seconds)"""")
+
+    // to track whether a new experiment starts
+    var experimentFlag = ""
+    var oneExperiment = new Array[Array[String]](0)
+    val validLines = io.Source.fromFile(inputFile).getLines().toArray.drop(1)
+    val lastIndex = validLines.size - 1
+
+    // multiple experiments
+    for ( (line, indx) <- validLines.zipWithIndex; record = line.split(",")) {
+      // encountered first row of next experiment
+      val tmpFlag = record.slice(4, 20).mkString("")
+      if (experimentFlag.equals("")) experimentFlag = tmpFlag
+
+      if ( (! tmpFlag.equals(experimentFlag)) || lastIndex == indx ) {
+        // first process experiment for previous experiment
+        if (lastIndex == indx) oneExperiment :+= record.slice(0, 4)
+
+        val results = Mediator.inverseVariance(oneExperiment, divisionWriter)
+        writer.println(results._1 + "," + results._4 + "," + (results._1 - results._4) + ","
+          + (results._1 - results._4)/results._4 + "," + results._5 + "," + results._6 + "," + results._2/1000.0 + "," + results._3/1000.0)
+
+        writer.flush()
+
+        // reset for next experiment
+        oneExperiment = new Array[Array[String]](0)
+        experimentFlag = tmpFlag
+      }
+
+      oneExperiment :+= record.slice(0, 4)
+    }
+
+    divisionWriter.close()
+    writer.close()
+  }
+
+  /**
+   * Aggregate study results from various sites
+   * Inverse-variance (Effect-size) based approach for Meta-analysis
+   * Note: (roughly speaking) numerator = sum(beta_i * w_i);  denominator = sum(w_i)
+   * @param inputFile  file containing encrypted data
+   */
+  /*
+  def inverseVariance(inputFile: String = Helpers.property("encrypted_data_file"),
+                       resultFile: String = Helpers.property("final_result_file"),
+                       toVerify: Boolean = false) = {
+        // to sum up w_i
+        //val betaWeightI = someone.add( new BigInteger(record(1)),
+        // someone.multiply(new BigInteger(record(2)), BigInteger.valueOf(-1)) )
+        val startedAt = System.currentTimeMillis()
+
+        betaWeightSum = someone.add(betaWeightSum, new BigInteger(record(1))).mod(paillierNS)
+        weightSum = someone.add(weightSum, new BigInteger(record(0))).mod(paillierNS)
+
+        val smcTime = System.currentTimeMillis()
+
+        // Output encryptions of numerator/denominator
+        writer.print(betaWeightSum + "," + weightSum)
+
+        //DEBUG for verification only
+
+        testBetaWeightSum += record(3).toDouble
+        testWeightSum += record(2).toDouble
+
+        val decryptedNumerator = decryptData(betaWeightSum, (testBetaWeightSum < 0))
+        val decryptedDenominator = decryptData(weightSum, (testWeightSum < 0))
+
+        var computedDivision = math.sqrt(Experiment.runDivision(decryptedNumerator, decryptedDenominator, 2, divisionWriter) / multiplier)
+        val divisionEndAt = System.currentTimeMillis()
+
+        val expectedDivision = testBetaWeightSum / math.sqrt(testWeightSum)
+        // to determine the sign of final result
+        if (expectedDivision < 0) computedDivision = - computedDivision
+
+        writer.println("," + decryptedNumerator + "," + decryptedDenominator +
+                     "," + (testBetaWeightSum * multiplier) + "," + (testWeightSum * multiplier) + "," +
+                      computedDivision + "," +
+                      expectedDivision + "," + (computedDivision - expectedDivision) + "," + "," +
+                      (smcTime - startedAt) + "," + (divisionEndAt - smcTime) )
+      }
+
+      //NOTE: this counter is inaccurate, as it won't imply specific end point
+      //if (indx % flushPerIterations == 0) {
+        //print("Records processded: ~" + indx)
+        writer.flush()
+      //}
+    }
+
+    writer.close()
+    divisionWriter.close()
+    println(" Result saved in " + resultFile)
+  }
+*/
+
   def main(args: Array[String]) = {
     val startedAt = System.currentTimeMillis()
 
@@ -264,8 +369,8 @@ object Experiment {
 
     //runDivision(new BigInteger("4000000"), new BigInteger("4"), toInit = false)
 
-    Mediator.inverseVariance()
-
+    //Mediator.inverseVariance()
+    inverseVarianceExperiment()
 
     println("\nExperiment process finished in " + (System.currentTimeMillis() - startedAt) / 1000 + " seconds.")
   }

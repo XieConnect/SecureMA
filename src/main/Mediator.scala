@@ -68,89 +68,37 @@ object Mediator {
     (privateKeyFile, publicKeyFile)
   }
 
-  /**
-   * Aggregate study results from various sites
-   * Inverse-variance (Effect-size) based approach for Meta-analysis
-   * Note: (roughly speaking) numerator = sum(beta_i * w_i);  denominator = sum(w_i)
-   * @param inputFile  file containing encrypted data
-   */
-  def inverseVariance(inputFile: String = Helpers.property("encrypted_data_file"),
-                       resultFile: String = Helpers.property("final_result_file"),
-                       toVerify: Boolean = false) = {
-    val writer = new java.io.PrintWriter(new java.io.File(resultFile))
-    val divisionWriter = new java.io.PrintWriter(new java.io.File("data/division_time_breakdown.csv"))
-    divisionWriter.println(""""Division runtime"""")
-    divisionWriter.println(""""denoninator (primary key)","Fairplay (numerator)","oblivious polynomial evaluation (numerator)","Fairplay (denominator)","oblivious polynomial evaluation (denominator)"""")
+  // Return: (computed division, SMC time, division time, plain division, decrypted numberator, decrypted denominator)
+  def inverseVariance(records: Array[Array[String]], divisionWriter: PrintWriter) = {
+    val startedAt = System.currentTimeMillis()
 
     val paillierNS = Helpers.paillierNS()
-
     val someone = new Paillier(Helpers.getPublicKey())
-    // denominator (sum(w_i)), numerator (sum(beta * w_i))
-    var weightSum = someone.encrypt(BigInteger.ZERO).mod(paillierNS)
-    var betaWeightSum = someone.encrypt(BigInteger.ZERO).mod(paillierNS)
-    //for verification only
+    // sum(weight_i) of denominator; sum(beta_i * weight_i) of numerator respectively
+    var weightSum, betaWeightSum = someone.encrypt(BigInteger.ZERO).mod(paillierNS)
+    //DEBUG for verification only
     var testWeightSum, testBetaWeightSum = 0.0
-    var multiplier = 0.0
 
-    val flushPerIterations = Helpers.property("flush_per_iterations").toInt
-    writer.print("\"Inverse variance results\"")
+    for (record <- records) {
+      weightSum = someone.add(weightSum, new BigInteger(record(0))).mod(paillierNS)
+      betaWeightSum = someone.add(betaWeightSum, new BigInteger(record(1))).mod(paillierNS)
 
-    for ((line, indx) <- io.Source.fromFile(inputFile).getLines().zipWithIndex) {
-      val record = line.split(",")
-
-      // deal with headers
-      if (indx == 0) {
-        multiplier = record(1).toDouble
-        writer.println(",Multiplier:," + record(1))
-        writer.println(""""encrypted numerator","encrypted denominator","decrypted numerator","decrypted denominator"""" +
-                       ""","expected numerator", "expected denominator",quotient,"expected quotient","absolute error",,"SMC time(ms)","division time(ms)"""")
-
-      } else if (indx > 1) {
-        // to sum up w_i
-        //val betaWeightI = someone.add( new BigInteger(record(1)),
-        // someone.multiply(new BigInteger(record(2)), BigInteger.valueOf(-1)) )
-        val startedAt = System.currentTimeMillis()
-
-        betaWeightSum = someone.add(betaWeightSum, new BigInteger(record(1))).mod(paillierNS)
-        weightSum = someone.add(weightSum, new BigInteger(record(0))).mod(paillierNS)
-
-        val smcTime = System.currentTimeMillis()
-
-        // Output encryptions of numerator/denominator
-        writer.print(betaWeightSum + "," + weightSum)
-
-        //DEBUG for verification only
-
-        testBetaWeightSum += record(3).toDouble
-        testWeightSum += record(2).toDouble
-
-        val decryptedNumerator = decryptData(betaWeightSum, (testBetaWeightSum < 0))
-        val decryptedDenominator = decryptData(weightSum, (testWeightSum < 0))
-
-        var computedDivision = math.sqrt(Experiment.runDivision(decryptedNumerator, decryptedDenominator, 2, divisionWriter) / multiplier)
-        val divisionEndAt = System.currentTimeMillis()
-
-        val expectedDivision = testBetaWeightSum / math.sqrt(testWeightSum)
-        // to determine the sign of final result
-        if (expectedDivision < 0) computedDivision = - computedDivision
-
-        writer.println("," + decryptedNumerator + "," + decryptedDenominator +
-                     "," + (testBetaWeightSum * multiplier) + "," + (testWeightSum * multiplier) + "," +
-                      computedDivision + "," +
-                      expectedDivision + "," + (computedDivision - expectedDivision) + "," + "," +
-                      (smcTime - startedAt) + "," + (divisionEndAt - smcTime) )
-      }
-
-      //NOTE: this counter is inaccurate, as it won't imply specific end point
-      //if (indx % flushPerIterations == 0) {
-        //print("Records processded: ~" + indx)
-        writer.flush()
-      //}
+      //DEBUG for verification
+      testWeightSum += record(2).toDouble
+      testBetaWeightSum += record(3).toDouble
     }
+    val smcTime = System.currentTimeMillis()
 
-    writer.close()
-    divisionWriter.close()
-    println(" Result saved in " + resultFile)
+    //-- Secure Division
+    val decryptedNumerator = decryptData(betaWeightSum, (testBetaWeightSum < 0))
+    val decryptedDenominator = decryptData(weightSum, (testWeightSum < 0))
+    var computedDivision = math.sqrt(Experiment.runDivision(decryptedNumerator, decryptedDenominator, 2, divisionWriter) / Helpers.MULTIPLIER)
+    val plainDivision = testBetaWeightSum / math.sqrt(testWeightSum)
+    // to determine the sign of final result
+    if (plainDivision < 0) computedDivision = - computedDivision
+
+    (computedDivision, smcTime - startedAt, System.currentTimeMillis() - smcTime,
+      plainDivision, decryptedNumerator, decryptedDenominator)
   }
 
 

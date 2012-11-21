@@ -26,7 +26,7 @@ class MediatorSuite extends FunSuite {
   test("inverse-variance computes numerator and denominator correctly") {
     //We need to re-encrypt data, as keys may have changed since last time
     Owner.prepareData(Helpers.property("raw_data_file"), Helpers.property("encrypted_data_file"))
-    Mediator.inverseVariance(Helpers.property("encrypted_data_file"), Helpers.property("final_result_file"), true)
+    //Mediator.inverseVariance(Helpers.property("encrypted_data_file"), Helpers.property("final_result_file"), true)
 
     var multiplier = 0.0
     for ((line, indx) <- io.Source.fromFile(Helpers.property("final_result_file")).getLines().zipWithIndex; record = line.split(",")) {
