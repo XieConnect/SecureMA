@@ -223,6 +223,12 @@ object Mediator {
    * @return  encryption of scaled-up ln(x)
    */
   def secureLn(alpha: BigInteger, beta: BigInteger) = {
+    // First need to make sure Manager finishes running
+    val tmpPowerFile = new File(MyUtil.pathFile(FairplayFile) + ".Alice.power")
+    while (! tmpPowerFile.exists()) {
+      Thread.sleep(70)
+    }
+
     val alicePowers = MyUtil.readResult(MyUtil.pathFile(FairplayFile) + ".Alice.power")
 
     val someone = new Paillier(Helpers.getPublicKey())
@@ -334,11 +340,7 @@ object Mediator {
     Helpers.storeBeta("Bob", beta)
 
     //--- Compute ln(x) ---
-    // First need to make sure Manager finishes running
-    val tmpPowerFile = new File(MyUtil.pathFile(FairplayFile) + ".Alice.power")
-    while (! tmpPowerFile.exists()) {
-      Thread.sleep(100)
-    }
+
 
     //println("Computed: " + actualLn(alpha, beta, 10))
 

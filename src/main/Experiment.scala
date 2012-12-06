@@ -95,8 +95,9 @@ object Experiment {
    */
   def pointsAroundTurning(startN: Int, endN: Int) = {
     (startN to endN).map { n =>
-      val tmp = math.pow(2, n - 2).toInt * 5
-      tmp - 1 to tmp + 5
+      //val tmp = math.pow(2, n - 2).toInt * 5
+      //tmp - 1 to tmp + 5
+      math.pow(2, n).toInt to (math.pow(2, n-1) * 3).toInt
     }.flatten.distinct
   }
 
@@ -135,7 +136,8 @@ object Experiment {
     val flushPerIterations = Helpers.property("flush_per_iterations").toInt
     val List(startN, endN) = List("start_n", "end_n").map(i => Helpers.property(i).toInt)
 
-    val testCases = generateAllCases(startN, endN)
+    //val testCases = generateAllCases(startN, endN)
+    val testCases = pointsAroundTurning(startN, endN)
     //perInstanceCases(startN, endN)  //pointsAroundTurning(startN, endN)  //generateTestCases()
 
     val endValue = testCases.last
