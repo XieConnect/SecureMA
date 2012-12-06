@@ -339,7 +339,7 @@ object Mediator {
       Thread.sleep(100)
     }
 
-    println("Computed: " + actualLn(alpha, beta, 10))
+    //println("Computed: " + actualLn(alpha, beta, 10))
 
     //getPublicKey()
     //inverseVariance()
