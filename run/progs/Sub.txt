@@ -4,7 +4,17 @@ program Sub {
 
   // Make sure to customize BOTH two values below
   const MaxN = 60;  //max N. Alternative: 85
-  const Nln2 = 799144290325171387;  // ~ 2^N * ln 2 .  Corresponding value for 85 is: 26814832747904221180368795
+
+  // Corresponding value for 85 is: 26814832747904221180368795
+  // For 41:   1524246769571
+  // For 42:   3048493539143
+  // For 50:   780414346020669
+  // For 55:   24973259072661436
+  // For 60:   799144290325171387
+  // For 60:   799144290325165978 (from WolframAlpha)
+  // For 64:   12786308645202655659
+  // For 63:   6393154322601327829
+  const Nln2 = 799144290325165978;  // ~ 2^N * ln 2
 
   type int = Int<128>;
 

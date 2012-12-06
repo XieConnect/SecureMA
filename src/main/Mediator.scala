@@ -97,6 +97,7 @@ object Mediator {
     // to determine the sign of final result
     if (plainDivision < 0) computedDivision = - computedDivision
 
+    // note the order of return results
     (computedDivision, smcTime - startedAt, System.currentTimeMillis() - smcTime,
       plainDivision, decryptedNumerator, decryptedDenominator)
   }

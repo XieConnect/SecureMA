@@ -2,14 +2,14 @@
 
 # Prepare a separate dir for current experiment containing necessary files
 # Usage:
-#   ./prepare_experiment.sh <experiment_name> <number_of_processes>
+#   ./prepare_meta_analysis_experiment.sh <experiment_name> <number_of_processes>
 # Note:
 #   - no slash in experiment_name
 dataDir=data/paper_overEstiamte_moreTaylor
 
 if [ $# -ne 1 ]
 then
-  echo "./prepare_experiment.sh <experiment_name>"
+  echo "./prepare_meta_analysis_experiment.sh <experiment_name>"
   exit
 fi
 

@@ -251,40 +251,54 @@ object Experiment {
     math.exp(Mediator.decryptLn(diff, 10, negative))
   }
 
+  /**
+   * Inverse-variance based meta-analysis
+   * @param inputFile  file containing encrypted inputs (provided by Data Owners).
+   *                   Note: each input file may consist of multiple experiments, each of which spans across several rows
+   * @param resultFile  file to save final results to
+   */
   def inverseVarianceExperiment(inputFile: String = Helpers.property("encrypted_data_file"),
                                 resultFile: String = Helpers.property("final_result_file")) = {
-    val writer = new java.io.PrintWriter(new java.io.File(resultFile))
+    // to track division time breakdowns
     val divisionWriter = new java.io.PrintWriter(new java.io.File("data/division_time_breakdown.csv"))
-    divisionWriter.println(""""Division runtime"""")
     divisionWriter.println(""""denoninator (primary key)","Fairplay (numerator)","oblivious polynomial evaluation (numerator)","Fairplay (denominator)","oblivious polynomial evaluation (denominator)"""")
+    // to track final result
+    val writer = new java.io.PrintWriter(new java.io.File(resultFile))
 
     // denominator (sum(w_i)), numerator (sum(beta * w_i))
 
-    val flushPerIterations = Helpers.property("flush_per_iterations").toInt
+    //val flushPerIterations = Helpers.property("flush_per_iterations").toInt * 3
     writer.println("""quotient(secure),quotient(plain),"absolute error","relative error"""" +
       ""","decrypted numerator","decrypted denominator","SMC time (seconds)","division time (seconds)"""")
 
     // to track whether a new experiment starts
+    // A new experiment is one that has different combination of control conditions
     var experimentFlag = ""
     var oneExperiment = new Array[Array[String]](0)
     val validLines = io.Source.fromFile(inputFile).getLines().toArray.drop(1)
     val lastIndex = validLines.size - 1
 
-    // multiple experiments
     for ( (line, indx) <- validLines.zipWithIndex; record = line.split(",")) {
-      // encountered first row of next experiment
+      // We combine all control attribute names to get the "primary key" for current experiment
       val tmpFlag = record.slice(4, 20).mkString("")
       if (experimentFlag.equals("")) experimentFlag = tmpFlag
 
+      // When encountered first row of *next* experiment, process previous experiment and reset variables
+      // NOTE: we need to handle last row separately (otherwise the last experiment will get ignored)
       if ( (! tmpFlag.equals(experimentFlag)) || lastIndex == indx ) {
-        // first process experiment for previous experiment
+        // First of all, process *previous* experiment
         if (lastIndex == indx) oneExperiment :+= record.slice(0, 4)
-
+        // Refer to the declaration of following method for return result details
         val results = Mediator.inverseVariance(oneExperiment, divisionWriter)
         writer.println(results._1 + "," + results._4 + "," + (results._1 - results._4) + ","
           + (results._1 - results._4)/results._4 + "," + results._5 + "," + results._6 + "," + results._2/1000.0 + "," + results._3/1000.0)
 
-        writer.flush()
+        // flush buffer after certain number of experiments
+        //if (indx % flushPerIterations == 0) {
+          println("> Current data row index: " + indx + "\n  Writing to result file...")
+          writer.flush()
+          divisionWriter.flush()
+        //}
 
         // reset for next experiment
         oneExperiment = new Array[Array[String]](0)
