@@ -123,7 +123,7 @@ object Experiment {
    */
   def runLn(startedAt: Long) = {
     val dataDir = getPrefix()
-    // track run time
+    // track runtime
     val timeWriter = new PrintWriter(new File(dataDir + "time.csv"))
     // store results from multiple experiments
     val resultWriter = new PrintWriter(new File(dataDir + "lnx.csv"))
@@ -139,7 +139,7 @@ object Experiment {
     //perInstanceCases(startN, endN)  //pointsAroundTurning(startN, endN)  //generateTestCases()
 
     val endValue = testCases.last
-    println("> " + testCases.length + " test cases to process [" + testCases.head + "..." + endValue + "]...")
+    println("> " + testCases.length + " test cases to process: [" + testCases.head + "..." + endValue + "]...")
 
     timeWriter.println(""""start value:",""" + testCases.head + ""","end value:",""" + endValue)
     timeWriter.println(""""aggregated number of values","aggregated seconds"""")
@@ -150,6 +150,7 @@ object Experiment {
       Mediator.compile()
     }
 
+    // start computing ln(x) securely
     for (xValue <- testCases) {
       println("> x = " + xValue)
       count += 1
@@ -164,8 +165,10 @@ object Experiment {
 
       val (_, bobOutputs) = readOutputs()
 
+      // securely compute ln(x) and decrypt final result
       val computedResult = Mediator.actualLn(bobOutputs(0), bobOutputs(1), 10).doubleValue()
 
+      // compute plain result
       val expectedResult = math.log(xValue)
 
       resultWriter.println(xValue + "," + computedResult + "," + expectedResult + "," +
@@ -312,79 +315,23 @@ object Experiment {
     writer.close()
   }
 
-  /**
-   * Aggregate study results from various sites
-   * Inverse-variance (Effect-size) based approach for Meta-analysis
-   * Note: (roughly speaking) numerator = sum(beta_i * w_i);  denominator = sum(w_i)
-   * @param inputFile  file containing encrypted data
-   */
-  /*
-  def inverseVariance(inputFile: String = Helpers.property("encrypted_data_file"),
-                       resultFile: String = Helpers.property("final_result_file"),
-                       toVerify: Boolean = false) = {
-        // to sum up w_i
-        //val betaWeightI = someone.add( new BigInteger(record(1)),
-        // someone.multiply(new BigInteger(record(2)), BigInteger.valueOf(-1)) )
-        val startedAt = System.currentTimeMillis()
-
-        betaWeightSum = someone.add(betaWeightSum, new BigInteger(record(1))).mod(paillierNS)
-        weightSum = someone.add(weightSum, new BigInteger(record(0))).mod(paillierNS)
-
-        val smcTime = System.currentTimeMillis()
-
-        // Output encryptions of numerator/denominator
-        writer.print(betaWeightSum + "," + weightSum)
-
-        //DEBUG for verification only
-
-        testBetaWeightSum += record(3).toDouble
-        testWeightSum += record(2).toDouble
-
-        val decryptedNumerator = decryptData(betaWeightSum, (testBetaWeightSum < 0))
-        val decryptedDenominator = decryptData(weightSum, (testWeightSum < 0))
-
-        var computedDivision = math.sqrt(Experiment.runDivision(decryptedNumerator, decryptedDenominator, 2, divisionWriter) / multiplier)
-        val divisionEndAt = System.currentTimeMillis()
-
-        val expectedDivision = testBetaWeightSum / math.sqrt(testWeightSum)
-        // to determine the sign of final result
-        if (expectedDivision < 0) computedDivision = - computedDivision
-
-        writer.println("," + decryptedNumerator + "," + decryptedDenominator +
-                     "," + (testBetaWeightSum * multiplier) + "," + (testWeightSum * multiplier) + "," +
-                      computedDivision + "," +
-                      expectedDivision + "," + (computedDivision - expectedDivision) + "," + "," +
-                      (smcTime - startedAt) + "," + (divisionEndAt - smcTime) )
-      }
-
-      //NOTE: this counter is inaccurate, as it won't imply specific end point
-      //if (indx % flushPerIterations == 0) {
-        //print("Records processded: ~" + indx)
-        writer.flush()
-      //}
-    }
-
-    writer.close()
-    divisionWriter.close()
-    println(" Result saved in " + resultFile)
-  }
-*/
 
   def main(args: Array[String]) = {
     val startedAt = System.currentTimeMillis()
 
 
     // document current experiment
-    //createDataDir()
-    //copyFiles()
-    //generateReadme()
+    createDataDir()
+    copyFiles()
+    generateReadme()
 
-    //runLn(startedAt)
+    runLn(startedAt)
 
     //runDivision(new BigInteger("4000000"), new BigInteger("4"), toInit = false)
 
     //Mediator.inverseVariance()
-    inverseVarianceExperiment()
+    //inverseVarianceExperiment()
+
 
     println("\nExperiment process finished in " + (System.currentTimeMillis() - startedAt) / 1000 + " seconds.")
   }
