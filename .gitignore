@@ -33,3 +33,4 @@ run/progs/*.txt.*.input
 *.log
 *.synctex.gz
 doc/*-eps-converted-to.pdf
+*.r
