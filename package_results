@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# Package experiment results into one .zip package
+# Usage:
+#   ./package_results <target .zip name>
+
+# customize the series of experiments to include
+experiments=$(echo {experiment/eagle_T2D_3,\
+experiment/eagle_T2D_3_MaxN_downto_50,\
+experiment/eagle_T2D_3_MaxN_downto_42})
+
+if [ $# lt 1 ]
+then
+  echo "Missing argument: target .zip name needed!"
+  exit 1
+fi
+
+zip -x \*.jar -r $1  $experiments
+echo "> Success! Result in: " $1
