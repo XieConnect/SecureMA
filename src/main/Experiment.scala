@@ -308,17 +308,37 @@ object Experiment {
     val startedAt = System.currentTimeMillis()
 
 
-    // document current experiment
-    createDataDir()
-    copyFiles()
-    generateReadme()
+    // Compile Fairplay script as necessary
+    if ( args.length == 1 && args(0).equals("compile") ) {
 
-    runLn(startedAt)
+      println("> To compile Fairplay script...")
+      Mediator.compile()
+      println("> END of compiling Fairplay script.")
+
+    } else if (args.length == 1 && args(0).equals("ln")) {
+      // Experiment secure ln(x)
+
+      println("> Secure ln(x)...")
+      // document current experiment
+      createDataDir()
+      copyFiles()
+      generateReadme()
+
+      runLn(startedAt)
+      println("> END of secure ln(x)")
+
+    } else {
+      // Experiment secure meta-analysis
+
+      println("> Secure meta-analysis...")
+      inverseVarianceExperiment( inputFile = Helpers.property("encrypted_data_file"),
+                                 resultFile = Helpers.property("final_result_file") )
+      println("> END of secure meta-analysis.")
+    }
+
 
     //runDivision(new BigInteger("4000000"), new BigInteger("4"), toInit = false)
 
-    //Mediator.inverseVariance()
-    //inverseVarianceExperiment()
 
 
     println("\nExperiment process finished in " + (System.currentTimeMillis() - startedAt) / 1000 + " seconds.")

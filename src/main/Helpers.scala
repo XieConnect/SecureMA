@@ -16,7 +16,7 @@ import io.Source
 
 object Helpers {
   // scaling factor during SMC
-  val MULTIPLIER: Double = math.pow(10, 10)
+  val MULTIPLIER: Double = math.pow(10, 8)
   val MyProperties = new Properties()
 
   /**
