@@ -7,6 +7,9 @@
 # customize the series of experiments to include
 experiments=$(echo {experiment/eagle_T2D_3,\
 experiment/eagle_T2D_3_MaxN_downto_50,\
+experiment/eagle_T2D_3_multiplier_downto_8,\
+experiment/eagle_T2D_3_Taylor_downto_8,\
+experiment/eagle_T2D_3_Taylor_to_12,\
 experiment/eagle_T2D_3_MaxN_downto_42})
 
 if [ $# lt 1 ]
