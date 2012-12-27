@@ -5,7 +5,8 @@
 #   ./prepare_meta_analysis_experiment.sh <experiment_name> <number_of_processes>
 # Note:
 #   - no slash in experiment_name
-dataDir=data/paper_overEstiamte_moreTaylor
+#dataDir=data/paper_overEstiamte_moreTaylor
+dataDir=data/over_estimate_test
 
 if [ $# -ne 1 ]
 then
