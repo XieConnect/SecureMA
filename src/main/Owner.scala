@@ -7,6 +7,7 @@ package main
  */
 
 import java.math.BigInteger
+import java.io.{File, PrintWriter}
 import scala.Array
 
 object Owner {
@@ -18,20 +19,22 @@ object Owner {
    */
   def prepareData( rawFile: String = Helpers.property("raw_data_file"),
                   encryptedFile: String = Helpers.property("encrypted_data_file") ) = {
-    val writer = new java.io.PrintWriter(new java.io.File(encryptedFile))
+    val writer = new PrintWriter(new File(encryptedFile))
     val someone = new paillierp.Paillier(Helpers.getPublicKey())
     val paillierNS = someone.getPublicKey.getN.pow(2)
 
     //writer.println("Multiplier:," + Helpers.MULTIPLIER)
     writer.println(""""encrypted weight_i","encrypted beta*weight",weight_i,beta*weight,"experiment identifiers"""")
     var indexCount = 0
+    // for how many rows will we flush buffer to file
     val flushPerIterations = Helpers.property("flush_per_iterations").toInt
 
+    // ignore .csv header
     for (line <- io.Source.fromFile(rawFile).getLines.drop(1); record = line.split(",")) {
       val weightI = 1.0 / math.pow(record(11).toDouble, 2)  // = 1 / se^2
       val betaWeight = record(10).toDouble * weightI
-      val raisedWeightI = Helpers.toBigInteger(weightI * Helpers.MULTIPLIER)
-      val raisedBetaWeight = Helpers.toBigInteger(betaWeight.abs * Helpers.MULTIPLIER)
+      val raisedWeightI = Helpers.toBigInteger(weightI * Helpers.getMultiplier())
+      val raisedBetaWeight = Helpers.toBigInteger(betaWeight.abs * Helpers.getMultiplier())
 
       // For beta * weight, submit both positive and negative parts
       //val splitBetaWeight = Array(BigInteger.ZERO, BigInteger.ZERO)
@@ -73,41 +76,59 @@ object Owner {
    */
   def verifyEncryption(encryptedFile: String = Helpers.property("encrypted_data_file")): Boolean = {
     val lines = io.Source.fromFile(encryptedFile).getLines().toArray
-    var multiplierCorrect = true
     var rowsCorrect = true
+    val multiplier = Helpers.getMultiplier()
 
+    //- Verify Paillier key size
+    println("> To verify key size...")
+    if (Helpers.getPublicKey().getK >= Mediator.FieldBitsMax) {
+      println("  Key size correct")
+    } else {
+      println("  Key size ERROR!")
+    }
+
+    //- Verify encryption correctness
     println("> To verify encryptions...")
-    // verify Multiplier
-    if (lines(0).split(",")(1).toDouble != Helpers.MULTIPLIER)
-      multiplierCorrect = false
-
     // Verify record row by row
-    for ((line, indx) <- lines.drop(2).view.zipWithIndex if multiplierCorrect == true; record = line.split(",")) {
+    for ((line, indx) <- lines.drop(1).view.zipWithIndex; record = line.split(",")) {
       print("Row # " + indx + " : ")
 
       // Verify weight_i (note it's non-negative)
-      if (Mediator.decryptData(new BigInteger(record(0))) != Helpers.toBigInteger(record(2).toDouble * Helpers.MULTIPLIER)) {
-        print("  weight_i error; ")
+      if (Mediator.decryptData(new BigInteger(record(0))) != Helpers.toBigInteger(record(2).toDouble * multiplier)) {
+        print("  weight_i error!!; ")
         rowsCorrect = false
       }
 
       val decryptedBetaWeight = Mediator.decryptData(new BigInteger(record(1)), (record(3).toDouble < 0))
-      if (decryptedBetaWeight != Helpers.toBigInteger(record(3).toDouble * Helpers.MULTIPLIER)) {
-        print("  beta*weight error")
+      if (decryptedBetaWeight != Helpers.toBigInteger(record(3).toDouble * multiplier)) {
+        print("  beta*weight error!!")
         rowsCorrect = false
       }
       println
     }
 
-    multiplierCorrect && rowsCorrect
+    rowsCorrect
   }
 
+  /**
+   * Perform Data Owners' roles (prepare/encrypt data)
+   * @param args: if called with "verify-only", then only do verification on encrypted file;
+   *              if with "verify", then do encryption and verification;
+   *              otherwise, do encryption only.
+   */
   // call with "verify" if verification on encryption is needed
   def main(args: Array[String]) = {
-    prepareData()
+    if (args.length > 0 && args(0).equals("verify-only")) {
+      verifyEncryption(Helpers.property("encrypted_data_file"))
 
-    if (args.size > 0 && args(0).equals("verify"))
-      verifyEncryption()
+    } else {
+      prepareData( rawFile = Helpers.property("raw_data_file"),
+        encryptedFile = Helpers.property("encrypted_data_file") )
 
+      if (args.size > 0 && args(0).equals("verify"))
+        verifyEncryption()
+    }
+
+    ()
   }
 }

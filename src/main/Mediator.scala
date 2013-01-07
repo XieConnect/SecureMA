@@ -35,7 +35,7 @@ object Mediator {
   //Currently Paillier max field bit size is set to 2048. A size > 1024 would be really slow
   //512
   val FieldBitsMax = ((MaxN + 2) * K_TAYLOR_PLACES +
-    (math.log(MaxN) / math.log(2) + math.log(Helpers.MULTIPLIER  * 100) / math.log(2)).ceil.toInt)
+    (math.log(MaxN) / math.log(2) + math.log(Helpers.getMultiplier()  * 100) / math.log(2)).ceil.toInt)
   //val FieldMax = new BigInteger("%.0f".format(math.pow(2, FieldBitsMax)))
 
   val FairplayFile = Helpers.property("fairplay_script")
@@ -92,7 +92,7 @@ object Mediator {
     //-- Secure Division
     val decryptedNumerator = decryptData(betaWeightSum, (testBetaWeightSum < 0))
     val decryptedDenominator = decryptData(weightSum, (testWeightSum < 0))
-    var computedDivision = math.sqrt(Experiment.runDivision(decryptedNumerator, decryptedDenominator, 2, divisionWriter) / Helpers.MULTIPLIER)
+    var computedDivision = math.sqrt(Experiment.runDivision(decryptedNumerator, decryptedDenominator, 2, divisionWriter) / Helpers.getMultiplier())
     val plainDivision = testBetaWeightSum / math.sqrt(testWeightSum)
     // to determine the sign of final result
     if (plainDivision < 0) computedDivision = - computedDivision
