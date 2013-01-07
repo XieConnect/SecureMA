@@ -16,7 +16,6 @@ import io.Source
 
 object Helpers {
   // scaling factor during SMC
-  val MULTIPLIER: Double = math.pow(10, 8)
   val MyProperties = new Properties()
 
   /**
@@ -39,6 +38,14 @@ object Helpers {
     MyProperties.load(new FileInputStream("conf.properties"))
     MyProperties.getProperty("data_directory") + System.getProperty("file.separator") +
       MyProperties.getProperty(key)
+  }
+
+  /**
+   * SMC multiplier (10^param)
+   * @return SMC multiplier
+   */
+  def getMultiplier(): Double = {
+    math.pow(10, property("multiplier").toInt)
   }
 
   /**
