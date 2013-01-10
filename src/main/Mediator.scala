@@ -311,12 +311,16 @@ object Mediator {
     //fromOrigin.close()
   }
 
-  // args = [firstRun?]
+  /**
+   * Run Mediator's role (including Bob's)
+   * @param args [only-init]: generate keys and compile Fairplay script only (no further running)
+   *             [with-init]: before running Bob's role, will also do initialization
+   */
   def main(args: Array[String]) = {
     val startedAt = System.currentTimeMillis()
 
 
-    println("> Plain input: " + Helpers.getPlainInput())
+    //println("> Plain input: " + Helpers.getPlainInput())
 
     //inverseVariance(Helpers.property("encrypted_data_file"), Helpers.property("final_result_file"), true)
 
@@ -327,11 +331,11 @@ object Mediator {
       compile()
     }
 
-    // Will store output to file
+    //-- Run Bob's role. Will store output to file
     Bob.main(Array("-r",
-                    Helpers.property("fairplay_script"), "dj2j",
-                    "4",
-                    Helpers.property("socket_port"))
+      Helpers.property("fairplay_script"), "dj2j",
+      "4",
+      Helpers.property("socket_port"))
     )
 
 

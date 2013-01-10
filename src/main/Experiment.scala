@@ -274,7 +274,7 @@ object Experiment {
 
     //val flushPerIterations = Helpers.property("flush_per_iterations").toInt * 3
     writer.println("""quotient(secure),quotient(plain),"absolute error","relative error"""" +
-      ""","decrypted numerator","decrypted denominator","SMC time (seconds)","division time (seconds)"""")
+      ""","decrypted numerator","decrypted denominator","SMC time (seconds)","division time (seconds)","experiment identifier"""")
 
     // to track whether a new experiment starts
     // A new experiment is one that has different combination of control conditions
@@ -285,7 +285,7 @@ object Experiment {
 
     for ( (line, indx) <- validLines.zipWithIndex; record = line.split(",")) {
       // We combine all control attribute names to get the "primary key" for current experiment
-      val tmpFlag = record.slice(4, 20).mkString("")
+      val tmpFlag = record.slice(4, 20).mkString("::")
       if (experimentFlag.equals("")) experimentFlag = tmpFlag
 
       // When encountered first row of *next* experiment, process previous experiment and reset variables
@@ -296,7 +296,8 @@ object Experiment {
         // Refer to the declaration of following method for return result details
         val results = Mediator.inverseVariance(oneExperiment, divisionWriter)
         writer.println(results._1 + "," + results._4 + "," + (results._1 - results._4) + ","
-          + (results._1 - results._4)/results._4 + "," + results._5 + "," + results._6 + "," + results._2/1000.0 + "," + results._3/1000.0)
+          + (results._1 - results._4)/results._4 + "," + results._5 + "," + results._6 + "," +
+          results._2/1000.0 + "," + results._3/1000.0 + "," + experimentFlag)
 
         // flush buffer after certain number of experiments
         //if (indx % flushPerIterations == 0) {
@@ -322,19 +323,27 @@ object Experiment {
     val startedAt = System.currentTimeMillis()
 
 
+    createDataDir()
+
     // Compile Fairplay script as necessary
-    if ( args.length == 1 && args(0).equals("compile") ) {
+    if ( args.length > 0 && args(0).equals("init") ) {
+      println("> To generate keys...")
+      Mediator.generateKeys()
+
+      println("> To compile Fairplay script...")
+      Mediator.compile()
+
+    } else if ( args.length > 0 && args(0).equals("compile") ) {
 
       println("> To compile Fairplay script...")
       Mediator.compile()
       println("> END of compiling Fairplay script.")
 
-    } else if (args.length == 1 && args(0).equals("ln")) {
+    } else if (args.length > 0 && args(0).equals("ln")) {
       // Experiment secure ln(x)
 
       println("> Secure ln(x)...")
       // document current experiment
-      createDataDir()
       copyFiles()
       generateReadme()
 

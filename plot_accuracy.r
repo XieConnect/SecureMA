@@ -2,19 +2,17 @@
 
 # to customize: input data
 inputdir <- c(
-              "experiment/eagle_T2D_3/data/",
-              "experiment/eagle_T2D_3_multiplier_downto_8/data/",
-              "experiment/eagle_T2D_3_MaxN_downto_50/data/",
-              "experiment/eagle_T2D_3_MaxN_downto_42/data/",
-              "experiment/eagle_T2D_3_Taylor_downto_8/data/",
-              "experiment/eagle_T2D_3_Taylor_to_12/data/"
+              "~/data/foxe1_second_run/foxe1_second_run/data/",
+              "~/data/foxe1_second_run/foxe1_second_run_multiplier_downto_6/data/",
+              "~/data/foxe1_second_run/foxe1_second_run_multiplier_downto_8/data/",
+              "~/data/foxe1_second_run/foxe1_second_run_multiplier_upto_12/data/"
               )
 
-for(datadir in inputdir){
-  #datadir <- "experiment/eagle_T2D_3_Taylor_downto_8/data/"
+runtime_y_max <- 17500
 
-  mydata <- read.csv(paste(datadir, "final_result.csv", sep=""), skip=1)
-  experiment_indices=34
+for(datadir in inputdir){
+  mydata <- read.csv(paste(datadir, "final_result.csv", sep=""), sep=",", head=TRUE)
+  #experiment_indices=34
 
   # plot accuracy
   svg(paste(datadir, "accuracy.svg", sep=""),
@@ -37,10 +35,11 @@ for(datadir in inputdir){
   legend("topright",
          legend=c("absolute error", "relative error"),
          col=c("blue", "red"),
+         pch=c(22,20),
          #ncol=2,
          cex=0.8,
-         #bty="n",
-         lwd=2)
+         #bty="n"
+         )
 
   # Plot relative error separately
   svg(paste(datadir, "accuracy_relative.svg", sep=""),
@@ -65,15 +64,18 @@ for(datadir in inputdir){
 
 
   ## plot runtime breakdown
-  mytime <- read.csv(paste(datadir, "division_time_breakdown.csv", sep=""), skip=1)
+  mytime <- read.csv(paste(datadir, "division_time_breakdown.csv", sep=""), sep=",",head=TRUE)
 
   svg(paste(datadir, "runtime_breakdown_of_lnx_for_numerator.svg", sep=""),
-      width=10, height=6)
-  barplot(t(data.frame(mytime[0:420, 2:3])),
+      width=8, height=6)
+
+  barplot(t(data.frame(mytime[1:15, 2:3])),
           col=c("cyan", "red"),
           xlab="experiment index",
-          ylab="runtime breakdown",
-          ylim=c(0, 25000),
+          ylab="runtime breakdown (ms)",
+          yaxp=c(0,18000,6),
+          yaxs="i",
+          #ylim=c(0, 18000),
           legend.text=c("Fairplay", "Taylor expansion"),
           args.legend=list(x="center"),
           main="ln(x) runtime breakdown for numerator"
@@ -81,12 +83,12 @@ for(datadir in inputdir){
 
 
   svg(paste(datadir, "runtime_breakdown_of_lnx_for_denominator.svg", sep=""),
-             width=10, height=6)
-  barplot(t(data.frame(mytime[0:420, 4:5])),
+             width=8, height=6)
+  barplot(t(data.frame(mytime[1:15, 4:5])),
           col=c("cyan", "red"),
           xlab="experiment index",
-          ylab="runtime breakdown",
-          ylim=c(0, 25000),
+          ylab="runtime breakdown (ms)",
+          yaxp=c(0,18000,6),
           legend.text=c("Fairplay", "Taylor expansion"),
           args.legend=list(x="center"),
           main="ln(x) runtime breakdown for denominator"
