@@ -5,8 +5,10 @@
 #   ./prepare_experiment.sh <experiment_name> <number_of_processes>
 # Note:
 #   - no slash in experiment_name
+
+# this contains keys
 #dataDir=data/paper_overEstiamte_moreTaylor
-dataDir=data/over_estimate_test
+dataDir=data/foxe1
 
 if [ $# -ne 1 ]
 then

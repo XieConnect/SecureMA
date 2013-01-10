@@ -119,14 +119,14 @@ object Owner {
   // call with "verify" if verification on encryption is needed
   def main(args: Array[String]) = {
     if (args.length > 0 && args(0).equals("verify-only")) {
-      verifyEncryption(Helpers.property("encrypted_data_file"))
+      println( "> Verification result: " + verifyEncryption() )
 
     } else {
       prepareData( rawFile = Helpers.property("raw_data_file"),
         encryptedFile = Helpers.property("encrypted_data_file") )
 
       if (args.size > 0 && args(0).equals("verify"))
-        verifyEncryption()
+        println( "> Verification result: " + verifyEncryption() )
     }
 
     ()
