@@ -1,7 +1,7 @@
-package test
+package edu.vanderbilt.hiplab.metaanalysis
 
 import org.scalatest.FunSuite
-import main.{Helpers, Experiment}
+import edu.vanderbilt.hiplab.metaanalysis.{Helpers, Experiment}
 
 /**
  * @description Refer to README

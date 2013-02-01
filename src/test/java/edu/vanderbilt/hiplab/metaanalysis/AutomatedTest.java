@@ -4,10 +4,10 @@
  * @description Test running Alice and Bob
  */
 
-package test;
+package edu.vanderbilt.hiplab.metaanalysis;
 
-import main.Manager;
-import main.Mediator;
+import edu.vanderbilt.hiplab.metaanalysis.Manager;
+import edu.vanderbilt.hiplab.metaanalysis.Mediator;
 
 public class AutomatedTest {
     public static void main(String[] args) {

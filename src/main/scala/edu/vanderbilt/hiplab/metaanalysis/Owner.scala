@@ -1,4 +1,4 @@
-package main
+package edu.vanderbilt.hiplab.metaanalysis
 
 /**
  * @description Data Owners encrypt and contribute their data
@@ -81,6 +81,9 @@ object Owner {
 
     //- Verify Paillier key size
     println("> To verify key size...")
+    println("Stored key size: " + Helpers.getPublicKey().getK)
+    println("Size defined in code: " + Mediator.FieldBitsMax)
+
     if (Helpers.getPublicKey().getK >= Mediator.FieldBitsMax) {
       println("  Key size correct")
     } else {
@@ -128,7 +131,5 @@ object Owner {
       if (args.size > 0 && args(0).equals("verify"))
         println( "> Verification result: " + verifyEncryption() )
     }
-
-    ()
   }
 }

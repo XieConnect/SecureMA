@@ -11,12 +11,12 @@ else
 fi
 
 function prepare_data(){
-  ${JAVA} -Drundir=run/ -classpath MetaAnalysis.jar main.Owner "verify"
+  ${JAVA} -Drundir=run/ -classpath MetaAnalysis.jar edu.vanderbilt.hiplab.metaanalysis.Owner "verify"
 }
 
 ## Prepare data
-#prepare_data > data/verification.log
-#sleep 5
+prepare_data > data/verification.log
+sleep 5
 
 ## Run experiment
-${JAVA} -Xms800m -Xmx2g -Drundir=run/ -classpath MetaAnalysis.jar main.Experiment > data/experiment.log
+${JAVA} -Xms800m -Xmx2g -Drundir=run/ -classpath MetaAnalysis.jar edu.vanderbilt.hiplab.metaanalysis.Experiment > data/experiment.log

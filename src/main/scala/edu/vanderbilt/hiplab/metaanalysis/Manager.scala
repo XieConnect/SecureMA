@@ -1,4 +1,4 @@
-package main
+package edu.vanderbilt.hiplab.metaanalysis
 
 /**
  * Data Managers pre-process and submit encrypted data for computation
@@ -191,7 +191,7 @@ object Manager {
     //TODO send to Mediator via network
     val encryptedPowers = encryptPowers(alpha)
     //NOTE we'll detect this file to determine if Manager (Alice) finishes running
-    MyUtil.saveResult(encryptedPowers, powerFile)
+    Helpers.saveFairplayResult(encryptedPowers, powerFile)
 
 
     println("\nManager finished in " + (System.currentTimeMillis - startedAt) / 1000.0 + " seconds.")

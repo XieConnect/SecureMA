@@ -2,7 +2,7 @@ program Sub {
   // 85 ; 26814832747904221180368795
 
   // Make sure to customize BOTH two values below
-  const MaxN = 60;  //max N. Alternative: 85
+  const MaxN = 80;  //max N. Alternative: 85
 
   // Corresponding value for 85 is: 26814832747904221180368795
   // For 20:   726817
@@ -14,7 +14,8 @@ program Sub {
   // For 60:   799144290325165978 (from WolframAlpha)
   // For 64:   12786308645202655659
   // For 63:   6393154322601327829
-  const Nln2 = 799144290325165978;  // ~ 2^N * ln 2
+  // For 80:   837963523372001241319907
+  const Nln2 = 837963523372001241319907;  // ~ 2^N * ln 2
 
   // For meta-analysis: 128
   // For ln(x) testing: 64

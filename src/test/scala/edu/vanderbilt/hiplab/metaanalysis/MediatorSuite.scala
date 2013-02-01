@@ -1,4 +1,4 @@
-package test
+package edu.vanderbilt.hiplab.metaanalysis
 
 /**
  * @description Refer to README
@@ -8,11 +8,11 @@ package test
 
 import org.scalatest.FunSuite
 import java.math.BigInteger
-import main.{Owner, Helpers, Mediator}
 import paillierp.Paillier
 import SFE.BOAL.MyUtil
 import io.Source
 import java.io.File
+import edu.vanderbilt.hiplab.metaanalysis.{Owner, Mediator, Helpers}
 
 class MediatorSuite extends FunSuite {
   // We only test if keys are generated and stored. Correctness of keys are checked in HelpersSuite

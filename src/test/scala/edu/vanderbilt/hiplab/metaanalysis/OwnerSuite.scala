@@ -1,4 +1,4 @@
-package test
+package edu.vanderbilt.hiplab.metaanalysis
 
 /**
  * @description Test Data Owners
@@ -7,8 +7,8 @@ package test
  */
 
 import org.scalatest.FunSuite
-import main.{Helpers, Owner}
 import java.io.File
+import edu.vanderbilt.hiplab.metaanalysis.{Owner, Helpers}
 
 class OwnerSuite extends FunSuite {
   val rawDataFile = Helpers.property("raw_data_file")

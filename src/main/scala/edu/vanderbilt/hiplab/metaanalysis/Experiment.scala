@@ -1,4 +1,4 @@
-package main
+package edu.vanderbilt.hiplab.metaanalysis
 
 /**
  * @description Run whole protocol on test data
@@ -9,10 +9,10 @@ package main
 import java.util.Random
 import java.io.{FileInputStream, FileOutputStream, PrintWriter, File}
 import SFE.BOAL.MyUtil
-import test.AutomatedTest
 import java.math.BigInteger
 import paillierp.Paillier
 import paillierp.key.KeyGen
+import edu.vanderbilt.hiplab.metaanalysis.AutomatedTest
 
 object Experiment {
   val PathPrefix = MyUtil.pathFile(Helpers.property("fairplay_script")) + "."
@@ -29,8 +29,8 @@ object Experiment {
 
   // Return: (AliceOutput, BobOutput)
   def readOutputs(): Tuple2[Array[BigInteger], Array[BigInteger]] = {
-    ( MyUtil.readResult(PathPrefix + "Alice.output").filter(_ != null).asInstanceOf[Array[BigInteger]],
-      MyUtil.readResult(PathPrefix + "Bob.output").filter(_ != null).asInstanceOf[Array[BigInteger]] )
+    ( Helpers.readFairplayResult(PathPrefix + "Alice.output").filter(_ != null).asInstanceOf[Array[BigInteger]],
+      Helpers.readFairplayResult(PathPrefix + "Bob.output").filter(_ != null).asInstanceOf[Array[BigInteger]] )
   }
 
   /**
@@ -296,7 +296,7 @@ object Experiment {
         // Refer to the declaration of following method for return result details
         val results = Mediator.inverseVariance(oneExperiment, divisionWriter)
         writer.println(results._1 + "," + results._4 + "," + (results._1 - results._4) + ","
-          + (results._1 - results._4)/results._4 + "," + results._5 + "," + results._6 + "," +
+          + "," + results._5 + "," + results._6 + "," +
           results._2/1000.0 + "," + results._3/1000.0 + "," + experimentFlag)
 
         // flush buffer after certain number of experiments

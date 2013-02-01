@@ -7,22 +7,24 @@ mydata <- read.csv(datadir, sep=",", skip=2)
 # plot accuracy
 svg("data/Sub.txt.all.absolute_error.svg", width=8, height=6)
 ## absolute error
-plot(mydata[2:260, 4],
+plot(mydata[1:260, 4],
      #type="l",
      #xlim=c(1, experiment_indices),
-     ylim=c(0,5e-2),
+     ylim=c(0,5.5e-2),
      main="Absolute error of secure ln(x)",
      xlab="x",
      ylab="Absolute error",
      pch=20,
      col="blue")
 
-## relative error
-points(mydata[, 9],
+points(mydata[1:260, 9],
        pch=4,
       col="red")
 
-legend("topright",
+abline(v=2^(2:8) - 1, col="gray60")
+
+legend(180, 0.05,
+       #"topright",
        legend=c("over-estimate", "under-estimate"),
        col=c("blue", "red"),
        pch=c(20,4),
@@ -32,14 +34,13 @@ legend("topright",
        )
 
 
-
 # plot relative error
 svg("data/Sub.txt.all.relative_error.svg", width=8, height=6)
 ## absolute error
-plot(mydata[2:260, 5],
+plot(mydata[1:260, 5],
      #type="l",
      #xlim=c(1, experiment_indices),
-     ylim=c(0,1e-2),
+     ylim=c(0,1.5e-2),
      main="Relative error of secure ln(x)",
      xlab="x",
      ylab="Relative error",
@@ -47,14 +48,13 @@ plot(mydata[2:260, 5],
      col="blue")
 
 ## relative error
-points(mydata[, 10],
+points(mydata[1:260, 10],
        pch=4,
       col="red")
 
 
-for(base_number in c(2:16)){
-  abline(v=base_number * base_number, col="gray60")
-}
+#TODO why need an offset?
+abline(v=2^(2:8) - 1, col="gray60")
 
 legend("topright",
        legend=c("over-estimate", "under-estimate"),
