@@ -1,4 +1,4 @@
-package main
+package edu.vanderbilt.hiplab.metaanalysis
 
 /**
  * @description This program simulates Fairplay for ln x computation

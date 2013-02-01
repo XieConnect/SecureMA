@@ -1,4 +1,4 @@
-package main
+package edu.vanderbilt.hiplab.metaanalysis
 
 /**
  * @description Refer to README
@@ -24,7 +24,7 @@ import org.apache.commons.math3.util.ArithmeticUtils
 import SFE.BOAL.{Bob, MyUtil}
 
 import java.net.UnknownHostException
-import test.AutomatedTest
+import edu.vanderbilt.hiplab.metaanalysis.AutomatedTest
 
 object Mediator {
   val K_TAYLOR_PLACES = Helpers.property("k_taylor_places").toInt  //it seems 7 is the cap. Larger number causes out-of-range crash
@@ -228,14 +228,14 @@ object Mediator {
       Thread.sleep(70)
     }
 
-    val alicePowers = MyUtil.readResult(MyUtil.pathFile(FairplayFile) + ".Alice.power")
+    val alicePowers = Helpers.readTemporaryResult(MyUtil.pathFile(FairplayFile) + ".Alice.power")
 
     val someone = new Paillier(Helpers.getPublicKey())
     val taylorResult = taylorExpansion(alpha, alicePowers)
     val paillierNS = Helpers.paillierNS()
 
     //TODO transfer from socket
-    val betas = (for (i <- Array("Alice", "Bob")) yield MyUtil.readResult(MyUtil.pathFile(FairplayFile) + "." + i + ".beta")(0))
+    val betas = (for (i <- Array("Alice", "Bob")) yield Helpers.readTemporaryResult(MyUtil.pathFile(FairplayFile) + "." + i + ".beta")(0))
     val tmp = someone.add(betas(0), betas(1)).mod(paillierNS)
     someone.add(taylorResult, tmp).mod(paillierNS)
   }

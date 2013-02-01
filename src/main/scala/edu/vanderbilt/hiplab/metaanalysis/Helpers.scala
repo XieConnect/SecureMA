@@ -1,4 +1,4 @@
-package main
+package edu.vanderbilt.hiplab.metaanalysis
 
 /**
  * @description Helper methods for project
@@ -6,13 +6,14 @@ package main
  * @version 7/30/12
  */
 
-import java.io.{FileOutputStream, PrintWriter, File, FileInputStream}
+import java.io._
 import java.util.{Random, Properties}
 import paillierp.key.{KeyGen, PaillierKey}
 import java.math.BigInteger
 import paillierp.{PaillierThreshold, Paillier}
 import SFE.BOAL.MyUtil
 import io.Source
+import scala.Tuple2
 
 object Helpers {
   // scaling factor during SMC
@@ -24,7 +25,9 @@ object Helpers {
    * @return value corresponding to the queried property
    */
   def property(key: String) = {
-    MyProperties.load(new FileInputStream("conf.properties"))
+    val in = new FileInputStream("conf.properties")
+    MyProperties.load(in)
+    in.close()
     MyProperties.getProperty(key)
   }
 
@@ -35,9 +38,7 @@ object Helpers {
    * @return file path with data-directory prefixed
    */
   def propertyFullPath(key: String) = {
-    MyProperties.load(new FileInputStream("conf.properties"))
-    MyProperties.getProperty("data_directory") + System.getProperty("file.separator") +
-      MyProperties.getProperty(key)
+    new File(property("data_directory"), property(key)).toString
   }
 
   /**
@@ -122,6 +123,29 @@ object Helpers {
     (share1, share2)
   }
 
+  def readFairplayResult(path: String): Array[BigInteger] = {
+    var result = Array[BigInteger]()
+
+    for (line <- Source.fromFile(path).getLines()) {
+      if (line.startsWith("output")) {
+        val values = line.trim.split("\\s")
+        result = result :+ new BigInteger(values(1))
+      }
+    }
+
+    result
+  }
+
+  def readTemporaryResult(path: String) = {
+    val fin = new FileInputStream(path)
+    val in = new ObjectInputStream(fin)
+    val arr: Array[BigInteger] = in.readObject().asInstanceOf[Array[BigInteger]]
+    in.close()
+    fin.close()
+
+    arr
+  }
+
   /**
    * Read out stored Fairplay outputs
    * @param whichParty whose output to read out? (either Alice or Bob)
@@ -129,7 +153,21 @@ object Helpers {
    */
   def getFairplayResult(whichParty: String = "Bob"): Array[BigInteger] = {
     // path of the form: run/progs/Sub.txt.Alice.output
-    MyUtil.readResult(MyUtil.pathFile(property("fairplay_script")) + "." + whichParty + ".output").filter(_ != null)
+    readFairplayResult(MyUtil.pathFile(property("fairplay_script")) + "." + whichParty + ".output").filter(_ != null)
+  }
+
+  def saveFairplayResult(result: Array[BigInteger], path: String) = {
+    val out = new ObjectOutputStream(new FileOutputStream(path))
+
+    try {
+      out.writeObject(result)
+      out.flush()
+    } catch {
+      case e: IOException => e.printStackTrace()
+    } finally {
+      out.close()
+    }
+
   }
 
   /**
@@ -143,7 +181,7 @@ object Helpers {
     var scaledBeta = someone.encrypt(BigInteger.valueOf(2).pow(Mediator.MaxN * (Mediator.K_TAYLOR_PLACES - 1)).multiply(BigInteger.valueOf(Mediator.LCM)).multiply(beta.abs))
     // handle negatives separately
     if (beta.compareTo(BigInteger.ZERO) < 0) scaledBeta = someone.multiply(scaledBeta, BigInteger.valueOf(-1))
-    MyUtil.saveResult(Array[BigInteger](scaledBeta), MyUtil.pathFile(property("fairplay_script")) + "." + who + ".beta")
+    saveFairplayResult(Array[BigInteger](scaledBeta), MyUtil.pathFile(property("fairplay_script")) + "." + who + ".beta")
   }
 
 

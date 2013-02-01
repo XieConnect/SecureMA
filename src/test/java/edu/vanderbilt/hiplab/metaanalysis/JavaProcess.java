@@ -1,4 +1,4 @@
-package test;
+package edu.vanderbilt.hiplab.metaanalysis;
 
 /**
  * @author Wei Xie <wei.xie (at) vanderbilt.edu>
@@ -6,7 +6,7 @@ package test;
  * @description Refer to README
  */
 import SFE.BOAL.Bob;
-import main.Mediator;
+import edu.vanderbilt.hiplab.metaanalysis.Mediator;
 
 import java.io.*;
 import java.util.ArrayList;
