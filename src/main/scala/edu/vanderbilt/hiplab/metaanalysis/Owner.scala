@@ -9,6 +9,7 @@ package edu.vanderbilt.hiplab.metaanalysis
 import java.math.BigInteger
 import java.io.{File, PrintWriter}
 import scala.Array
+import actors.Actor
 
 object Owner {
 
@@ -70,7 +71,7 @@ object Owner {
   }
 
   /**
-   * Verify correctness of encrypted data before submitting to others
+   * Verify correctness of encrypted data before submitting to others (in parallel)
    * @param encryptedFile file containing encryptions
    * @return true if no errors found
    */
@@ -81,8 +82,7 @@ object Owner {
 
     //- Verify Paillier key size
     println("> To verify key size...")
-    println("Stored key size: " + Helpers.getPublicKey().getK)
-    println("Size defined in code: " + Mediator.FieldBitsMax)
+    println("  Stored: " + Helpers.getPublicKey().getK + ";  " + " size in code: " + Mediator.FieldBitsMax)
 
     if (Helpers.getPublicKey().getK >= Mediator.FieldBitsMax) {
       println("  Key size correct")
@@ -94,20 +94,25 @@ object Owner {
     println("> To verify encryptions...")
     // Verify record row by row
     for ((line, indx) <- lines.drop(1).view.zipWithIndex; record = line.split(",")) {
-      print("Row # " + indx + " : ")
+      new Actor {
+        override def act() = {
+          print("Row # " + indx + " : ")
 
-      // Verify weight_i (note it's non-negative)
-      if (Mediator.decryptData(new BigInteger(record(0))) != Helpers.toBigInteger(record(2).toDouble * multiplier)) {
-        print("  weight_i error!!; ")
-        rowsCorrect = false
-      }
+          // Verify weight_i (note it's non-negative)
+          if (Mediator.decryptData(new BigInteger(record(0))) != Helpers.toBigInteger(record(2).toDouble * multiplier)) {
+            print("  weight_i error!!; ")
+            rowsCorrect = false
+          }
 
-      val decryptedBetaWeight = Mediator.decryptData(new BigInteger(record(1)), (record(3).toDouble < 0))
-      if (decryptedBetaWeight != Helpers.toBigInteger(record(3).toDouble * multiplier)) {
-        print("  beta*weight error!!")
-        rowsCorrect = false
-      }
-      println
+          val decryptedBetaWeight = Mediator.decryptData(new BigInteger(record(1)), (record(3).toDouble < 0))
+          if (decryptedBetaWeight != Helpers.toBigInteger(record(3).toDouble * multiplier)) {
+            print("  beta*weight error!!")
+            rowsCorrect = false
+          }
+          println
+        }
+      }.start
+
     }
 
     rowsCorrect
@@ -119,7 +124,6 @@ object Owner {
    *              if with "verify", then do encryption and verification;
    *              otherwise, do encryption only.
    */
-  // call with "verify" if verification on encryption is needed
   def main(args: Array[String]) = {
     if (args.length > 0 && args(0).equals("verify-only")) {
       println( "> Verification result: " + verifyEncryption() )
