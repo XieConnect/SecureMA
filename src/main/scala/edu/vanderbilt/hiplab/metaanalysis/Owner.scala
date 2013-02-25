@@ -9,9 +9,11 @@ package edu.vanderbilt.hiplab.metaanalysis
 import java.math.BigInteger
 import java.io.{File, PrintWriter}
 import scala.Array
-import actors.Actor
+import akka.actor._
+import akka.routing.RoundRobinRouter
 
 object Owner {
+  val MULTIPLIER = Helpers.getMultiplier()
 
   /**
    * Encrypt data for sharing (save encryptions in .csv file)
@@ -70,16 +72,68 @@ object Owner {
     println(">> Encrypted data saved in: " + encryptedFile)
   }
 
+
+  sealed trait VerificationMessage
+  case object Verify extends VerificationMessage
+  case class Work(indx: Int, data: Array[String]) extends VerificationMessage
+  case class Result(indx: Int, values: Array[Boolean]) extends VerificationMessage
+  case class FinalResult(results: collection.mutable.Map[Int, Array[Boolean]])
+
+  class Listener extends Actor {
+    def receive = {
+      case FinalResult(results) =>
+        println("\n> Problematic records (no news is good news): ")
+        results.filter(a => !(a._2(0) && a._2(1)) ).map(b =>
+          println(" ERROR: #" + b._1 + ": " + b._2(0) + ", " + b._2(1)))
+        context.system.shutdown()
+    }
+  }
+
+  class Worker extends Actor {
+    def receive = {
+      case Work(indx, data) =>
+        val weight_i_correct: Boolean = Mediator.decryptData(new BigInteger(data(0))) ==
+          Helpers.toBigInteger(data(2).toDouble * MULTIPLIER)
+        val beta_weight_correct: Boolean = Mediator.decryptData(new BigInteger(data(1)), (data(3).toDouble < 0)) ==
+          Helpers.toBigInteger(data(3).toDouble * MULTIPLIER)
+
+        sender ! Result( indx, Array(weight_i_correct, beta_weight_correct) )
+    }
+  }
+
+  class Master(inputFile: String, listener: ActorRef) extends Actor {
+    val lines = io.Source.fromFile(inputFile).getLines().drop(1).toArray
+    var recordsProcessed: Int = _
+    var results = collection.mutable.Map[Int, Array[Boolean]]()
+    val totalRecords: Int = lines.size
+    var numberOfCores = Helpers.property("total_cores").toInt
+    if (numberOfCores < 1) numberOfCores = 1
+    val workerRouter = context.actorOf(
+      Props[Worker].withRouter(RoundRobinRouter(numberOfCores)), name = "workerRouter")
+
+    def receive = {
+      case Verify =>
+        for ((line, indx) <- lines.view.zipWithIndex; record = line.split(",")) {
+          workerRouter ! Work(indx, record)
+        }
+
+      case Result(indx, values) =>
+        results += indx -> values
+        recordsProcessed += 1
+        println("  verify #" + indx + ": " + values(0) + ", " + values(1))
+        if (recordsProcessed >= totalRecords) {
+          listener ! FinalResult(results)
+          context.stop(self)
+        }
+    }
+  }
+
   /**
    * Verify correctness of encrypted data before submitting to others (in parallel)
    * @param encryptedFile file containing encryptions
    * @return true if no errors found
    */
-  def verifyEncryption(encryptedFile: String = Helpers.property("encrypted_data_file")): Boolean = {
-    val lines = io.Source.fromFile(encryptedFile).getLines().toArray
-    var rowsCorrect = true
-    val multiplier = Helpers.getMultiplier()
-
+  def verifyEncryption(encryptedFile: String = Helpers.property("encrypted_data_file")) = {
     //- Verify Paillier key size
     println("> To verify key size...")
     println("  Stored: " + Helpers.getPublicKey().getK + ";  " + " size in code: " + Mediator.FieldBitsMax)
@@ -91,31 +145,11 @@ object Owner {
     }
 
     //- Verify encryption correctness
-    println("> To verify encryptions...")
-    // Verify record row by row
-    for ((line, indx) <- lines.drop(1).view.zipWithIndex; record = line.split(",")) {
-      new Actor {
-        override def act() = {
-          print("Row # " + indx + " : ")
+    val system = ActorSystem("VerificationSystem")
+    val listener = system.actorOf(Props[Listener], name = "listener")
+    val master = system.actorOf(Props(new Master(encryptedFile, listener)), name = "master")
+    master ! Verify
 
-          // Verify weight_i (note it's non-negative)
-          if (Mediator.decryptData(new BigInteger(record(0))) != Helpers.toBigInteger(record(2).toDouble * multiplier)) {
-            print("  weight_i error!!; ")
-            rowsCorrect = false
-          }
-
-          val decryptedBetaWeight = Mediator.decryptData(new BigInteger(record(1)), (record(3).toDouble < 0))
-          if (decryptedBetaWeight != Helpers.toBigInteger(record(3).toDouble * multiplier)) {
-            print("  beta*weight error!!")
-            rowsCorrect = false
-          }
-          println
-        }
-      }.start
-
-    }
-
-    rowsCorrect
   }
 
   /**
@@ -126,14 +160,18 @@ object Owner {
    */
   def main(args: Array[String]) = {
     if (args.length > 0 && args(0).equals("verify-only")) {
-      println( "> Verification result: " + verifyEncryption() )
+      println( "> Begin verification: ")
+      verifyEncryption()
 
     } else {
       prepareData( rawFile = Helpers.property("raw_data_file"),
         encryptedFile = Helpers.property("encrypted_data_file") )
 
-      if (args.size > 0 && args(0).equals("verify"))
-        println( "> Verification result: " + verifyEncryption() )
+      if (args.size > 0 && args(0).equals("verify")) {
+        println( "> Begin verification: ")
+        verifyEncryption()
+      }
+
     }
   }
 }

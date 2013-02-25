@@ -229,7 +229,7 @@ object Helpers {
 
   def getPlainInput(): BigInteger = {
     val inputs = Array("Alice", "Bob").map(a =>
-      new BigInteger(Source.fromFile(Experiment.PathPrefix + a + ".input").getLine(1))
+      new BigInteger(Source.fromFile(Experiment.PathPrefix + a + ".input").getLines().take(1).mkString)
     )
 
     inputs(0).add(inputs(1))
