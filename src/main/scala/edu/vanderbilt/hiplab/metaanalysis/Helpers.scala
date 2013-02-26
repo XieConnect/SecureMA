@@ -8,9 +8,9 @@ package edu.vanderbilt.hiplab.metaanalysis
 
 import java.io._
 import java.util.{Random, Properties}
-import paillierp.key.{KeyGen, PaillierKey}
+import paillierp.key.PaillierKey
 import java.math.BigInteger
-import paillierp.{PaillierThreshold, Paillier}
+import paillierp.Paillier
 import SFE.BOAL.MyUtil
 import io.Source
 import scala.Tuple2

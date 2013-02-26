@@ -1,13 +1,10 @@
 package edu.vanderbilt.hiplab.metaanalysis
 
 import org.scalatest.FunSuite
-import java.io.File
-import paillierp.key.KeyGen
-import paillierp.{PaillierThreshold, Paillier}
+import paillierp.Paillier
 import java.math.BigInteger
 import java.util.Random
 import io.Source
-import edu.vanderbilt.hiplab.metaanalysis.{Helpers, Experiment}
 
 /**
  * @description Refer to README

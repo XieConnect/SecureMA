@@ -6,9 +6,6 @@
 
 package edu.vanderbilt.hiplab.metaanalysis;
 
-import edu.vanderbilt.hiplab.metaanalysis.Manager;
-import edu.vanderbilt.hiplab.metaanalysis.Mediator;
-
 public class AutomatedTest {
     public static void main(String[] args) {
         Process providerProcess = null;
