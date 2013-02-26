@@ -9,8 +9,6 @@ package edu.vanderbilt.hiplab.metaanalysis
 import org.scalatest.FunSuite
 import java.math.BigInteger
 import java.util.Random
-import paillierp.Paillier
-import edu.vanderbilt.hiplab.metaanalysis.{Mediator, Manager, Helpers}
 
 class ManagerSuite extends FunSuite {
   // helper to verify encryption correctness of powers (positive/negative)

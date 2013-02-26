@@ -5,17 +5,13 @@ package edu.vanderbilt.hiplab.metaanalysis
  * It runs Alice
  */
 
-import java.io.{FileNotFoundException, File, ObjectOutputStream, ObjectInputStream}
+import java.io.{File, ObjectOutputStream, ObjectInputStream}
 import java.math.BigInteger
 import java.net.Socket
-import java.util.Random
 import paillierp.Paillier
-import paillierp.key.KeyGen
 import paillierp.key.PaillierPrivateThresholdKey
-import paillierp.key.PaillierKey
 
 import paillierp.PaillierThreshold
-import java.math.{BigDecimal, RoundingMode}
 
 import SFE.BOAL.{MyUtil, Alice}
 

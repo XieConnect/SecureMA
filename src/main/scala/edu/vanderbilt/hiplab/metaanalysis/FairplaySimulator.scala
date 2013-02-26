@@ -7,9 +7,6 @@ package edu.vanderbilt.hiplab.metaanalysis
  */
 
 import java.math.{BigInteger, BigDecimal}
-import SFE.BOAL.MyUtil
-import paillierp.Paillier
-import org.apache.commons.math3.util.ArithmeticUtils
 
 
 object FairplaySimulator {

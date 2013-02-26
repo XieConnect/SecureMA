@@ -6,13 +6,11 @@ package edu.vanderbilt.hiplab.metaanalysis
  * @version 7/13/12
  */
 
-import java.util.Random
 import java.io.{FileInputStream, FileOutputStream, PrintWriter, File}
 import SFE.BOAL.MyUtil
 import java.math.BigInteger
 import paillierp.Paillier
 import paillierp.key.KeyGen
-import edu.vanderbilt.hiplab.metaanalysis.AutomatedTest
 
 object Experiment {
   val PathPrefix = MyUtil.pathFile(Helpers.property("fairplay_script")) + "."

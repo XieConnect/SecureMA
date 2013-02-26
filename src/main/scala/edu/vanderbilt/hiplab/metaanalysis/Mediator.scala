@@ -7,24 +7,17 @@ package edu.vanderbilt.hiplab.metaanalysis
 
 import java.io._
 import java.math.BigInteger
-import java.net.{Socket, ServerSocket}
 import java.util
-import java.util.Random
-import org.apache.commons.math3.linear.{RealVector, ArrayRealVector}
 import paillierp.Paillier
 import paillierp.key.KeyGen
-import paillierp.key.PaillierPrivateThresholdKey
-import paillierp.key.PaillierKey
 
 import paillierp.PaillierThreshold
-import java.math.{BigDecimal, RoundingMode}
+import java.math.BigDecimal
 
 import org.apache.commons.math3.util.ArithmeticUtils
 
 import SFE.BOAL.{Bob, MyUtil}
 
-import java.net.UnknownHostException
-import edu.vanderbilt.hiplab.metaanalysis.AutomatedTest
 
 object Mediator {
   val K_TAYLOR_PLACES = Helpers.property("k_taylor_places").toInt  //it seems 7 is the cap. Larger number causes out-of-range crash

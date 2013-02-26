@@ -5,10 +5,9 @@ package edu.vanderbilt.hiplab.metaanalysis;
  * @version 7/5/12
  * @description Refer to README
  */
-import SFE.BOAL.Bob;
-import edu.vanderbilt.hiplab.metaanalysis.Mediator;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 

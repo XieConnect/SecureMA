@@ -1,9 +1,7 @@
 package edu.vanderbilt.hiplab.metaanalysis
 
 import org.scalatest.FunSuite
-import SFE.BOAL.MyUtil
 import java.math.BigInteger
-import edu.vanderbilt.hiplab.metaanalysis.FairplaySimulator
 
 /**
  * @description Refer to README

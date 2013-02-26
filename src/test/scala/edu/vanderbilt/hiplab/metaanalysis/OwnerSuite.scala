@@ -8,7 +8,6 @@ package edu.vanderbilt.hiplab.metaanalysis
 
 import org.scalatest.FunSuite
 import java.io.File
-import edu.vanderbilt.hiplab.metaanalysis.{Owner, Helpers}
 
 class OwnerSuite extends FunSuite {
   val rawDataFile = Helpers.property("raw_data_file")
