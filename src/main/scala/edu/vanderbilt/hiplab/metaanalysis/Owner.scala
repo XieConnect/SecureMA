@@ -3,7 +3,6 @@ package edu.vanderbilt.hiplab.metaanalysis
 /**
  * @description Data Owners encrypt and contribute their data
  * @author Wei Xie <wei.xie (at) vanderbilt.edu>
- * @version 9/24/12
  */
 
 import java.math.BigInteger
@@ -15,6 +14,7 @@ import akka.routing.RoundRobinRouter
 object Owner {
   val MULTIPLIER = Helpers.getMultiplier()
 
+  // Encrypt and verify data in multi-thread
   sealed trait MyMessage
   case object Encrypt extends MyMessage
   case object Verify extends MyMessage
@@ -66,11 +66,12 @@ object Owner {
     }
   }
 
+  // Manage whole computation process
   class Master(inputFile: String, resultReporter: ActorRef) extends Actor {
     var recordsProcessed: Int = _
     var verificationResults = collection.mutable.Map[Int, Array[Boolean]]()
     var totalRecords: Int = _
-    var numberOfCores = Helpers.property("total_cores").toInt
+    var numberOfCores = (try {Some(Helpers.property("total_cores").toInt)} catch {case _ => None}).getOrElse(1)
     if (numberOfCores < 1) numberOfCores = 1
     val workerRouter = context.actorOf(
       Props[Worker].withRouter(RoundRobinRouter(numberOfCores)), name = "workerRouter")
