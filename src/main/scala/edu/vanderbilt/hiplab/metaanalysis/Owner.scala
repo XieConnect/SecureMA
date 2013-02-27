@@ -30,7 +30,6 @@ object Owner {
   class ResultReport extends Actor {
     def receive = {
       case EncryptionResults() =>
-        println("\n> Finished writing encryptions to file.")
         context.system.shutdown()
 
       case VerificationResults(results) =>
@@ -44,6 +43,7 @@ object Owner {
   // Slave workers
   class Worker extends Actor {
     def receive = {
+      // To encrypt data record
       case EncryptionWork(record, someone, paillierNS) =>
         val weightI = 1.0 / math.pow(record(11).toDouble, 2)  // = 1 / se^2
         val betaWeight = record(10).toDouble * weightI
@@ -56,6 +56,7 @@ object Owner {
           + "," + weightI + "," + betaWeight
           + "," + (record.slice(0, 4) ++ record.slice(5, 10)).mkString(",") )
 
+      // To verify data record
       case VerificationWork(indx, data) =>
         val weight_i_correct: Boolean = Mediator.decryptData(new BigInteger(data(0))) ==
           Helpers.toBigInteger(data(2).toDouble * MULTIPLIER)
@@ -67,7 +68,7 @@ object Owner {
   }
 
   // Manage whole computation process
-  class Master(inputFile: String, resultReporter: ActorRef) extends Actor {
+  class Master(encryptionFile: String, resultReporter: ActorRef) extends Actor {
     var recordsProcessed: Int = _
     var verificationResults = collection.mutable.Map[Int, Array[Boolean]]()
     var totalRecords: Int = _
@@ -83,7 +84,7 @@ object Owner {
         totalRecords = lines.size
         val someone = new paillierp.Paillier(Helpers.getPublicKey())
         val paillierNS = someone.getPublicKey.getN.pow(2)
-        encryptionWriter = new PrintWriter(new File(Helpers.property("encrypted_data_file") ))
+        encryptionWriter = new PrintWriter(new File(encryptionFile))
         encryptionWriter.println("encrypted_weight_i,encrypted_beta*weight,weight_i,beta*weight,experiment_identifiers")
 
         for (line <- lines; record = line.split(",")) {
@@ -91,12 +92,13 @@ object Owner {
         }
 
       case Verify =>
-        val lines = io.Source.fromFile(inputFile).getLines().drop(1).toArray
+        val lines = io.Source.fromFile(encryptionFile).getLines().drop(1).toArray
         totalRecords = lines.size
         for ((line, indx) <- lines.view.zipWithIndex; record = line.split(",")) {
           workerRouter ! VerificationWork(indx, record)
         }
 
+      // individual encryption result
       case EncryptionResult(result) =>
         recordsProcessed += 1
         print("\rRecords processed: " + recordsProcessed)
@@ -107,13 +109,15 @@ object Owner {
             encryptionWriter.close()
           }
           resultReporter ! EncryptionResults()
+          println("\n> Encryptions saved to file: " + encryptionFile)
           context.stop(self)
         }
 
+      // individual verification result
       case VerificationResult(indx, values) =>
         verificationResults += indx -> values
         recordsProcessed += 1
-        println("  verify #" + indx + ": " + values(0) + ", " + values(1))
+        println("  verify #%4d: %6s %6s".format(indx, values(0), values(1)))
         if (recordsProcessed >= totalRecords) {
           resultReporter ! VerificationResults(verificationResults)
           context.stop(self)
@@ -134,8 +138,6 @@ object Owner {
     val resultReporter = system.actorOf(Props[ResultReport], name = "resultReporter")
     val master = system.actorOf(Props(new Master(encryptedFile, resultReporter)), name = "master")
     master ! Encrypt
-
-    println(">> Encrypted data saved in: " + encryptedFile)
   }
 
   /**
@@ -156,8 +158,8 @@ object Owner {
 
     //- Verify encryption correctness
     val system = ActorSystem("VerificationSystem")
-    val listener = system.actorOf(Props[ResultReport], name = "listener")
-    val master = system.actorOf(Props(new Master(encryptedFile, listener)), name = "master")
+    val resultReport = system.actorOf(Props[ResultReport], name = "resultReport")
+    val master = system.actorOf(Props(new Master(encryptedFile, resultReport)), name = "master")
     master ! Verify
 
   }
