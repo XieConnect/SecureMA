@@ -132,12 +132,15 @@ object Owner {
    */
   def prepareData( rawFile: String = Helpers.property("raw_data_file"),
                   encryptedFile: String = Helpers.property("encrypted_data_file") ) = {
-
     //- Verify encryption correctness
     val system = ActorSystem("EncryptionSystem")
     val resultReporter = system.actorOf(Props[ResultReport], name = "resultReporter")
     val master = system.actorOf(Props(new Master(encryptedFile, resultReporter)), name = "master")
     master ! Encrypt
+
+    while (! master.isTerminated)
+      Thread.sleep(500)
+    println("All encryption finished.")
   }
 
   /**
@@ -162,12 +165,15 @@ object Owner {
     val master = system.actorOf(Props(new Master(encryptedFile, resultReport)), name = "master")
     master ! Verify
 
+    while (! master.isTerminated)
+      Thread.sleep(500)
+    println("All verification finished.")
   }
 
   /**
    * Perform Data Owners' roles (prepare/encrypt data)
    * @param args: if called with "verify-only", then only do verification on encrypted file;
-   *              if with "verify", then do encryption and verification;
+   *              if with "verify", then do encryption AND verification;
    *              otherwise, do encryption only.
    */
   def main(args: Array[String]) = {
