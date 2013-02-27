@@ -236,7 +236,7 @@ object Experiment {
     val diff = someone.add( if (coefficient > 1) someone.multiply(numeratorLn, coefficient).mod(paillierNSquared) else numeratorLn,
                              someone.multiply(denominatorLn, -1).mod(paillierNSquared) ).mod(paillierNSquared)
 
-    val negative = (numerator.pow(2).divide(denominator).compareTo(BigInteger.ONE) < 0)
+    val negative = try { numerator.pow(2).divide(denominator).compareTo(BigInteger.ONE) < 0 } catch {case _ => false}
 
     //DEBUG only (change to true for debug purpose)
     if (false) {
@@ -252,6 +252,45 @@ object Experiment {
 
 
     math.exp(Mediator.decryptLn(diff, 10, negative))
+  }
+
+  def variableSites() = {
+    val writer = new java.io.PrintWriter(new java.io.File(Helpers.property("encrypted_with_variable_sites")))
+    val validLines = io.Source.fromFile(Helpers.property("encrypted_data_file")).getLines().toArray
+    writer.println(validLines(0))
+
+    var experimentFlag = ""
+    var oneExperiment = new Array[String](0)
+    val lastIndex = validLines.size - 2
+
+    for ( (line, indx) <- validLines.drop(1).zipWithIndex; record = line.split(",")) {
+      // We combine all control attribute names to get the "primary key" for current experiment
+      val tmpFlag = record.slice(4, 20).mkString("::")
+      if (experimentFlag.isEmpty) experimentFlag = tmpFlag
+
+      // When encountered first row of *next* experiment, process previous experiment and reset variables
+      // NOTE: we need to handle last row separately (otherwise the last experiment will get ignored)
+      if ( (! tmpFlag.equals(experimentFlag)) || lastIndex == indx ) {
+        // First of all, process *previous* experiment
+        if (lastIndex == indx) oneExperiment :+= line
+        // process current experiment
+        for (sitesCount <- 1 to oneExperiment.size) {
+          oneExperiment.take(sitesCount).foreach(perSiteLine => writer.println(perSiteLine + sitesCount))
+        }
+
+        // flush buffer after certain number of experiments
+        println("> Current data row index: " + indx + "\n  Writing to result file...")
+        writer.flush()
+
+        // reset for next experiment
+        oneExperiment = new Array[String](0)
+        experimentFlag = tmpFlag
+      }
+
+      oneExperiment :+= line
+    }
+
+    writer.close()
   }
 
   /**
@@ -347,6 +386,9 @@ object Experiment {
 
       runLn(startedAt)
       println("> END of secure ln(x)")
+
+    } else if (args.length > 0 && args(0).equals("variable-sites")) {
+      variableSites()
 
     } else {
       // Experiment secure meta-analysis
