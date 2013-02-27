@@ -248,7 +248,4 @@ object Helpers {
     getPublicKey().getN.pow(2)
   }
 
-  def main(args: Array[String]) = {
-    simulateFairplay()
-  }
 }
