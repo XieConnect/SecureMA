@@ -236,7 +236,7 @@ object Experiment {
     val diff = someone.add( if (coefficient > 1) someone.multiply(numeratorLn, coefficient).mod(paillierNSquared) else numeratorLn,
                              someone.multiply(denominatorLn, -1).mod(paillierNSquared) ).mod(paillierNSquared)
 
-    val negative = try { numerator.pow(2).divide(denominator).compareTo(BigInteger.ONE) < 0 } catch {case _ => false}
+    val negative = try { numerator.pow(2).divide(denominator).compareTo(BigInteger.ONE) < 0 } catch {case e: Exception => false}
 
     //DEBUG only (change to true for debug purpose)
     if (false) {
@@ -255,7 +255,9 @@ object Experiment {
   }
 
   def variableSites() = {
-    val writer = new java.io.PrintWriter(new java.io.File(Helpers.property("encrypted_with_variable_sites")))
+    val variableSitesFile = new File(Helpers.property("encrypted_data_with_variable_sites"))
+    val writer = new java.io.PrintWriter(variableSitesFile)
+
     val validLines = io.Source.fromFile(Helpers.property("encrypted_data_file")).getLines().toArray
     writer.println(validLines(0))
 
@@ -263,6 +265,7 @@ object Experiment {
     var oneExperiment = new Array[String](0)
     val lastIndex = validLines.size - 2
 
+    println("> To support variable sites...")
     for ( (line, indx) <- validLines.drop(1).zipWithIndex; record = line.split(",")) {
       // We combine all control attribute names to get the "primary key" for current experiment
       val tmpFlag = record.slice(4, 20).mkString("::")
@@ -275,12 +278,10 @@ object Experiment {
         if (lastIndex == indx) oneExperiment :+= line
         // process current experiment
         for (sitesCount <- 1 to oneExperiment.size) {
-          oneExperiment.take(sitesCount).foreach(perSiteLine => writer.println(perSiteLine + sitesCount))
+          oneExperiment.take(sitesCount).foreach(perSiteLine => writer.println(perSiteLine + "," + sitesCount))
         }
 
-        // flush buffer after certain number of experiments
-        println("> Current data row index: " + indx + "\n  Writing to result file...")
-        writer.flush()
+        println("  Current data row index: " + indx)
 
         // reset for next experiment
         oneExperiment = new Array[String](0)
@@ -290,7 +291,12 @@ object Experiment {
       oneExperiment :+= line
     }
 
-    writer.close()
+    try {
+      writer.close()
+      variableSitesFile.renameTo(new File(Helpers.property("encrypted_data_file")))
+    } catch {
+      case e: Exception => println("ERROR in renaming variable_sites file.")
+    }
   }
 
   /**
@@ -387,11 +393,11 @@ object Experiment {
       runLn(startedAt)
       println("> END of secure ln(x)")
 
-    } else if (args.length > 0 && args(0).equals("variable-sites")) {
-      variableSites()
-
     } else {
       // Experiment secure meta-analysis
+
+      if (args.length > 0 && args(0).equals("variable-sites"))
+        variableSites()
 
       println("> Secure meta-analysis...")
       inverseVarianceExperiment( inputFile = Helpers.property("encrypted_data_file"),
