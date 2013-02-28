@@ -19,10 +19,10 @@ object Owner {
   case object Encrypt extends MyMessage
   case object Verify extends MyMessage
   case class VerificationWork(indx: Int, data: Array[String]) extends MyMessage
-  case class EncryptionWork(record: Array[String], someone: paillierp.Paillier,
+  case class EncryptionWork(indx: Int, record: Array[String], someone: paillierp.Paillier,
                             paillierNS: BigInteger) extends MyMessage
   case class VerificationResult(indx: Int, values: Array[Boolean]) extends MyMessage
-  case class EncryptionResult(result: String) extends MyMessage
+  case class EncryptionResult(indx: Int, result: String) extends MyMessage
   case class VerificationResults(results: collection.mutable.Map[Int, Array[Boolean]])
   case class EncryptionResults()
 
@@ -44,7 +44,7 @@ object Owner {
   class Worker extends Actor {
     def receive = {
       // To encrypt data record
-      case EncryptionWork(record, someone, paillierNS) =>
+      case EncryptionWork(indx, record, someone, paillierNS) =>
         val weightI = 1.0 / math.pow(record(11).toDouble, 2)  // = 1 / se^2
         val betaWeight = record(10).toDouble * weightI
         val raisedWeightI = Helpers.toBigInteger(weightI * Helpers.getMultiplier())
@@ -52,9 +52,9 @@ object Owner {
         var encryptedBetaWeight = someone.encrypt(raisedBetaWeight).mod(paillierNS)
         if (betaWeight < 0) encryptedBetaWeight = someone.multiply(encryptedBetaWeight, -1).mod(paillierNS)
 
-        sender ! EncryptionResult(someone.encrypt(raisedWeightI).mod(paillierNS) + "," + encryptedBetaWeight
+        sender ! EncryptionResult(indx, someone.encrypt(raisedWeightI).mod(paillierNS) + "," + encryptedBetaWeight
           + "," + weightI + "," + betaWeight
-          + "," + (record.slice(0, 4) ++ record.slice(5, 10)).mkString(",") )
+          + "," + (record.slice(0, 4) ++ record.slice(5, 10)).filter(_.nonEmpty).mkString(",") )
 
       // To verify data record
       case VerificationWork(indx, data) =>
@@ -71,6 +71,7 @@ object Owner {
   class Master(encryptionFile: String, resultReporter: ActorRef) extends Actor {
     var recordsProcessed: Int = _
     var verificationResults = collection.mutable.Map[Int, Array[Boolean]]()
+    var encryptionResults = collection.mutable.Map[Int, String]()
     var totalRecords: Int = _
     var numberOfCores = (try {Some(Helpers.property("total_cores").toInt)} catch {case _ => None}).getOrElse(1)
     if (numberOfCores < 1) numberOfCores = 1
@@ -82,33 +83,37 @@ object Owner {
       case Encrypt =>
         val lines = io.Source.fromFile(Helpers.property("raw_data_file")).getLines.drop(1).toArray
         totalRecords = lines.size
+        println("> " + totalRecords + " records to process totally...")
         val someone = new paillierp.Paillier(Helpers.getPublicKey())
         val paillierNS = someone.getPublicKey.getN.pow(2)
         encryptionWriter = new PrintWriter(new File(encryptionFile))
         encryptionWriter.println("encrypted_weight_i,encrypted_beta*weight,weight_i,beta*weight,experiment_identifiers")
 
-        for (line <- lines; record = line.split(",")) {
-          workerRouter ! EncryptionWork(record, someone, paillierNS)
+        for ((line, indx) <- lines.view.zipWithIndex; record = line.split(",")) {
+          workerRouter ! EncryptionWork(indx, record, someone, paillierNS)
         }
 
       case Verify =>
         val lines = io.Source.fromFile(encryptionFile).getLines().drop(1).toArray
         totalRecords = lines.size
+        println("> " + totalRecords + " records to process totally...")
+        println("          %4s %6s %6s".format("Index", "W_i", "Beta*Wi"))
         for ((line, indx) <- lines.view.zipWithIndex; record = line.split(",")) {
           workerRouter ! VerificationWork(indx, record)
         }
 
       // individual encryption result
-      case EncryptionResult(result) =>
+      case EncryptionResult(indx, result) =>
         recordsProcessed += 1
         print("\rRecords processed: " + recordsProcessed)
-        encryptionWriter.println(result)
+        encryptionResults += indx -> result
         if (recordsProcessed >= totalRecords) {
+          resultReporter ! EncryptionResults()
           if (encryptionWriter != null) {
+            encryptionResults.toList.sortBy {_._1}.foreach { a => encryptionWriter.println(a._2)}
             encryptionWriter.flush()
             encryptionWriter.close()
           }
-          resultReporter ! EncryptionResults()
           println("\n> Encryptions saved to file: " + encryptionFile)
           context.stop(self)
         }
