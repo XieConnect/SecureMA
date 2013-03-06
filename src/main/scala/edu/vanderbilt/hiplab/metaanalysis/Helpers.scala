@@ -248,4 +248,7 @@ object Helpers {
     getPublicKey().getN.pow(2)
   }
 
+  def encryptNegative(someone: Paillier, negativeValue: BigInteger): BigInteger = {
+    someone.multiply(someone.encrypt(negativeValue.abs), -1).mod(someone.getPublicKey.getNSPlusOne)
+  }
 }
