@@ -61,17 +61,21 @@ object Mediator {
     (privateKeyFile, publicKeyFile)
   }
 
-  // Return: (computed division, SMC time, division time, plain division, decrypted numberator, decrypted denominator)
+  /**
+   * Perform secure meta-analysis on given input set (one experiment)
+   * @param records input data from different contributing sites
+   * @param divisionWriter
+   * @return tuple of (computed division, SMC time, division time, plain division, decrypted numberator, decrypted denominator)
+   */
   def inverseVariance(records: Array[Array[String]], divisionWriter: PrintWriter) = {
-    val startedAt = System.currentTimeMillis()
-
     val paillierNS = Helpers.paillierNS()
     val someone = new Paillier(Helpers.getPublicKey())
-    // sum(weight_i) of denominator; sum(beta_i * weight_i) of numerator respectively
     var weightSum, betaWeightSum = someone.encrypt(BigInteger.ZERO).mod(paillierNS)
+    // sum(weight_i) of denominator; sum(beta_i * weight_i) of numerator respectively
     //DEBUG for verification only
     var testWeightSum, testBetaWeightSum = 0.0
 
+    val startedAt = System.currentTimeMillis()
     for (record <- records) {
       weightSum = someone.add(weightSum, new BigInteger(record(0))).mod(paillierNS)
       betaWeightSum = someone.add(betaWeightSum, new BigInteger(record(1))).mod(paillierNS)
@@ -85,7 +89,8 @@ object Mediator {
     //-- Secure Division
     val decryptedNumerator = decryptData(betaWeightSum, (testBetaWeightSum < 0))
     val decryptedDenominator = decryptData(weightSum, (testWeightSum < 0))
-    var computedDivision = math.sqrt(Experiment.runDivision(decryptedNumerator, decryptedDenominator, 2, divisionWriter) / Helpers.getMultiplier())
+    var computedDivision = math.sqrt(
+      Experiment.runDivision(decryptedNumerator, decryptedDenominator, 2, divisionWriter) / Helpers.getMultiplier())
     val plainDivision = testBetaWeightSum / math.sqrt(testWeightSum)
     // to determine the sign of final result
     if (plainDivision < 0) computedDivision = - computedDivision

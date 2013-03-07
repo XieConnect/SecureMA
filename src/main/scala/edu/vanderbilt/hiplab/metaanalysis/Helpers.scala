@@ -245,7 +245,7 @@ object Helpers {
   }
 
   def paillierNS() = {
-    getPublicKey().getN.pow(2)
+    getPublicKey().getNSPlusOne
   }
 
   def encryptNegative(someone: Paillier, negativeValue: BigInteger): BigInteger = {
