@@ -3,7 +3,6 @@ package edu.vanderbilt.hiplab.metaanalysis
 /**
  * @description Run whole protocol on test data
  * @author Wei Xie <wei.xie (at) vanderbilt.edu>
- * @version 7/13/12
  */
 
 import java.io.{FileInputStream, FileOutputStream, PrintWriter, File}
@@ -23,7 +22,6 @@ object Experiment {
     val scriptFile = Helpers.property("fairplay_script")
     new File(Helpers.property("data_directory"), scriptFile.substring(scriptFile.lastIndexOf("/") + 1)).toString + "."
   }
-
 
   // Return: (AliceOutput, BobOutput)
   def readOutputs(): Tuple2[Array[BigInteger], Array[BigInteger]] = {
@@ -215,7 +213,7 @@ object Experiment {
   }
 
   /**
-   * Given numerator, denominator, compute actual division result
+   * Compute actual division, given numerator and denominator
    * @param numerator numerator in plain value
    * @param denominator denominator in plain value
    * @param toInit whether or not to generate keys/compile Fairplay
@@ -223,7 +221,7 @@ object Experiment {
   //TODO remove cheat about determining result sign
   def runDivision( numerator: BigInteger, denominator: BigInteger, coefficient: Int = 1, timerWriter: PrintWriter = null,
                    toInit: Boolean = false, someone: Paillier = new Paillier(Helpers.getPublicKey()) ): Double = {
-    val paillierNSquared = Helpers.getPublicKey().getN.pow(2)
+    val paillierNSquared = Helpers.getPublicKey().getNSPlusOne
 
     if (timerWriter != null) timerWriter.print(denominator + ",")
     val numeratorLn = lnWrapper(numerator.abs, toInit, timerWriter)  //DEBUG no init
@@ -232,25 +230,11 @@ object Experiment {
     val denominatorLn = lnWrapper(denominator, false, timerWriter)
     if (timerWriter != null) timerWriter.println
 
-    val fieldN = KeyGen.PaillierThresholdKeyLoad(new File(Helpers.property("data_directory"), Helpers.property("private_keys")).toString)(0).getN
+    //val fieldN = KeyGen.PaillierThresholdKeyLoad(new File(Helpers.property("data_directory"), Helpers.property("private_keys")).toString)(0).getN
     val diff = someone.add( if (coefficient > 1) someone.multiply(numeratorLn, coefficient).mod(paillierNSquared) else numeratorLn,
                              someone.multiply(denominatorLn, -1).mod(paillierNSquared) ).mod(paillierNSquared)
 
     val negative = try { numerator.pow(2).divide(denominator).compareTo(BigInteger.ONE) < 0 } catch {case e: Exception => false}
-
-    //DEBUG only (change to true for debug purpose)
-    if (false) {
-      println("----Begin DEBUG: ")
-      println("  NUM length: " + numerator.toString.length)
-      println("  DEN length: " + denominator.toString.length)
-      println("----")
-      println("> Field size = " + fieldN.toString.length)
-      println("  ln(num) = " + Mediator.decryptLn(numeratorLn))
-      println("  ln(den) = " + Mediator.decryptLn(denominatorLn))
-      println("  ln diff = " + Mediator.decryptLn(diff, 10, negative))
-    }
-
-
     math.exp(Mediator.decryptLn(diff, 10, negative))
   }
 
@@ -300,7 +284,8 @@ object Experiment {
   }
 
   /**
-   * Inverse-variance based meta-analysis
+   * Experiment with inverse-variance based meta-analysis
+   * Note: for division: denominator (sum(w_i)), numerator (sum(beta * w_i))
    * @param inputFile  file containing encrypted inputs (provided by Data Owners).
    *                   Note: each input file may consist of multiple experiments, each of which spans across several rows
    * @param resultFile  file to save final results to
@@ -309,45 +294,38 @@ object Experiment {
                                 resultFile: String = Helpers.property("final_result_file")) = {
     // to track division time breakdowns
     val divisionWriter = new java.io.PrintWriter(new java.io.File("data/division_time_breakdown.csv"))
-    divisionWriter.println(""""denoninator (primary key)","Fairplay (numerator)","oblivious polynomial evaluation (numerator)","Fairplay (denominator)","oblivious polynomial evaluation (denominator)"""")
-    // to track final result
+    divisionWriter.println("denoninator_primary_key,Fairplay_numerator,oblivious_polynomial_evaluation_numerator" +
+      ",Fairplay_denominator,oblivious_polynomial_evaluation_denominator")
+    // to save final result
     val writer = new java.io.PrintWriter(new java.io.File(resultFile))
+    writer.println("quotient_secure,quotient_plain,absolute_error,relative_error" +
+      ",decrypted_numerator,decrypted_denominator,SMC_time_seconds,division_time_seconds,experiment_identifier")
 
-    // denominator (sum(w_i)), numerator (sum(beta * w_i))
-
-    //val flushPerIterations = Helpers.property("flush_per_iterations").toInt * 3
-    writer.println("""quotient(secure),quotient(plain),"absolute error","relative error"""" +
-      ""","decrypted numerator","decrypted denominator","SMC time (seconds)","division time (seconds)","experiment identifier"""")
-
-    // to track whether a new experiment starts
-    // A new experiment is one that has different combination of control conditions
+    // to mark whether a new experiment starts (compare set of identifiers)
     var experimentFlag = ""
     var oneExperiment = new Array[Array[String]](0)
     val validLines = io.Source.fromFile(inputFile).getLines().toArray.drop(1)
     val lastIndex = validLines.size - 1
 
-    for ( (line, indx) <- validLines.zipWithIndex; record = line.split(",")) {
-      // We combine all control attribute names to get the "primary key" for current experiment
+    for ((line, indx) <- validLines.zipWithIndex; record = line.split(",")) {
+      // combine identifier attributes to label current experiment
       val tmpFlag = record.slice(4, 20).mkString("::")
       if (experimentFlag.equals("")) experimentFlag = tmpFlag
 
-      // When encountered first row of *next* experiment, process previous experiment and reset variables
-      // NOTE: we need to handle last row separately (otherwise the last experiment will get ignored)
+      // encountered with "next" experiment or last row of whole dataset
       if ( (! tmpFlag.equals(experimentFlag)) || lastIndex == indx ) {
-        // First of all, process *previous* experiment
+        // consider last record separately
         if (lastIndex == indx) oneExperiment :+= record.slice(0, 4)
-        // Refer to the declaration of following method for return result details
+
+        // process "previous" experiment first
         val results = Mediator.inverseVariance(oneExperiment, divisionWriter)
         writer.println(results._1 + "," + results._4 + "," + (results._1 - results._4) + ","
           + "," + results._5 + "," + results._6 + "," +
           results._2/1000.0 + "," + results._3/1000.0 + "," + experimentFlag)
 
-        // flush buffer after certain number of experiments
-        //if (indx % flushPerIterations == 0) {
-          println("> Current data row index: " + indx + "\n  Writing to result file...")
-          writer.flush()
-          divisionWriter.flush()
-        //}
+        println("> Processed till row # %d / %d ; Saving result...".format(indx, lastIndex))
+        writer.flush()
+        divisionWriter.flush()
 
         // reset for next experiment
         oneExperiment = new Array[Array[String]](0)
@@ -357,14 +335,21 @@ object Experiment {
       oneExperiment :+= record.slice(0, 4)
     }
 
-    divisionWriter.close()
-    writer.close()
+    try {
+      divisionWriter.close()
+      writer.close()
+    } catch {
+      case e: Exception => println("ERROR: result files not properly closed")
+    }
+
   }
 
-
+  /**
+   * Refer to below for param switches
+   * @param args
+   */
   def main(args: Array[String]) = {
     val startedAt = System.currentTimeMillis()
-
 
     createDataDir()
 
@@ -407,8 +392,6 @@ object Experiment {
 
 
     //runDivision(new BigInteger("4000000"), new BigInteger("4"), toInit = false)
-
-
 
     println("\nExperiment process finished in " + (System.currentTimeMillis() - startedAt) / 1000 + " seconds.")
   }
