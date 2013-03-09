@@ -55,7 +55,7 @@ class HelpersSuite extends FunSuite {
       if (plainValue.compareTo(BigInteger.ZERO) < 0) encryption = someone.multiply(encryption, -1)
 
       val (share1, share2) = Helpers.encryption2Shares(encryption, plainValue)
-      expect(0) (share1.add(share2).compareTo(plainValue))
+      expectResult(0) (share1.add(share2).compareTo(plainValue))
     }
   }
 
@@ -68,7 +68,7 @@ class HelpersSuite extends FunSuite {
         new BigInteger(Source.fromFile(Experiment.PathPrefix + a + ".input").getLines().toArray.head)
       )
 
-      expect(0) (inputs(0).add(inputs(1)).compareTo(i))
+      expectResult(0) (inputs(0).add(inputs(1)).compareTo(i))
     }
   }
 
