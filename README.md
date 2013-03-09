@@ -10,8 +10,13 @@ Distributed secure meta-analysis for GWAS.
 
 
 ## Dependencies ##
-- Java 1.6 or higher
+- JDK 1.6+
 - Other required jars are included in lib/
+- scalatest jar package (in case you want to run automated tests)
+
+
+## Usage ##
+1. Organize input according to format:
 
 ### To build documentation, you also need: ###
 - UMLGraph: for sequence diagram generation in doc/*

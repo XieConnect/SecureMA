@@ -286,6 +286,7 @@ object Experiment {
 
   /**
    * Experiment with inverse-variance based meta-analysis
+   * Partition into multiple experiments according to experiment identifiers
    * Note: for division: denominator (sum(w_i)), numerator (sum(beta * w_i))
    * @param inputFile  file containing encrypted inputs (provided by Data Owners).
    *                   Note: each input file may consist of multiple experiments, each of which spans across several rows
@@ -311,8 +312,8 @@ object Experiment {
 
 
     for ((line, indx) <- validLines.zipWithIndex; record = line.split(",")) {
-      // combine identifier attributes to label current experiment
-      val tmpFlag = record.slice(4, 20).mkString("::")
+      // experiment identifiers start from 5th column
+      val tmpFlag = record.slice(4, 20).mkString("::").toUpperCase
       if (experimentFlag.equals("")) experimentFlag = tmpFlag
 
       // encountered with "next" experiment or last row of whole dataset
