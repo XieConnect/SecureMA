@@ -60,7 +60,7 @@ object Owner {
       case VerificationWork(indx, data) =>
         val weight_i_correct: Boolean = Mediator.decryptData(new BigInteger(data(0))) ==
           Helpers.toBigInteger(data(2).toDouble * MULTIPLIER)
-        val beta_weight_correct: Boolean = Mediator.decryptData(new BigInteger(data(1)), (data(3).toDouble < 0)) ==
+        val beta_weight_correct: Boolean = Mediator.decryptData(new BigInteger(data(1))) ==
           Helpers.toBigInteger(data(3).toDouble * MULTIPLIER)
 
         sender ! VerificationResult( indx, Array(weight_i_correct, beta_weight_correct) )

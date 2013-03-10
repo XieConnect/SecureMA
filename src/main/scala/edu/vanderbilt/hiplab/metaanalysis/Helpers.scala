@@ -32,6 +32,18 @@ object Helpers {
   }
 
   /**
+   * Return multiple values for given keys (avoid redundant config file loading)
+   * @param keys a series of keys
+   * @return ArrayBuffer containing desired values
+   */
+  def properties(keys: String*) = {
+    val in = new FileInputStream("conf.properties")
+    MyProperties.load(in)
+    in.close()
+    keys.map(MyProperties.getProperty(_))
+  }
+
+  /**
    * Add data-directory prefix to queried file path
    * We don't like the overhead introduced by new File(bla1, bla2).toString
    * @param key property name
@@ -110,7 +122,7 @@ object Helpers {
 
     // need to determine whether output is to be negative
     val shareNegative = plainValue.add(shareRand).compareTo(BigInteger.ZERO) < 0
-    val share1 = Mediator.decryptData(someone.add(encryption, encryptedRandom), negative = shareNegative)
+    val share1 = Mediator.decryptData(someone.add(encryption, encryptedRandom))
     val share2 = shareRand.negate()
 
     writers(0).println(share2)

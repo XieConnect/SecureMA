@@ -10,6 +10,9 @@ import SFE.BOAL.MyUtil
 import java.math.BigInteger
 import paillierp.Paillier
 import paillierp.key.KeyGen
+import concurrent.{future, blocking, Future, Await}
+import concurrent.ExecutionContext.Implicits.global
+import concurrent.duration._
 
 object Experiment {
   val PathPrefix = MyUtil.pathFile(Helpers.property("fairplay_script")) + "."
@@ -214,28 +217,28 @@ object Experiment {
 
   /**
    * Compute actual division, given numerator and denominator
-   * @param numerator numerator in plain value
-   * @param denominator denominator in plain value
+   * @param numeratorEncryption numerator encryption
+   * @param denominatorEncryption denominator encryption
    * @param toInit whether or not to generate keys/compile Fairplay
    */
-  //TODO remove cheat about determining result sign
-  def runDivision( numerator: BigInteger, denominator: BigInteger, coefficient: Int = 1, timerWriter: PrintWriter = null,
-                   toInit: Boolean = false, someone: Paillier = new Paillier(Helpers.getPublicKey()) ): Double = {
+  def runDivision( numeratorEncryption: BigInteger, denominatorEncryption: BigInteger, coefficient: Int = 1,
+                   timerWriter: PrintWriter = null, toInit: Boolean = false,
+                   someone: Paillier = new Paillier(Helpers.getPublicKey()) ): Double = {
     val paillierNSquared = Helpers.getPublicKey().getNSPlusOne
+    val decryptionFuture: List[Future[BigInteger]] = List(numeratorEncryption, denominatorEncryption).map(a =>
+      future { blocking {Mediator.decryptData(a)} })
+    val decryptions = Await.result(Future.sequence(decryptionFuture), 20 second)
 
-    if (timerWriter != null) timerWriter.print(denominator + ",")
-    val numeratorLn = lnWrapper(numerator.abs, toInit, timerWriter)  //DEBUG no init
+    val numeratorLn = lnWrapper(decryptions(0).abs, toInit, timerWriter)  //DEBUG no init
     // to delimiter time records
     if (timerWriter != null) timerWriter.print(",")
-    val denominatorLn = lnWrapper(denominator, false, timerWriter)
+    val denominatorLn = lnWrapper(decryptions(1), false, timerWriter)
     if (timerWriter != null) timerWriter.println
 
-    //val fieldN = KeyGen.PaillierThresholdKeyLoad(new File(Helpers.property("data_directory"), Helpers.property("private_keys")).toString)(0).getN
     val diff = someone.add( if (coefficient > 1) someone.multiply(numeratorLn, coefficient).mod(paillierNSquared) else numeratorLn,
                              someone.multiply(denominatorLn, -1).mod(paillierNSquared) ).mod(paillierNSquared)
 
-    val negative = try { numerator.pow(2).divide(denominator).compareTo(BigInteger.ONE) < 0 } catch {case e: Exception => false}
-    math.exp(Mediator.decryptLn(diff, 10, negative))
+    math.exp(Mediator.decryptLn(diff, 10))
   }
 
   def variableSites() = {
@@ -315,7 +318,6 @@ object Experiment {
 
       // encountered with "next" experiment or last row of whole dataset
       if ( (! tmpFlag.equals(experimentFlag)) || lastIndex == indx ) {
-        // consider last record separately
         if (lastIndex == indx) oneExperiment :+= record.slice(0, 4)
 
         // process "previous" experiment first
