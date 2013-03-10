@@ -3,7 +3,6 @@ package edu.vanderbilt.hiplab.metaanalysis
 /**
  * @description Refer to README
  * @author Wei Xie <wei.xie (at) vanderbilt.edu>
- * @version 7/10/12
  */
 
 import org.scalatest.FunSuite
@@ -17,14 +16,13 @@ class ManagerSuite extends FunSuite {
     // Run multiple random tests
     for (i <- 0 to 1) {
       var variableA = rand.nextInt(300)
-
-      expect(true) (variableA >= 0)
+      assert(variableA >= 0)
 
       // generate negative case
       if (negative) variableA = - variableA
 
       val decrypted = Manager.encryptPowers(BigInteger.valueOf(variableA)).zipWithIndex.map {
-        case (a, indx) => Mediator.decryptData(a, if (negative && indx % 2 == 1) true else false)
+        case (a, indx) => Mediator.decryptData(a)
       }
 
       // to test if array is composed of powers of current variable

@@ -64,7 +64,7 @@ object Mediator {
   /**
    * Perform secure meta-analysis on given input set (one experiment)
    * @param records input data from different contributing sites
-   * @param divisionWriter
+   * @param divisionWriter file writer to track division time breakdown
    * @return tuple of (computed division, SMC time, division time, plain division, decrypted numberator, decrypted denominator)
    */
   def inverseVariance(records: Array[Array[String]], divisionWriter: PrintWriter) = {
@@ -87,16 +87,16 @@ object Mediator {
     val smcTime = System.currentTimeMillis()
 
     //-- Secure Division
-    val decryptedNumerator = decryptData(betaWeightSum, (testBetaWeightSum < 0))
-    val decryptedDenominator = decryptData(weightSum, (testWeightSum < 0))
+    //val decryptedNumerator = decryptData(betaWeightSum)
+    //val decryptedDenominator = decryptData(weightSum)
     var computedDivision = math.sqrt(
-      Experiment.runDivision(decryptedNumerator, decryptedDenominator, 2, divisionWriter) / Helpers.getMultiplier())
+      Experiment.runDivision(betaWeightSum, weightSum, 2, divisionWriter) / Helpers.getMultiplier())
     val plainDivision = testBetaWeightSum / math.sqrt(testWeightSum)
     // to determine the sign of final result
     if (plainDivision < 0) computedDivision = - computedDivision
 
     (computedDivision, smcTime - startedAt, System.currentTimeMillis() - smcTime,
-      plainDivision, decryptedNumerator, decryptedDenominator)
+      plainDivision, "NA", "NA")
   }
 
 
@@ -152,22 +152,29 @@ object Mediator {
   def runBob() = {
   }
 
-
   /**
-   * Decrypt ciphertext
+   * Decrypt ciphertext (without further processing about expected negative results)
    * @param encrypted ciphertext
-   * @param negative whether the final result is going to be negative
-   * @return plain value result
-   * TODO remove the "negative" signal parameter
+   * @return always-positive plain value result
    */
-  def decryptData(encrypted: BigInteger, negative: Boolean = false) = {
-    val privateKeys = KeyGen.PaillierThresholdKeyLoad(new File(Helpers.property("data_directory"), Helpers.property("private_keys")).toString)
-    val parties = for (k <- privateKeys.take(Helpers.property("threshold_parties").toInt)) yield new PaillierThreshold(k)
-    val decrypted = parties(0).combineShares((for (p <- parties) yield p.decrypt(encrypted)): _*).mod(privateKeys(0).getN)
-
-    if (negative) decrypted.subtract(privateKeys(0).getN) else decrypted
+  def decryptDataNoProcessing(encrypted: BigInteger) = {
+    val configs = Helpers.properties("data_directory", "private_keys", "threshold_parties")
+    val privateKeys = KeyGen.PaillierThresholdKeyLoad(new File(configs(0), configs(1)).toString)
+    val parties = for (k <- privateKeys.take(configs(2).toInt)) yield new PaillierThreshold(k)
+    //val parties = privateKeys.take(configs(2).toInt).map(new PaillierThreshold(_))
+    parties(0).combineShares((for (p <- parties) yield p.decrypt(encrypted)): _*).mod(privateKeys(0).getN)
   }
 
+  /**
+   * Decrypt ciphertext (support for negative results)
+   * @param encrypted ciphertext
+   * @return plain value result
+   */
+  def decryptData(encrypted: BigInteger) = {
+    val decrypted = decryptDataNoProcessing(encrypted)
+    val paillierN = Helpers.getPublicKey().getN
+    if (decrypted.bitLength < paillierN.bitLength - 1) decrypted else decrypted.subtract(paillierN)
+  }
 
   /**
    * Phase 2 of secure ln(x): Taylor expansion
@@ -238,21 +245,21 @@ object Mediator {
     someone.add(taylorResult, tmp).mod(paillierNS)
   }
 
-  def decryptLn(encryptedLn: BigInteger, scale: Int = 10, negative: Boolean = false): Double = {
-    var tmp = decryptData(encryptedLn)
-    if (negative) {
-      val fieldN = KeyGen.PaillierThresholdKeyLoad(new File(Helpers.property("data_directory"), Helpers.property("private_keys")).toString)(0).getN
-      tmp = tmp.subtract(fieldN)
-    }
-
+  /**
+   * Decrypt enc(ln(x))
+   * @param encryptedLn ln(x) encryption
+   * @param scale
+   * @return ln(x) decryption
+   */
+  def decryptLn(encryptedLn: BigInteger, scale: Int = 10): Double = {
     val divisor = new BigInteger("%.0f" format Mediator.POWER_OF_TWO).pow(Mediator.K_TAYLOR_PLACES).multiply(BigInteger.valueOf(Mediator.LCM))
-    new BigDecimal(tmp).divide(new BigDecimal(divisor), scale, BigDecimal.ROUND_HALF_UP).doubleValue()
+    new BigDecimal(decryptData(encryptedLn)).divide(new BigDecimal(divisor), scale, BigDecimal.ROUND_HALF_UP).doubleValue()
   }
 
   /**
    * Remember to modify multiplier in Fairplay script when customizing param *scale*
-   * @alpha Bob's alpha
-   * @beta Bob's beta
+   * @param alpha Bob's alpha
+   * @param beta Bob's beta
    * @return  decrypted value of ln(x)
    */
   def actualLn(alpha: BigInteger, beta: BigInteger, scale: Int = 6) = {

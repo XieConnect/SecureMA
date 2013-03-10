@@ -38,26 +38,26 @@ class EncryptionSuite extends FunSuite {
 
     for (a <- testSamples.map(_.negate())) {
       // this generates the original decryption of a negative value
-      val decrypted = Mediator.decryptData( Helpers.encryptNegative(someone, a) )
+      val encryption = Helpers.encryptNegative(someone, a)
+      val decrypted = Mediator.decryptDataNoProcessing( encryption )
       assert(a.compareTo(decrypted) < 0)
       // should give correct result in "negated" form
-      expectResult(a)(decrypted.subtract(paillierN))
+      expectResult(a)(Mediator.decryptData( encryption ))
     }
   }
 
   test("decryptions are of expected bit length") {
     val samples = testSamples :+ paillierN.divide(BigInteger.valueOf(2))
     val paillierBits = paillierN.bitLength
-    val paillierNSquared = someone.getPublicKey.getNSPlusOne
 
     for (a <- samples) {
-      assert(a.compareTo(paillierN) < 0)
+      assert(a.signum() > 0 && a.compareTo(paillierN) < 0)
       assert(paillierBits > Mediator.decryptData( someone.encrypt(a) ).bitLength)
     }
 
     // negative values
     for (a <- samples.map(_.negate())) {
-      val decryption = Mediator.decryptData( Helpers.encryptNegative(someone, a) )
+      val decryption = Mediator.decryptDataNoProcessing( Helpers.encryptNegative(someone, a) )
       assert(paillierBits - decryption.bitLength <= 1)
     }
   }
@@ -66,8 +66,7 @@ class EncryptionSuite extends FunSuite {
     val samples = (testSamples :+ paillierN.divide(BigInteger.valueOf(2))).map(_.negate())
     for (a <- samples) {
       assert(a.signum < 0)
-      val decryption = Mediator.decryptData( Helpers.encryptNegative(someone, a) )
-      expectResult(a)( if (decryption.bitLength >= paillierN.bitLength - 1) decryption.subtract(paillierN) else decryption )
+      expectResult(a)( Mediator.decryptData( Helpers.encryptNegative(someone, a) ) )
     }
   }
 }
