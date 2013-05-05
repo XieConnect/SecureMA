@@ -91,19 +91,22 @@ object Helpers {
    * @param xValue  the x value as in ln(x)
    * @return  creates .input files
    */
-  def prepareInputs(xValue: BigInteger) = {
-    val writers = Array("Bob", "Alice").map(a => new PrintWriter(new File(Experiment.PathPrefix + a + ".input")))
+  def prepareInputs(xValue: BigInteger): Array[String] = {
+    //val writers = Array("Bob", "Alice").map(a => new PrintWriter(new File(Experiment.PathPrefix + a + ".input")))
     val shareRand = BigInteger.valueOf(3)  //TODO use real rand like: rnd.nextInt(rndRange)
     // input for party 1
     //writers(0).println(shareRand.negate())
-    writers(0).println(shareRand)
-    writers(0).println(2)  //TODO (rnd.nextInt(rndRange))
-    writers(0).println(5)  //TODO (rnd.nextInt(rndRange))
+    //writers(0).println(shareRand)
+    //writers(0).println(2)  //TODO (rnd.nextInt(rndRange))
+    //writers(0).println(5)  //TODO (rnd.nextInt(rndRange))
 
     // input for party 2
-    writers(1).println(xValue.subtract(shareRand))
+    //writers(1).println(xValue.subtract(shareRand))
 
-    writers.map(a => a.close())
+    //writers.map(a => a.close())
+
+    // bob, alice
+    Array(shareRand + "\n" + "2" + "\n" + "5",  xValue.subtract(shareRand).toString)
   }
 
   /**
@@ -183,17 +186,19 @@ object Helpers {
   }
 
   /**
-   * Further scale-up and store beta
+   * Scale-up and encrypt beta
    * Scaling factor from 2^N increased to 2^(Nk) * lcm(2,...,k)
-   * @param who  can either be "Bob" or "Alice"
    * @param beta  the originally scaled-up Beta output by Fairplay
+   * @return encryption of scaled-up beta
    */
-  def storeBeta(who: String = "Bob", beta: BigInteger) = {
+  def encryptBeta(beta: BigInteger) = {
     val someone = new Paillier(Helpers.getPublicKey())
-    var scaledBeta = someone.encrypt(BigInteger.valueOf(2).pow(Mediator.MaxN * (Mediator.K_TAYLOR_PLACES - 1)).multiply(BigInteger.valueOf(Mediator.LCM)).multiply(beta.abs))
+    var scaledBeta = someone.encrypt( BigInteger.valueOf(2).pow(Mediator.MaxN * (Mediator.K_TAYLOR_PLACES - 1)).multiply(BigInteger.valueOf(Mediator.LCM)).multiply(beta.abs) )
     // handle negatives separately
     if (beta.compareTo(BigInteger.ZERO) < 0) scaledBeta = someone.multiply(scaledBeta, BigInteger.valueOf(-1))
-    saveFairplayResult(Array[BigInteger](scaledBeta), MyUtil.pathFile(property("fairplay_script")) + "." + who + ".beta")
+    //saveFairplayResult(Array[BigInteger](scaledBeta), MyUtil.pathFile(property("fairplay_script")) + "." + who + ".beta")
+
+    scaledBeta
   }
 
 

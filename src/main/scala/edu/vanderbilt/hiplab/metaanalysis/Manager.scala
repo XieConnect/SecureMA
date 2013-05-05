@@ -127,9 +127,9 @@ object Manager {
   def runAlice() = {
     val socketServer = Helpers.property("socket_server")
     val socketPort = Helpers.property("socket_port")
-    Alice.main(Array("-r", Helpers.property("fairplay_script"), "djdj", socketServer, socketPort))
+    Alice.main(Array("-r", Helpers.property("fairplay_script"), "djdj", socketServer, socketPort)).filter(_ != null)
 
-    Helpers.getFairplayResult("Alice")
+    //Helpers.getFairplayResult("Alice")
   }
 
   /**
@@ -138,7 +138,7 @@ object Manager {
    * @param baseValue  alpha2
    * @return  vector of encrypted powers
    */
-  def encryptPowers(baseValue: BigInteger) = {
+  def encryptPowers(baseValue: BigInteger): Array[BigInteger] = {
     val someone = new Paillier(Helpers.getPublicKey())
     val paillierN = someone.getPublicKey.getN
     val paillierNSquared = paillierN.multiply(paillierN)
@@ -167,7 +167,6 @@ object Manager {
     ss.close()
   }
 
-
   def main(args: Array[String]) = {
     val startedAt = System.currentTimeMillis()
 
@@ -181,13 +180,51 @@ object Manager {
       case ex: Exception => println("Error in deleting .power file!")
     }
 
-    val Array(alpha, beta) = runAlice()
-    Helpers.storeBeta("Alice", beta)
+    var inputArgs = Array("-r", Helpers.property("fairplay_script"), "djdj", Helpers.property("socket_server"))
+    if (args.length > 1) {
+      // customize socket port
+      inputArgs :+= (Helpers.property("socket_port").toLong + (if (args.length > 2) args(2).toInt else 0)).toString
+      inputArgs :+= args(1)
+    }
 
-    //TODO send to Mediator via network
+    val Array(alpha, beta) = Alice.main(inputArgs).filter(_ != null)
+
+
+    //Helpers.storeBeta("Alice", beta)
+
     val encryptedPowers = encryptPowers(alpha)
-    //NOTE we'll detect this file to determine if Manager (Alice) finishes running
-    Helpers.saveFairplayResult(encryptedPowers, powerFile)
+
+    var socket: Socket = null
+    var connected = false
+    while (!connected) {
+      try {
+        socket = new Socket("localhost", inputArgs(4).toInt + 1)
+        connected = true
+      } catch { case e: Exception =>
+        e.printStackTrace()
+        Thread.sleep(70)
+      }
+    }
+
+
+    val os = socket.getOutputStream
+    val oos = new ObjectOutputStream(os)
+    try {
+      //println("[Alice] beta: " + beta)
+      //println("[Alice] powers: " + encryptedPowers.mkString("  "))
+      oos.writeObject(encryptedPowers)
+      oos.writeObject(Helpers.encryptBeta(beta))
+
+    } catch { case e: Exception =>
+      e.printStackTrace()
+    } finally {
+      oos.close()
+      os.close()
+      socket.close()
+    }
+
+
+
 
 
     println("\nManager finished in " + (System.currentTimeMillis - startedAt) / 1000.0 + " seconds.")

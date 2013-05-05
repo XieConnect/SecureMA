@@ -6,8 +6,14 @@
 
 package edu.vanderbilt.hiplab.metaanalysis;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+
 public class AutomatedTest {
-    public static void main(String[] args) {
+    public static String main(String[] args) {
+        // final result
+        String result = "0";
         Process providerProcess = null;
         Process mediatorProcess = null;
 
@@ -27,7 +33,28 @@ public class AutomatedTest {
             System.out.println("Error running Mediator: " + e.getMessage());
         }
 
-        // Wait for process to terminate
+        InputStreamReader isr = new InputStreamReader(mediatorProcess.getInputStream());
+        BufferedReader input = new BufferedReader(isr);
+        try {
+          // to retrieve last line of output (return result)
+          String line;
+          while ( (line = input.readLine()) != null) {
+            result = line;
+          }
+          result = result.trim();
+        } catch (IOException e) {
+          e.printStackTrace();
+        } finally {
+          try {
+            if (input != null) input.close();
+            if (isr != null) isr.close();
+          } catch (IOException e) {
+            e.printStackTrace();
+          }
+        }
+
+
+      // Wait for process to terminate
         try {
             if (mediatorProcess != null)
                 mediatorProcess.waitFor();
@@ -46,6 +73,7 @@ public class AutomatedTest {
                 providerProcess.destroy();
         }
 
+      return result;
     }
 
 }
