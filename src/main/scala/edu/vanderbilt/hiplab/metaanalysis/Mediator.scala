@@ -344,7 +344,7 @@ object Mediator {
    * @param args [only-init]: generate keys and compile Fairplay script only (no further running)
    *             [with-init]: before running Bob's role, will also do initialization
    */
-  def main(args: Array[String]) = {
+  def main(args: Array[String]): BigInteger = {
     val startedAt = System.currentTimeMillis()
 
 
@@ -383,7 +383,7 @@ object Mediator {
     val fairplayTime = System.currentTimeMillis()
 
 
-    val resultEncryption = Mediator.secureLn(bobOutputs(0), Helpers.encryptBeta(bobOutputs(1)), aliceOutputs._1, aliceOutputs._2)
+    val resultEncryption: BigInteger = Mediator.secureLn(bobOutputs(0), Helpers.encryptBeta(bobOutputs(1)), aliceOutputs._1, aliceOutputs._2)
 
 
     //--- Compute ln(x) alone ---
@@ -397,5 +397,7 @@ object Mediator {
     println("\nProcess finished in " + (System.currentTimeMillis() - startedAt) / 1000.0 + " seconds.")
 
     println(resultEncryption)
+
+    resultEncryption
   }
 }

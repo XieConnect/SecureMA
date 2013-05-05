@@ -170,7 +170,7 @@ object Manager {
   def main(args: Array[String]) = {
     val startedAt = System.currentTimeMillis()
 
-
+/*
     val powerFile = MyUtil.pathFile(FairplayFile) + ".Alice.power"
 
     // first need to delete previous .power file
@@ -179,6 +179,7 @@ object Manager {
     } catch {
       case ex: Exception => println("Error in deleting .power file!")
     }
+    */
 
     var inputArgs = Array("-r", Helpers.property("fairplay_script"), "djdj", Helpers.property("socket_server"))
     if (args.length > 1) {
