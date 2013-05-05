@@ -156,6 +156,7 @@ object Experiment {
       println("> x = " + xValue)
       count += 1
 
+      /*
       Helpers.prepareInputs(BigInteger.valueOf(xValue))
 
       // Run Bob and Alice
@@ -166,8 +167,11 @@ object Experiment {
 
       val (_, bobOutputs) = readOutputs()
 
+      */
+
       // securely compute ln(x) and decrypt final result
-      val computedResult = Mediator.actualLn(bobOutputs(0), bobOutputs(1), 10).doubleValue()
+      //val computedResult = Mediator.actualLn(bobOutputs(0), bobOutputs(1), 10).doubleValue()
+      val computedResult = Mediator.decryptLn(Mediator.lnWrapper(BigInteger.valueOf(xValue)))
 
       // compute plain result
       val expectedResult = math.log(xValue)
@@ -189,33 +193,6 @@ object Experiment {
   }
 
   /**
-   * Input x, compute ln(x) encryption result
-   * @param xValue x as in ln(x)
-   * @param toInit whether to generate keys/compile Fairplay script or not
-   * @return encryption of ln(x) result
-   */
-  def lnWrapper(xValue: BigInteger, toInit: Boolean = false, writer: PrintWriter = null): BigInteger = {
-    Helpers.prepareInputs(xValue)
-
-    // Run Bob and Alice
-    var bobArgs = Array[String]()
-    if (toInit) bobArgs :+= "init"  //compile and generate keys only once
-
-    val startedAt = System.currentTimeMillis()
-
-    AutomatedTest.main(bobArgs)
-    val fairplayTime = System.currentTimeMillis()
-
-    val (_, bobOutputs) = readOutputs()
-
-    val result = Mediator.secureLn(bobOutputs(0), bobOutputs(1))
-
-    if (writer != null) writer.print( (fairplayTime - startedAt) + "," + (System.currentTimeMillis() - fairplayTime) )
-
-    result
-  }
-
-  /**
    * Compute actual division, given numerator and denominator
    * @param numeratorEncryption numerator encryption
    * @param denominatorEncryption denominator encryption
@@ -229,11 +206,18 @@ object Experiment {
       future { blocking {Mediator.decryptData(a)} })
     val decryptions = Await.result(Future.sequence(decryptionFuture), 20 second)
 
-    val numeratorLn = lnWrapper(decryptions(0).abs, toInit, timerWriter)  //DEBUG no init
+    val numeratorFuture = future { Mediator.lnWrapper(decryptions(0).abs, false, timerWriter, 0) }
+    val denominatorFuture = future { Mediator.lnWrapper(decryptions(1), false, timerWriter, 2) }
+
+    val numeratorLn = Await.result(numeratorFuture, 70 second)
+    val denominatorLn = Await.result(denominatorFuture, 70 second)
+
+    //val numeratorLn = Mediator.lnWrapper(decryptions(0).abs, toInit, timerWriter)
     // to delimiter time records
-    if (timerWriter != null) timerWriter.print(",")
-    val denominatorLn = lnWrapper(decryptions(1), false, timerWriter)
-    if (timerWriter != null) timerWriter.println
+    //if (timerWriter != null) timerWriter.print(",")
+
+    //val denominatorLn = Mediator.lnWrapper(decryptions(1), false, timerWriter)
+    //if (timerWriter != null) timerWriter.println
 
     val diff = someone.add( if (coefficient > 1) someone.multiply(numeratorLn, coefficient).mod(paillierNSquared) else numeratorLn,
                              someone.multiply(denominatorLn, -1).mod(paillierNSquared) ).mod(paillierNSquared)

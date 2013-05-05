@@ -42,6 +42,7 @@ program Sub {
     var int jEnd;
     var int nlnSum;
     var int x;
+
     var int preEst;
 
     est = 1;
@@ -50,10 +51,11 @@ program Sub {
 
     x = input.bob.share + input.alice;
 
+    // Eestimate n as in 2^n
     for(i=1 to MaxN) {
       if (est <= x)
       {
-        preEst = est;
+        //preEst = est;
         est = est + est;
         n = n + 1;
       }

@@ -17,6 +17,7 @@ import java.math.BigDecimal
 import org.apache.commons.math3.util.ArithmeticUtils
 
 import SFE.BOAL.{Bob, MyUtil}
+import java.net.ServerSocket
 
 
 object Mediator {
@@ -222,27 +223,19 @@ object Mediator {
 
 
   /**
-   * Compute ln(x) securely
+   * Compute ln(x) securely (the second phase: Taylor expansion)
    * @param alpha  Bob's input alpha
    * @param beta  Bob's input beta
    * @return  encryption of scaled-up ln(x)
    */
-  def secureLn(alpha: BigInteger, beta: BigInteger) = {
-    // First need to make sure Manager finishes running
-    val tmpPowerFile = new File(MyUtil.pathFile(FairplayFile) + ".Alice.power")
-    while (! tmpPowerFile.exists()) {
-      Thread.sleep(70)
-    }
-
-    val alicePowers = Helpers.readTemporaryResult(MyUtil.pathFile(FairplayFile) + ".Alice.power")
-
+  def secureLn(alpha: BigInteger, beta: BigInteger,
+               alicePowers: Array[BigInteger], aliceBeta: BigInteger) = {
     val someone = new Paillier(Helpers.getPublicKey())
     val taylorResult = taylorExpansion(alpha, alicePowers)
     val paillierNS = Helpers.paillierNS()
 
     //TODO transfer from socket
-    val betas = (for (i <- Array("Alice", "Bob")) yield Helpers.readTemporaryResult(MyUtil.pathFile(FairplayFile) + "." + i + ".beta")(0))
-    val tmp = someone.add(betas(0), betas(1)).mod(paillierNS)
+    val tmp = someone.add(beta, aliceBeta).mod(paillierNS)
     someone.add(taylorResult, tmp).mod(paillierNS)
   }
 
@@ -255,18 +248,6 @@ object Mediator {
   def decryptLn(encryptedLn: BigInteger, scale: Int = 10): Double = {
     val divisor = new BigInteger("%.0f" format Mediator.POWER_OF_TWO).pow(Mediator.K_TAYLOR_PLACES).multiply(BigInteger.valueOf(Mediator.LCM))
     new BigDecimal(decryptData(encryptedLn)).divide(new BigDecimal(divisor), scale, BigDecimal.ROUND_HALF_UP).doubleValue()
-  }
-
-  /**
-   * Remember to modify multiplier in Fairplay script when customizing param *scale*
-   * @param alpha Bob's alpha
-   * @param beta Bob's beta
-   * @return  decrypted value of ln(x)
-   */
-  def actualLn(alpha: BigInteger, beta: BigInteger, scale: Int = 6) = {
-    val tmp = secureLn(alpha, beta)
-
-    decryptLn(tmp)
   }
 
 /*
@@ -294,26 +275,68 @@ object Mediator {
   */
 
   /**
-   * Receive intermediate result from Manager
+   * Receive intermediate result from Manager/Alice
    * @return
    */
-  def receiveData() = {
-    // Read content
-    //val fromOrigin = new ObjectInputStream(socket.getInputStream())
-    //val (alicePowers, aliceBeta) = (fromOrigin.readObject().asInstanceOf[Array[BigInteger]], fromOrigin.readObject().asInstanceOf[BigInteger])
+  def receiveData(socketPort: Int): Tuple2[Array[BigInteger], BigInteger] = {
+    var encryptedPowers = Array[BigInteger]()
+    var beta = BigInteger.ZERO
 
-    // Receive data file
-    //is = new ObjectInputStream(new BufferedInputStream(socket.getInputStream))
-    //val result = is.readObject().asInstanceOf[Array[BigInteger]]
-    //MyUtil.saveResult(result, MyUtil.pathFile(FairplayFile) + ".Alice.power.transferred")
-    //is.close()
-    //socket.close()
+    println("Waiting for return result...")
+    val listener = new ServerSocket(socketPort)
 
-    //val someone = new Paillier(getPublicKey())
-    //val taylorResult = taylorExpansion(alpha, alicePowers)
+    try {
+      val socket = listener.accept()
 
-    //socket.close()
-    //fromOrigin.close()
+      try {
+        val input = new ObjectInputStream(socket.getInputStream())
+        encryptedPowers = input.readObject().asInstanceOf[Array[BigInteger]]
+        beta = input.readObject().asInstanceOf[BigInteger]
+
+        // DEBUG only
+        println("[from Alice] beta: " + beta)
+        println("[From Alice] beta powers: " + encryptedPowers.mkString("  "))
+
+      } catch { case e: Exception =>
+        e.printStackTrace()
+      } finally {
+        socket.close()
+      }
+
+    } catch { case ex: Exception =>
+      ex.printStackTrace()
+    } finally {
+      listener.close()
+    }
+
+    (encryptedPowers, beta)
+  }
+
+  /**
+   * Input x, compute ln(x) encryption result
+   * @param xValue x as in ln(x)
+   * @param toInit whether to generate keys/compile Fairplay script or not
+   * @return encryption of ln(x) result
+   */
+  def lnWrapper(xValue: BigInteger, toInit: Boolean = false, writer: PrintWriter = null, socketPortOffset: Int = 0): BigInteger = {
+    val inputs = Helpers.prepareInputs(xValue)
+
+    // Run Bob and Alice
+    var inputArgs = Array[String]()
+    //if (toInit) inputArgs :+= "init"  //compile and generate keys only once
+    inputArgs ++= inputs
+    inputArgs :+= socketPortOffset.toString
+
+    val startedAt = System.currentTimeMillis()
+
+    // use garbled circuit to perform first phase of ln(x)
+    new BigInteger(AutomatedTest.main(inputArgs))
+
+    // track runtime
+    /*
+    if (writer != null)
+      writer.print( (fairplayTime - startedAt) + "," + (System.currentTimeMillis() - fairplayTime) )
+    */
   }
 
   /**
@@ -336,21 +359,34 @@ object Mediator {
       compile()
     }
 
-    //-- Run Bob's role. Will store output to file
-    Bob.main(Array("-r",
-      Helpers.property("fairplay_script"), "dj2j",
-      "4",
-      Helpers.property("socket_port"))
-    )
+
+    //-- Run Bob's role ---
+    var inputArgs = Array("-r", Helpers.property("fairplay_script"), "dj2j", "4")
+    if (args.length > 1) {
+      // customize socket port
+      inputArgs :+= (Helpers.property("socket_port").toLong + (if (args.length > 2) args(2).toInt else 0)).toString
+      inputArgs :+= args(0)
+    }
+
+    val bobOutputs = Bob.main(inputArgs).filter(_ != null)
 
 
-    val Array(alpha, beta) = Helpers.getFairplayResult("Bob")
+    //val Array(alpha, beta) = Helpers.getFairplayResult("Bob")
     // store my beta shares
-    Helpers.storeBeta("Bob", beta)
+    //Helpers.storeBeta("Bob", beta)
 
-    //--- Compute ln(x) ---
+    val aliceOutputs = receiveData(inputArgs(4).toInt + 1)
+
+    // -- END OF garbled circuit --
 
 
+    val fairplayTime = System.currentTimeMillis()
+
+
+    val resultEncryption = Mediator.secureLn(bobOutputs(0), Helpers.encryptBeta(bobOutputs(1)), aliceOutputs._1, aliceOutputs._2)
+
+
+    //--- Compute ln(x) alone ---
     //println("Computed: " + actualLn(alpha, beta, 10))
 
     //getPublicKey()
@@ -359,5 +395,7 @@ object Mediator {
 
 
     println("\nProcess finished in " + (System.currentTimeMillis() - startedAt) / 1000.0 + " seconds.")
+
+    println(resultEncryption)
   }
 }
