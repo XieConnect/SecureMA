@@ -18,6 +18,7 @@ import scala.Tuple2
 object Helpers {
   // scaling factor during SMC
   val MyProperties = new Properties()
+  val rand = new Random()
 
   /**
    * Find value corresponding to queried property in system config
@@ -93,7 +94,7 @@ object Helpers {
    */
   def prepareInputs(xValue: BigInteger): Array[String] = {
     //val writers = Array("Bob", "Alice").map(a => new PrintWriter(new File(Experiment.PathPrefix + a + ".input")))
-    val shareRand = BigInteger.valueOf(3)  //TODO use real rand like: rnd.nextInt(rndRange)
+    //val shareRand = BigInteger.valueOf(3)  //TODO use real rand like: rnd.nextInt(rndRange)
     // input for party 1
     //writers(0).println(shareRand.negate())
     //writers(0).println(shareRand)
@@ -105,8 +106,11 @@ object Helpers {
 
     //writers.map(a => a.close())
 
+    val shareRand = BigInteger.valueOf(rand.nextInt(Integer.MAX_VALUE))
+
     // bob, alice
-    Array(shareRand + "\n" + "2" + "\n" + "5",  xValue.subtract(shareRand).toString)
+    Array(shareRand + "\n" + BigInteger.valueOf(rand.nextInt()) + "\n" + BigInteger.valueOf(rand.nextInt()),
+      xValue.subtract(shareRand).toString)
   }
 
   /**

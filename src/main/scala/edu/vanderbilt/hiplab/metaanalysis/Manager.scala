@@ -181,52 +181,47 @@ object Manager {
     }
     */
 
-    var inputArgs = Array("-r", Helpers.property("fairplay_script"), "djdj", Helpers.property("socket_server"))
-    if (args.length > 1) {
-      // customize socket port
-      inputArgs :+= (Helpers.property("socket_port").toLong + (if (args.length > 2) args(2).toInt else 0)).toString
-      inputArgs :+= args(1)
-    }
-
-    val Array(alpha, beta) = Alice.main(inputArgs).filter(_ != null)
+//    var inputArgs = Array("-r", Helpers.property("fairplay_script"), "djdj", Helpers.property("socket_server"))
+//    if (args.length > 1) {
+//      // customize socket port
+//      inputArgs :+= (Helpers.property("socket_port").toLong + (if (args.length > 2) args(2).toInt else 0)).toString
+//      inputArgs :+= args(1)
+//    }
+//
+//    val Array(alpha, beta) = Alice.main(inputArgs).filter(_ != null)
 
 
     //Helpers.storeBeta("Alice", beta)
-
-    val encryptedPowers = encryptPowers(alpha)
-
-    var socket: Socket = null
-    var connected = false
-    while (!connected) {
-      try {
-        socket = new Socket("localhost", inputArgs(4).toInt + 1)
-        connected = true
-      } catch { case e: Exception =>
-        e.printStackTrace()
-        Thread.sleep(70)
-      }
-    }
-
-
-    val os = socket.getOutputStream
-    val oos = new ObjectOutputStream(os)
-    try {
-      //println("[Alice] beta: " + beta)
-      //println("[Alice] powers: " + encryptedPowers.mkString("  "))
-      oos.writeObject(encryptedPowers)
-      oos.writeObject(Helpers.encryptBeta(beta))
-
-    } catch { case e: Exception =>
-      e.printStackTrace()
-    } finally {
-      oos.close()
-      os.close()
-      socket.close()
-    }
-
-
-
-
+//
+//    val encryptedPowers = encryptPowers(alpha)
+//
+//    var socket: Socket = null
+//    var connected = false
+//    while (!connected) {
+//      try {
+//        socket = new Socket("localhost", inputArgs(4).toInt + 1)
+//        connected = true
+//      } catch { case e: Exception =>
+//        e.printStackTrace()
+//        Thread.sleep(70)
+//      }
+//    }
+//
+//    val os = socket.getOutputStream
+//    val oos = new ObjectOutputStream(os)
+//    try {
+//      //println("[Alice] beta: " + beta)
+//      //println("[Alice] powers: " + encryptedPowers.mkString("  "))
+//      oos.writeObject(encryptedPowers)
+//      oos.writeObject(Helpers.encryptBeta(beta))
+//
+//    } catch { case e: Exception =>
+//      e.printStackTrace()
+//    } finally {
+//      oos.close()
+//      os.close()
+//      socket.close()
+//    }
 
     println("\nManager finished in " + (System.currentTimeMillis - startedAt) / 1000.0 + " seconds.")
   }

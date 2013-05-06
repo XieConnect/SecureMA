@@ -9,10 +9,10 @@ import java.io.{FileInputStream, FileOutputStream, PrintWriter, File}
 import SFE.BOAL.MyUtil
 import java.math.BigInteger
 import paillierp.Paillier
-import paillierp.key.KeyGen
 import concurrent.{future, blocking, Future, Await}
 import concurrent.ExecutionContext.Implicits.global
 import concurrent.duration._
+import java.util.concurrent.{Callable, FutureTask, Executors}
 
 object Experiment {
   val PathPrefix = MyUtil.pathFile(Helpers.property("fairplay_script")) + "."
@@ -148,7 +148,7 @@ object Experiment {
     // Generate keys and compile Fairplay script
     if (Helpers.property("to_generate_keys").equals("true")) {
       Mediator.generateKeys()
-      Mediator.compile()
+      //Mediator.compile()
     }
 
     // start computing ln(x) securely
@@ -206,11 +206,24 @@ object Experiment {
       future { blocking {Mediator.decryptData(a)} })
     val decryptions = Await.result(Future.sequence(decryptionFuture), 20 second)
 
-    val numeratorFuture = future { Mediator.lnWrapper(decryptions(0).abs, false, timerWriter, 0) }
-    val denominatorFuture = future { Mediator.lnWrapper(decryptions(1), false, timerWriter, 2) }
+    //println("LnWrapper: " + lnWrapper(BigInteger.valueOf(100), toInit = false, writer = null,
+    //              bobPort = 3490, alicePort = 3491, socketPort = 3496)  )
 
-    val numeratorLn = Await.result(numeratorFuture, 70 second)
-    val denominatorLn = Await.result(denominatorFuture, 70 second)
+    val pool = Executors.newFixedThreadPool(4)
+    val numeratorFuture = new FutureTask[BigInteger]( new Callable[BigInteger] {
+      def call(): BigInteger = Mediator.lnWrapper(decryptions(0).abs, toInit = false,
+        writer = timerWriter, bobPort = 3490, alicePort = 3491, socketPort = 3496)
+    })
+    val denominatorFuture = new FutureTask[BigInteger]( new Callable[BigInteger] {
+      def call(): BigInteger = Mediator.lnWrapper(decryptions(1), toInit = false,
+        writer = timerWriter, bobPort = 3492, alicePort = 3493, socketPort = 3497)
+    })
+
+    pool.execute(numeratorFuture)
+    pool.execute(denominatorFuture)
+
+    val numeratorLn = numeratorFuture.get()
+    val denominatorLn = denominatorFuture.get()
 
     //val numeratorLn = Mediator.lnWrapper(decryptions(0).abs, toInit, timerWriter)
     // to delimiter time records
