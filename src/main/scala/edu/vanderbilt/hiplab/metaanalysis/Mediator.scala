@@ -13,12 +13,12 @@ import paillierp.key.KeyGen
 
 import paillierp.PaillierThreshold
 import java.math.BigDecimal
-
 import org.apache.commons.math3.util.ArithmeticUtils
-
-import SFE.BOAL.{Bob, MyUtil}
 import java.net.ServerSocket
-
+import concurrent.ExecutionContext.Implicits.global
+import concurrent.{future, Await}
+import concurrent.duration._
+import java.util.concurrent.{Callable, FutureTask, Executors}
 
 object Mediator {
   val K_TAYLOR_PLACES = Helpers.property("k_taylor_places").toInt  //it seems 7 is the cap. Larger number causes out-of-range crash
@@ -134,17 +134,6 @@ object Mediator {
   }
   */
 
-
-  /**
-   * Compile Fairplay script
-   * NOTE: it seems only ONE compilation is needed
-   * TODO read from config script file name
-   */
-  def compile() = {
-    SFE.BOAL.Bob.main(Array("-c", FairplayFile))
-  }
-
-
   /**
    * Run Bob (starts socket server)
    * Note: socket server blocks the thread
@@ -249,6 +238,10 @@ object Mediator {
     new BigDecimal(decryptData(encryptedLn)).divide(new BigDecimal(divisor), scale, BigDecimal.ROUND_HALF_UP).doubleValue()
   }
 
+  def compile() = {
+    SFE.BOAL.Bob.main( Array("-c", Helpers.property("fairplay_script")) )
+  }
+
 /*
   //TODO for testing only
   def divide(numerator: BigInteger, denominator: BigInteger) = {
@@ -317,25 +310,39 @@ object Mediator {
    * @param toInit whether to generate keys/compile Fairplay script or not
    * @return encryption of ln(x) result
    */
-  def lnWrapper(xValue: BigInteger, toInit: Boolean = false, writer: PrintWriter = null, socketPortOffset: Int = 0): BigInteger = {
+  def lnWrapper(xValue: BigInteger, toInit: Boolean = false, writer: PrintWriter = null,
+                bobPort: Int = 3490, alicePort: Int = 3491, socketPort: Int = 3496): BigInteger = {
     val inputs = Helpers.prepareInputs(xValue)
-
-    // Run Bob and Alice
-    var inputArgs = Array[String]()
-    //if (toInit) inputArgs :+= "init"  //compile and generate keys only once
-    inputArgs ++= inputs
-    inputArgs :+= socketPortOffset.toString
+    var timerStr = "X_In_In_Bob_Alice_SMC:" + xValue + "," + inputs(0).split("\n")(0) + "," + inputs(1) + ","
 
     val startedAt = System.currentTimeMillis()
 
-    // use garbled circuit to perform first phase of ln(x)
-    new BigInteger(AutomatedTest.main(inputArgs))
+    //-- Estimate n in ln(x) phase 1 using garbled circuit  --
+    // Old way: spawn new JVM's
+    //new BigInteger(AutomatedTest.main(inputArgs))
 
-    // track runtime
-    /*
-    if (writer != null)
-      writer.print( (fairplayTime - startedAt) + "," + (System.currentTimeMillis() - fairplayTime) )
-    */
+    // Bob
+    val bobClient = new GCClient()
+    val bobFuture = future { bobClient.run(bobPort, Array(inputs(0), socketPort.toString)) }
+    // Alice
+    val aliceClient = new GCClient()
+    val aliceFuture = future { aliceClient.run(alicePort, Array(inputs(1), socketPort.toString)) }
+
+    Await.result(bobFuture, 120 second)
+    timerStr += (System.currentTimeMillis() - startedAt)
+
+    Await.result(aliceFuture, 120 second)
+    val fairplayEnded = System.currentTimeMillis()
+    timerStr += ("," + (fairplayEnded - startedAt))
+
+    //-- Assemble ln(x) pieces --
+    val lnEncryption = Mediator.secureLn(bobClient.result(0), Helpers.encryptBeta(bobClient.result(1)),
+      aliceClient.result.init, aliceClient.result.last)
+    timerStr += ("," + (System.currentTimeMillis() - fairplayEnded))
+
+    println(timerStr)
+
+    lnEncryption
   }
 
   /**
@@ -346,43 +353,55 @@ object Mediator {
   def main(args: Array[String]): BigInteger = {
     val startedAt = System.currentTimeMillis()
 
+    //println("LnWrapper: " + lnWrapper(BigInteger.valueOf(100), toInit = false, writer = null,
+    //              bobPort = 3490, alicePort = 3491, socketPort = 3496)  )
+
+    //val numeratorFuture = future { Mediator.lnWrapper(BigInteger.valueOf(100), toInit = false,
+    //  writer = null, bobPort = 3490, alicePort = 3491, socketPort = 3496) }
+
+    val pool = Executors.newFixedThreadPool(4)
+
+    //val denominatorFuture = future { Mediator.lnWrapper(BigInteger.valueOf(80), toInit = false,
+    //  writer = null, bobPort = 3492, alicePort = 3493, socketPort = 3497) }
+
+    val future = new FutureTask[BigInteger](new Callable[BigInteger] {
+      def call(): BigInteger = Mediator.lnWrapper(BigInteger.valueOf(100), toInit = false,
+        writer = null, bobPort = 3490, alicePort = 3491, socketPort = 3496)
+    })
+    val future2 = new FutureTask[BigInteger](new Callable[BigInteger] {
+      def call(): BigInteger = Mediator.lnWrapper(BigInteger.valueOf(80), toInit = false,
+        writer = null, bobPort = 3492, alicePort = 3493, socketPort = 3497)
+    })
+    pool.execute(future)
+    pool.execute(future2)
+
+    println("To get result of future: " + future.get())
+    println("To get result of future: " + future2.get())
+
+
+    //val denominatorFuture = future { Mediator.lnWrapper(decryptions(1), false, timerWriter, 2) }
+
+    //val numeratorLn = Await.result(numeratorFuture, 170 second)
+    //val denominatorLn = Await.result(denominatorFuture, 170 second)
 
     //println("> Plain input: " + Helpers.getPlainInput())
 
     //inverseVariance(Helpers.property("encrypted_data_file"), Helpers.property("final_result_file"), true)
 
-    //--- Run Fairplay ---
-    // Generate keys only when forced to or no keys exist
-    if ( args.length > 0 && args(0).equals("init") || (! new File(Helpers.property("data_directory"), Helpers.property("private_keys")).exists()) ) {
-      //generateKeys()
-      compile()
-    }
-
 
     //-- Run Bob's role ---
-    var inputArgs = Array("-r", Helpers.property("fairplay_script"), "dj2j", "4")
-    if (args.length > 1) {
-      // customize socket port
-      inputArgs :+= (Helpers.property("socket_port").toLong + (if (args.length > 2) args(2).toInt else 0)).toString
-      inputArgs :+= args(0)
-    }
 
-    val bobOutputs = Bob.main(inputArgs).filter(_ != null)
+
+    //val bobOutputs = Bob.main(inputArgs).filter(_ != null)
 
 
     //val Array(alpha, beta) = Helpers.getFairplayResult("Bob")
     // store my beta shares
     //Helpers.storeBeta("Bob", beta)
 
-    val aliceOutputs = receiveData(inputArgs(4).toInt + 1)
+    //val aliceOutputs = receiveData(inputArgs(4).toInt + 1)
 
     // -- END OF garbled circuit --
-
-
-    val fairplayTime = System.currentTimeMillis()
-
-
-    val resultEncryption: BigInteger = Mediator.secureLn(bobOutputs(0), Helpers.encryptBeta(bobOutputs(1)), aliceOutputs._1, aliceOutputs._2)
 
 
     //--- Compute ln(x) alone ---
@@ -395,8 +414,10 @@ object Mediator {
 
     println("\nProcess finished in " + (System.currentTimeMillis() - startedAt) / 1000.0 + " seconds.")
 
-    println(resultEncryption)
+    //println(resultEncryption)
 
-    resultEncryption
+    //resultEncryption
+    //DEBUG
+    BigInteger.ZERO
   }
 }
