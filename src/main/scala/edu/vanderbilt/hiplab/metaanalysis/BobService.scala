@@ -65,7 +65,7 @@ object BobService {
   }
 
   // 3490 port
-  def main(args: Array[String]) = {
+  def main(args: Array[String]): Unit = {
     if (args.length < 1) {
       println("ERROR: need to provide PORT number for AliceService.")
     } else {

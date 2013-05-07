@@ -73,7 +73,7 @@ object Owner {
     var verificationResults = collection.mutable.Map[Int, Array[Boolean]]()
     var encryptionResults = collection.mutable.Map[Int, String]()
     var totalRecords: Int = _
-    var numberOfCores = (try {Some(Helpers.property("total_cores").toInt)} catch {case _ => None}).getOrElse(1)
+    var numberOfCores = (try {Some(Helpers.property("total_cores").toInt)} catch {case _: Exception => None}).getOrElse(1)
     if (numberOfCores < 1) numberOfCores = 1
     val workerRouter = context.actorOf(
       Props[Worker].withRouter(RoundRobinRouter(numberOfCores)), name = "workerRouter")
