@@ -350,8 +350,11 @@ object Mediator {
    * @param args [only-init]: generate keys and compile Fairplay script only (no further running)
    *             [with-init]: before running Bob's role, will also do initialization
    */
-  def main(args: Array[String]): BigInteger = {
+  def main(args: Array[String]): Unit = {
     val startedAt = System.currentTimeMillis()
+
+    // to compile Fairplay script
+    SFE.BOAL.Bob.main( Array("-c", Helpers.property("fairplay_script")) )
 
     //println("LnWrapper: " + lnWrapper(BigInteger.valueOf(100), toInit = false, writer = null,
     //              bobPort = 3490, alicePort = 3491, socketPort = 3496)  )
@@ -359,24 +362,24 @@ object Mediator {
     //val numeratorFuture = future { Mediator.lnWrapper(BigInteger.valueOf(100), toInit = false,
     //  writer = null, bobPort = 3490, alicePort = 3491, socketPort = 3496) }
 
-    val pool = Executors.newFixedThreadPool(4)
-
-    //val denominatorFuture = future { Mediator.lnWrapper(BigInteger.valueOf(80), toInit = false,
-    //  writer = null, bobPort = 3492, alicePort = 3493, socketPort = 3497) }
-
-    val future = new FutureTask[BigInteger](new Callable[BigInteger] {
-      def call(): BigInteger = Mediator.lnWrapper(BigInteger.valueOf(100), toInit = false,
-        writer = null, bobPort = 3490, alicePort = 3491, socketPort = 3496)
-    })
-    val future2 = new FutureTask[BigInteger](new Callable[BigInteger] {
-      def call(): BigInteger = Mediator.lnWrapper(BigInteger.valueOf(80), toInit = false,
-        writer = null, bobPort = 3492, alicePort = 3493, socketPort = 3497)
-    })
-    pool.execute(future)
-    pool.execute(future2)
-
-    println("To get result of future: " + future.get())
-    println("To get result of future: " + future2.get())
+//    val pool = Executors.newFixedThreadPool(4)
+//
+//    //val denominatorFuture = future { Mediator.lnWrapper(BigInteger.valueOf(80), toInit = false,
+//    //  writer = null, bobPort = 3492, alicePort = 3493, socketPort = 3497) }
+//
+//    val future = new FutureTask[BigInteger](new Callable[BigInteger] {
+//      def call(): BigInteger = Mediator.lnWrapper(BigInteger.valueOf(100), toInit = false,
+//        writer = null, bobPort = 3490, alicePort = 3491, socketPort = 3496)
+//    })
+//    val future2 = new FutureTask[BigInteger](new Callable[BigInteger] {
+//      def call(): BigInteger = Mediator.lnWrapper(BigInteger.valueOf(80), toInit = false,
+//        writer = null, bobPort = 3492, alicePort = 3493, socketPort = 3497)
+//    })
+//    pool.execute(future)
+//    pool.execute(future2)
+//
+//    println("To get result of future: " + future.get())
+//    println("To get result of future: " + future2.get())
 
 
     //val denominatorFuture = future { Mediator.lnWrapper(decryptions(1), false, timerWriter, 2) }
@@ -413,11 +416,5 @@ object Mediator {
 
 
     println("\nProcess finished in " + (System.currentTimeMillis() - startedAt) / 1000.0 + " seconds.")
-
-    //println(resultEncryption)
-
-    //resultEncryption
-    //DEBUG
-    BigInteger.ZERO
   }
 }
