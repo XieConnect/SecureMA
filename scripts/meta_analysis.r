@@ -1,4 +1,5 @@
 #!/usr/bin/Rscript
+# Meta-analysis on test data
 
 # to customize: input data
 mydata <- read.csv("~/test/page_data/outlier.csv", sep=",", head=T)
@@ -10,7 +11,11 @@ se <- sqrt(1 / sum(weight))
 beta <- sum(betas * weight) / sum(weight)
 
 z_score <- beta / se
+cat("Z: ")
+print(z_score)
+
 p_value <- 2 * pnorm(-abs(z_score))
+cat("P: ")
 print(p_value)
 
 
