@@ -238,6 +238,10 @@ object Experiment {
     math.exp(Mediator.decryptLn(diff, 10))
   }
 
+  /**
+   * Vary the number of participating sites to test scalability
+   * @return
+   */
   def variableSites() = {
     val variableSitesFile = new File(Helpers.property("encrypted_data_with_variable_sites"))
     val writer = new java.io.PrintWriter(variableSitesFile)
@@ -355,32 +359,28 @@ object Experiment {
 
     // Compile Fairplay script as necessary
     if ( args.length > 0 && args(0).equals("init") ) {
-      println("> To generate keys...")
+      println("> To generate keys (takes time)...")
       Mediator.generateKeys()
 
       println("> To compile Fairplay script...")
       Mediator.compile()
 
     } else if ( args.length > 0 && args(0).equals("compile") ) {
-
       println("> To compile Fairplay script...")
       Mediator.compile()
-      println("> END of compiling Fairplay script.")
+      println("= END of compiling Fairplay script.")
 
     } else if (args.length > 0 && args(0).equals("ln")) {
-      // Experiment secure ln(x)
-
       println("> Secure ln(x)...")
       // document current experiment
       copyFiles()
       generateReadme()
 
       runLn(startedAt)
-      println("> END of secure ln(x)")
+      println("= END of secure ln(x)")
 
     } else {
-      // Experiment secure meta-analysis
-
+      // Experiment on secure meta-analysis
       if (args.length > 0 && args(0).equals("variable-sites"))
         variableSites()
 
