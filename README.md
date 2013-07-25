@@ -1,32 +1,46 @@
-# Distributed Secure Meta-analysis #
-Distributed secure meta-analysis for GWAS.
+# SecureMA: supporting secure meta-analysis #
+
+The SecureMA project aims at supporting meta-analysis computation over distributed data sites while preserving data privacy at both individual- and site-level. Specifically, individual data and site-level summary statistics are fully protected throughout the computation. And the final result of meta-analysis is only made known to the designated recipient.
+
+
+## Technical Overview ##
+
+This demonstration package is primarily implemented in Scala (a high-performance language on the Java Virtual Machine). We provide native API to any JVM-based languages (such as Java).
+
+The whole project can be deployed as one single self-contained JAR package and run on any system where JVM is available.
+
+
+## How to Get ##
+
+- Source code available at: http://github.com/XieConnect/SecureMA
+- Pre-compiled JAR package: (TO ANNOUNCE SOON)
+
+
+## Lazy User's Guide ##
+
+Assume you already downloaded the pre-packaged SecureMA.jar .
+
+1. Organize input according to required format;
+2. Run FairplayBI backends (for securely computing ln(x));
+3. Run the experiment;
 
 
 ## Description ##
 
-- Owner.scala : data owners encrypt and contribute their data;
-- Mediator.scala : secure computation (aggregation); run as Bob in Fairplay in estimating ln(x);
-- Manager.scala : collects data encryptions from data owners; run as Alice in Fairplay;
+- Owner.scala : data owners (e.g., local sites) encrypt and contribute their data to entrusted parties;
+- Manager.scala : collects data encryptions from data owners and act as data
+  delegates;
+- Mediator.scala : secure computation (aggregation);
 
 
 ## Dependencies ##
 - JDK 1.6+
-- Other required jars are included in lib/
-- scalatest jar package (in case you want to run automated tests)
-
-
-## Usage ##
-1. Organize input according to format:
-
-### To build documentation, you also need: ###
-- UMLGraph: for sequence diagram generation in doc/*
-- texlive: for LaTeX (large package!)
-- texlive-fonts-recommended: required fonts
+- Other required jars are included in lib/ or specified as Maven dependencies;
+- (optional) scalatest jar package (for automated tests only);
 
 
 ## Directory structure ##
-- doc/* : documentary for whole protocol
-- data/raw_data_sorted.csv: input raw data for meta-analysis (delimitered by comma). This should be sorted with first line as header. Important columns include:
+- data/raw_data_sorted.csv: input raw data for meta-analysis (delimitered by comma). This should be sorted by experiment identifiers (to distinguish between different experiments); the first row should be the header. Important columns include:
     * standard error (or se., 12th column)
     * beta (11th column)
     * the other columns (1 to 4th, and 6 to 10th) will be combined to form an identifier to distinguish different experiments (in other words, you can safely put site names in column 5).
@@ -44,14 +58,12 @@ Distributed secure meta-analysis for GWAS.
 
 
 ## To-Do ##
-- Run in parallel
+- Speed-up optimization
 
 
-## For Developers
-- Generate documents
-  - doc/draw_graph : draw sequence diagram for whole protocol;
-  - details.tex: technical details for whole protocol;
+## Copyright & License ##
+TBD
 
 
 ## Authors
-- Wei Xie <wei.xie@vanderbilt.edu>
+- Wei Xie
