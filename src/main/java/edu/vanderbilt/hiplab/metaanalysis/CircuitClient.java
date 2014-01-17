@@ -21,6 +21,7 @@ import java.util.Random;
 public class CircuitClient {
     static BigInteger inputValue;
     static int nBits;
+    static int inputPort;
 
     static Random rnd = new Random();
 
@@ -33,6 +34,8 @@ public class CircuitClient {
         CmdLineParser.Option optionServerIPname = parser.addStringOption('s', "server");
         CmdLineParser.Option optionBitLength = parser.addIntegerOption('n', "bit-Length");
         CmdLineParser.Option optionIterCount = parser.addIntegerOption('r', "iteration");
+        CmdLineParser.Option optionSocketPort = parser.addIntegerOption('p', "port");
+        CmdLineParser.Option optionInputPort = parser.addIntegerOption('i', "input-port");
 
         try {
             parser.parse(args);
@@ -45,6 +48,8 @@ public class CircuitClient {
         nBits = ((Integer) parser.getOptionValue(optionBitLength, new Integer(64))).intValue();
         ProgClient.serverIPname = (String) parser.getOptionValue(optionServerIPname, new String("localhost"));
         Program.iterCount = ((Integer) parser.getOptionValue(optionIterCount, new Integer(1))).intValue();
+        EstimateNConfig.socketPort = ((Integer) parser.getOptionValue(optionSocketPort, new Integer(23456))).intValue();
+        inputPort = ((Integer) parser.getOptionValue(optionInputPort, new Integer(3492))).intValue();
     }
 
     private static void generateData() throws Exception {
@@ -53,6 +58,8 @@ public class CircuitClient {
     }
 
     public static void main(String[] args) throws Exception {
+        Object tempObject = null;
+
         StopWatch.pointTimeStamp("Starting program");
         process_cmdline_args(args);
 
@@ -63,18 +70,26 @@ public class CircuitClient {
         client.runOffline();
 
         // host socket server to get inputs
-        ServerSocket ss = new ServerSocket(3492);
-        Socket sock = ss.accept();
-        System.out.println("## Input socket OK.");
+        ServerSocket ss = new ServerSocket(inputPort);
+
 
         BigInteger inputLine;
-        ObjectInputStream inStream = new ObjectInputStream(sock.getInputStream());
-        ObjectOutputStream outStream = new ObjectOutputStream(sock.getOutputStream());
+
         System.out.println("## Now take inputs (before WHILE).");
 
-        try {
-            while (true) {
+        while (true) {
+            Socket sock = ss.accept();
+            ObjectInputStream inStream = new ObjectInputStream(sock.getInputStream());
+            ObjectOutputStream outStream = new ObjectOutputStream(sock.getOutputStream());
+            System.out.println("## Input socket OK.");
+
+            try {
                 inputLine = (BigInteger) inStream.readObject();
+            } catch (EOFException e) {
+                e.printStackTrace();
+                continue;
+            }
+
 
                 System.out.println("#### One more inputs: " + inputLine);
                 inputValue = inputLine;
@@ -84,14 +99,9 @@ public class CircuitClient {
 
                 outStream.writeObject(client.randa);
                 outStream.writeObject(client.randb);
-            }
 
-        } catch (EOFException e) {
-            System.out.println("No more inputs. Will exit.");
-        } catch (Exception e) {
-            e.printStackTrace();
+            sock.close();
         }
-
 
     }
 }

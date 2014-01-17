@@ -216,11 +216,11 @@ object Experiment {
     val pool = Executors.newFixedThreadPool(4)
     val numeratorFuture = new FutureTask[BigInteger]( new Callable[BigInteger] {
       def call(): BigInteger = Mediator.lnWrapper(decryptions(0).abs, toInit = false,
-        writer = timerWriter, bobPort = 3490, alicePort = 3491, socketPort = 3496)
+        writer = timerWriter, bobPort = 3491, alicePort = 3492, socketPort = 3496)
     })
     val denominatorFuture = new FutureTask[BigInteger]( new Callable[BigInteger] {
       def call(): BigInteger = Mediator.lnWrapper(decryptions(1), toInit = false,
-        writer = timerWriter, bobPort = 3492, alicePort = 3493, socketPort = 3497)
+        writer = timerWriter, bobPort = 3494, alicePort = 3495, socketPort = 3497)
     })
 
     pool.execute(numeratorFuture)
@@ -355,72 +355,6 @@ object Experiment {
       case e: Exception => println("ERROR: result files not properly closed")
     }
 
-
-
-
-//    println("Before server future")
-//    val circuitServer = new EstimateNServer(80, 80)
-//    circuitServer.setInputs(new BigInteger("1"))
-//    val serverFuture = future { circuitServer.runOffline() }
-//
-//    println("Before client future")
-//    val circuitClient = new EstimateNClient(80)
-//    circuitClient.setInputs(new BigInteger("5"))
-//    val clientFuture = future { circuitClient.runOffline() }
-//
-//    println("Starts to await..")
-//    //Await.result(serverFuture, 40 seconds)
-//    println("Starts to await client..")
-//    Await.result(clientFuture, 40 seconds)
-//
-//    val bobClient = new GCClient()
-//    val bobFuture = future { bobClient.run(3491, Array("haha", "hello")) }
-//    // Alice
-//    val aliceClient = new GCClient()
-//    val aliceFuture = future { aliceClient.run(3492, Array("client", "helloclient")) }
-//
-//    Await.result(bobFuture, 30 second)
-//
-//    Await.result(aliceFuture, 30 second)
-
-//
-//    val bobClient = new CircuitQuery()
-//    val bobFuture = future { bobClient.run(3491, Array("1", "2", "3")) }
-//    // Alice
-//    val aliceClient = new CircuitQuery()
-//    val aliceFuture = future { aliceClient.run(3492, Array("5", "2", "3") ) }
-
-//    bobFuture.onComplete {
-//      case Success(results) => println(results.toString)
-//      case Failure(t) => println("Error! " + t.getStackTrace)
-//    }
-//
-//    aliceFuture.onComplete {
-//      case Success(results) => println(results.toString)
-//      case Failure(t) => println("Error! " + t.getStackTrace)
-////    }
-//
-//    Await.result(bobFuture, 30 second)
-//    Await.result(aliceFuture, 30 second)
-//
-//    val bobClient = new CircuitQuery()
-//    val bobFuture = new Thread(new Runnable {
-//      def run() {
-//        bobClient.run(3491, Array("1"))
-//      }
-//    } )
-//
-//    val aliceClient = new CircuitQuery()
-//    val aliceFuture = new Thread(new Runnable {
-//      def run() {
-//        aliceClient.run(3492, Array("5"))
-//      }
-//    } )
-//
-//    bobFuture.start()
-//    aliceFuture.start()
-//
-//    println("DONE")
   }
 
   /**

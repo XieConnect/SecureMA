@@ -19,6 +19,7 @@ import concurrent.ExecutionContext.Implicits.global
 import concurrent.{future, Await}
 import concurrent.duration._
 import java.util.concurrent.{Callable, FutureTask, Executors}
+import fastgc.CircuitQuery
 
 object Mediator {
   val K_TAYLOR_PLACES = Helpers.property("k_taylor_places").toInt  //it seems 7 is the cap. Larger number causes out-of-range crash
@@ -88,12 +89,7 @@ object Mediator {
     }
     val smcTime = System.currentTimeMillis()
 
-
-    //TEMP COMMENTED to run division manually
-
     //-- Secure Division
-    //val decryptedNumerator = decryptData(betaWeightSum)
-    //val decryptedDenominator = decryptData(weightSum)
     var computedDivision = math.sqrt(
       Experiment.runDivision(betaWeightSum, weightSum, 2, divisionWriter) / Helpers.getMultiplier())
     val plainDivision = testBetaWeightSum / math.sqrt(testWeightSum)
@@ -102,10 +98,6 @@ object Mediator {
 
     (computedDivision, smcTime - startedAt, System.currentTimeMillis() - smcTime,
       plainDivision, "NA", "NA")
-
-    /*
-    (0, smcTime - startedAt, "NA", "NA", "NA", "NA")
-    */
   }
 
 
@@ -319,33 +311,40 @@ object Mediator {
    * @return encryption of ln(x) result
    */
   def lnWrapper(xValue: BigInteger, toInit: Boolean = false, writer: PrintWriter = null,
-                bobPort: Int = 3490, alicePort: Int = 3491, socketPort: Int = 3496): BigInteger = {
-    val inputs = Helpers.prepareInputs(xValue)
-    var timerStr = "X_In_In_Bob_Alice_SMC:" + xValue + "," + inputs(0).split("\n")(0) + "," + inputs(1) + ","
+                bobPort: Int = 3491, alicePort: Int = 3492, socketPort: Int = 3496): BigInteger = {
+
+    val inputs = Helpers.randomizeInputs(xValue)
+    var timerStr = "X_In_In_Bob_Alice_SMC:" + xValue + "," + inputs(0) + "," + inputs(1) + ","
 
     val startedAt = System.currentTimeMillis()
 
     //-- Estimate n in ln(x) phase 1 using garbled circuit  --
-    // Old way: spawn new JVM's
-    //new BigInteger(AutomatedTest.main(inputArgs))
+//    // Bob
+//    val bobClient = new GCClient()
+//    val bobFuture = future { bobClient.run(bobPort, Array(inputs(0), socketPort.toString)) }
+//    // Alice
+//    val aliceClient = new GCClient()
+//    val aliceFuture = future { aliceClient.run(alicePort, Array(inputs(1), socketPort.toString)) }
 
-    // Bob
-    val bobClient = new GCClient()
-    val bobFuture = future { bobClient.run(bobPort, Array(inputs(0), socketPort.toString)) }
-    // Alice
-    val aliceClient = new GCClient()
-    val aliceFuture = future { aliceClient.run(alicePort, Array(inputs(1), socketPort.toString)) }
+    val a = new CircuitQuery(bobPort)
+    val b = new CircuitQuery(alicePort)
 
-    Await.result(bobFuture, 120 second)
+    val aa = future { a.query(inputs(0)) }
+    val bb = future { b.query(inputs(1)) }
+
+    val aResult = Await.result(aa, 120 second)
     timerStr += (System.currentTimeMillis() - startedAt)
 
-    Await.result(aliceFuture, 120 second)
+    val bResult = Await.result(bb, 120 second)
     val fairplayEnded = System.currentTimeMillis()
     timerStr += ("," + (fairplayEnded - startedAt))
 
     //-- Assemble ln(x) pieces --
-    val lnEncryption = Mediator.secureLn(bobClient.result(0), Helpers.encryptBeta(bobClient.result(1)),
-      aliceClient.result.init, aliceClient.result.last)
+//    val lnEncryption = Mediator.secureLn(bobClient.result(0), Helpers.encryptBeta(bobClient.result(1)),
+//      aliceClient.result.init, aliceClient.result.last)
+
+    val lnEncryption = Mediator.secureLn(aResult(0), Helpers.encryptBeta(aResult(1)),
+      Manager.encryptPowers(bResult(0)), bResult(1))
     timerStr += ("," + (System.currentTimeMillis() - fairplayEnded))
 
     println(timerStr)
