@@ -5,9 +5,7 @@ import Program.EstimateNServer;
 import Utils.StopWatch;
 import jargs.gnu.CmdLineParser;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.math.BigInteger;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -72,31 +70,32 @@ public class CircuitServer {
 
 
         System.out.println("## Now take inputs (before WHILE).");
+        BigInteger inputLine;
+        ObjectInputStream inStream = new ObjectInputStream(sock.getInputStream());
+        ObjectOutputStream outStream = new ObjectOutputStream(sock.getOutputStream());
 
-        while (true) {
+        try {
+            while (true) {
+                inputLine = (BigInteger) inStream.readObject();
 
-            DataInputStream inStream = new DataInputStream(sock.getInputStream());
-            DataOutputStream outStream = new DataOutputStream(sock.getOutputStream());
-            String inputLine = null;
-
-            if ( (inputLine = inStream.readLine()) != null ) {
                 System.out.println("## Read inputs:");
                 System.out.println("Got: " + inputLine);
-                inputValue = BigInteger.valueOf( Integer.parseInt(inputLine) );
+                inputValue = inputLine;
 
                 server.setInputs(inputValue);
                 server.runOnline();
 
                 // get outputs
-                /*
                 for (int outputIndex = 0; outputIndex < server.results.length; outputIndex++) {
                     System.out.println("Outside: " + server.results[outputIndex]);
-                    outStream.writeBytes(server.results[outputIndex].toString() + "\n");
+                    outStream.writeObject(server.results[outputIndex]);
                 }
-                */
             }
+        } catch (EOFException e) {
+            System.out.println("No more inputs. Will exit.");
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-
 
     }
 }

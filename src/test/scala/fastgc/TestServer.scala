@@ -1,7 +1,8 @@
 package fastgc
 
 import java.net.Socket
-import java.io.DataOutputStream
+import java.io.{ObjectInputStream, DataInputStream, DataOutputStream}
+import java.math.BigInteger
 
 /**
   * Refer to README for details.
@@ -17,8 +18,16 @@ object TestServer {
      val sock = new Socket("localhost", 3491)
      println("Connected")
      val outStream = new DataOutputStream(sock.getOutputStream)
-     println("to write data..")
-     outStream.writeBytes("1")
-     println("finish")
+     val inStream = new ObjectInputStream(sock.getInputStream)
+
+     for (i <- 0 to 5) {
+       println("to write data..")
+       outStream.writeInt(1 + i)
+       println("finish writing. now get results..")
+
+       println(inStream.readObject().asInstanceOf[BigInteger])
+       println(inStream.readObject().asInstanceOf[BigInteger])
+     }
+
    }
  }
