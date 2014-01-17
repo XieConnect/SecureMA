@@ -75,8 +75,9 @@ object Mediator {
     // sum(weight_i) of denominator; sum(beta_i * weight_i) of numerator respectively
     //DEBUG for verification only
     var testWeightSum, testBetaWeightSum = 0.0
-
     val startedAt = System.currentTimeMillis()
+
+    // scure summation
     for (record <- records) {
       weightSum = someone.add(weightSum, new BigInteger(record(0))).mod(paillierNS)
       betaWeightSum = someone.add(betaWeightSum, new BigInteger(record(1))).mod(paillierNS)
@@ -86,6 +87,9 @@ object Mediator {
       testBetaWeightSum += record(3).toDouble
     }
     val smcTime = System.currentTimeMillis()
+
+
+    //TEMP COMMENTED to run division manually
 
     //-- Secure Division
     //val decryptedNumerator = decryptData(betaWeightSum)
@@ -98,6 +102,10 @@ object Mediator {
 
     (computedDivision, smcTime - startedAt, System.currentTimeMillis() - smcTime,
       plainDivision, "NA", "NA")
+
+    /*
+    (0, smcTime - startedAt, "NA", "NA", "NA", "NA")
+    */
   }
 
 

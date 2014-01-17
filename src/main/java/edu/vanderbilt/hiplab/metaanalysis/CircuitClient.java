@@ -7,8 +7,7 @@ import Program.Program;
 import Utils.StopWatch;
 import jargs.gnu.CmdLineParser;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import java.io.*;
 import java.math.BigInteger;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -68,26 +67,31 @@ public class CircuitClient {
         Socket sock = ss.accept();
         System.out.println("## Input socket OK.");
 
+        BigInteger inputLine;
+        ObjectInputStream inStream = new ObjectInputStream(sock.getInputStream());
+        ObjectOutputStream outStream = new ObjectOutputStream(sock.getOutputStream());
         System.out.println("## Now take inputs (before WHILE).");
-        while (true) {
 
-            DataInputStream inStream = new DataInputStream(sock.getInputStream());
-            DataOutputStream outStream = new DataOutputStream(sock.getOutputStream());
-            String inputLine = null;
+        try {
+            while (true) {
+                inputLine = (BigInteger) inStream.readObject();
 
-            if ( (inputLine = inStream.readLine()) != null ) {
                 System.out.println("#### One more inputs: " + inputLine);
-                inputValue = BigInteger.valueOf( Integer.parseInt(inputLine) );
+                inputValue = inputLine;
 
                 client.setInputs(inputValue);
                 client.runOnline();
 
-                /*
-                outStream.writeBytes(client.randa.toString() + "\n");
-                outStream.writeBytes(client.randb.toString() + "\n");
-                */
+                outStream.writeObject(client.randa);
+                outStream.writeObject(client.randb);
             }
+
+        } catch (EOFException e) {
+            System.out.println("No more inputs. Will exit.");
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+
 
     }
 }
