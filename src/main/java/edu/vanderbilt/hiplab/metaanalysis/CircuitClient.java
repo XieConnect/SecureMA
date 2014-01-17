@@ -7,7 +7,11 @@ import Program.Program;
 import Utils.StopWatch;
 import jargs.gnu.CmdLineParser;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.math.BigInteger;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.Random;
 
 /**
@@ -59,11 +63,31 @@ public class CircuitClient {
 
         client.runOffline();
 
-        for (int i = 0; i < 3; i++) {
-            System.out.println("#### One more inputs:");
-            client.setInputs(inputValue);
-            client.runOnline();
+        // host socket server to get inputs
+        ServerSocket ss = new ServerSocket(3492);
+        Socket sock = ss.accept();
+        System.out.println("## Input socket OK.");
+
+        System.out.println("## Now take inputs (before WHILE).");
+        while (true) {
+
+            DataInputStream inStream = new DataInputStream(sock.getInputStream());
+            DataOutputStream outStream = new DataOutputStream(sock.getOutputStream());
+            String inputLine = null;
+
+            if ( (inputLine = inStream.readLine()) != null ) {
+                System.out.println("#### One more inputs: " + inputLine);
+                inputValue = BigInteger.valueOf( Integer.parseInt(inputLine) );
+
+                client.setInputs(inputValue);
+                client.runOnline();
+
+                /*
+                outStream.writeBytes(client.randa.toString() + "\n");
+                outStream.writeBytes(client.randb.toString() + "\n");
+                */
+            }
         }
-        System.out.println("From client!");
+
     }
 }
