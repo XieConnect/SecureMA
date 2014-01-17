@@ -20,6 +20,7 @@ public class CircuitServer {
     // input value to the circuit (random)
     static BigInteger inputValue;
     static int nBits;
+    static int inputPort;
 
     static Random rnd = new Random();
 
@@ -30,6 +31,8 @@ public class CircuitServer {
     private static void process_cmdline_args(String[] args) {
         CmdLineParser parser = new CmdLineParser();
         CmdLineParser.Option optionBitLength = parser.addIntegerOption('n', "bit-length");
+        CmdLineParser.Option optionSocketPort = parser.addIntegerOption('p', "port");
+        CmdLineParser.Option optionInputPort = parser.addIntegerOption('i', "input-port");
 
         try {
             parser.parse(args);
@@ -40,6 +43,8 @@ public class CircuitServer {
         }
 
         nBits = ((Integer) parser.getOptionValue(optionBitLength, new Integer(64))).intValue();
+        EstimateNConfig.socketPort = ((Integer) parser.getOptionValue(optionSocketPort, new Integer(23456))).intValue();
+        inputPort = ((Integer) parser.getOptionValue(optionInputPort, new Integer(3491))).intValue();
     }
 
     /**
@@ -52,6 +57,7 @@ public class CircuitServer {
     }
 
     public static void main(String[] args) throws Exception {
+        Object tempObject = null;
 
         StopWatch.pointTimeStamp("Starting program");
         process_cmdline_args(args);
@@ -64,38 +70,43 @@ public class CircuitServer {
         server.runOffline();
 
         // host socket server to get inputs
-        ServerSocket ss = new ServerSocket(3491);
-        Socket sock = ss.accept();
-        System.out.println("## Input socket connected.");
-
+        ServerSocket ss = new ServerSocket(inputPort);
 
         System.out.println("## Now take inputs (before WHILE).");
         BigInteger inputLine;
-        ObjectInputStream inStream = new ObjectInputStream(sock.getInputStream());
-        ObjectOutputStream outStream = new ObjectOutputStream(sock.getOutputStream());
 
-        try {
-            while (true) {
+        String tmp;
+
+        while (true) {
+            Socket sock = ss.accept();
+            System.out.println("## Input socket connected.");
+            ObjectInputStream inStream = new ObjectInputStream(sock.getInputStream());
+            ObjectOutputStream outStream = new ObjectOutputStream(sock.getOutputStream());
+
+            try {
                 inputLine = (BigInteger) inStream.readObject();
-
-                System.out.println("## Read inputs:");
-                System.out.println("Got: " + inputLine);
-                inputValue = inputLine;
-
-                server.setInputs(inputValue);
-                server.runOnline();
-
-                // get outputs
-                for (int outputIndex = 0; outputIndex < server.results.length; outputIndex++) {
-                    System.out.println("Outside: " + server.results[outputIndex]);
-                    outStream.writeObject(server.results[outputIndex]);
-                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                continue;
             }
-        } catch (EOFException e) {
-            System.out.println("No more inputs. Will exit.");
-        } catch (Exception e) {
-            e.printStackTrace();
+
+            System.out.println("## Read inputs:");
+            System.out.println("Got: " + inputLine);
+            inputValue = inputLine;
+
+            server.setInputs(inputValue);
+            server.runOnline();
+
+            // get outputs
+            for (int outputIndex = 0; outputIndex < server.results.length; outputIndex++) {
+                System.out.println("Outside: " + server.results[outputIndex]);
+                outStream.writeObject(server.results[outputIndex]);
+            }
+
+            sock.close();
         }
+
+
 
     }
 }

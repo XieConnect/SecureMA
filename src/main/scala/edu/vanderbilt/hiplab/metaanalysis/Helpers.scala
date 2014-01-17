@@ -19,6 +19,10 @@ object Helpers {
   // scaling factor during SMC
   val MyProperties = new Properties()
   val rand = new Random()
+  // used to scale-up n (gamma's in paper): for N = 80
+  val nScalingFactor = new BigInteger("837963523372001241319907").multiply(
+    BigInteger.valueOf(2).pow(Mediator.MaxN * (Mediator.K_TAYLOR_PLACES - 1) ).multiply(BigInteger.valueOf(Mediator.LCM)) )
+
 
   /**
    * Find value corresponding to queried property in system config
@@ -113,6 +117,12 @@ object Helpers {
       xValue.subtract(shareRand).toString)
   }
 
+  def randomizeInputs(xValue: BigInteger): Array[BigInteger] = {
+    val shareRand = BigInteger.valueOf(rand.nextInt(Integer.MAX_VALUE))
+    // bob, alice
+    Array(shareRand, xValue.subtract(shareRand))
+  }
+
   /**
    * Convert Paillier encryption to secret shares
    * For E(x), we return (in plain value): x1 = x + r1, x2 = - r1
@@ -197,7 +207,7 @@ object Helpers {
    */
   def encryptBeta(beta: BigInteger) = {
     val someone = new Paillier(Helpers.getPublicKey())
-    var scaledBeta = someone.encrypt( BigInteger.valueOf(2).pow(Mediator.MaxN * (Mediator.K_TAYLOR_PLACES - 1)).multiply(BigInteger.valueOf(Mediator.LCM)).multiply(beta.abs) )
+    var scaledBeta = someone.encrypt( nScalingFactor.multiply(beta.abs) )
     // handle negatives separately
     if (beta.compareTo(BigInteger.ZERO) < 0) scaledBeta = someone.multiply(scaledBeta, BigInteger.valueOf(-1))
     //saveFairplayResult(Array[BigInteger](scaledBeta), MyUtil.pathFile(property("fairplay_script")) + "." + who + ".beta")
