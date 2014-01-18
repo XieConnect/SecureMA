@@ -34,6 +34,7 @@ object Mediator {
   //val FieldMax = new BigInteger("%.0f".format(math.pow(2, FieldBitsMax)))
 
   val FairplayFile = Helpers.property("fairplay_script")
+  val someone = new Paillier(Helpers.getPublicKey())
 
   /**
    * Generate and store Paillier Threshold keys to file
@@ -71,7 +72,6 @@ object Mediator {
    */
   def inverseVariance(records: Array[Array[String]], divisionWriter: PrintWriter) = {
     val paillierNS = Helpers.paillierNS()
-    val someone = new Paillier(Helpers.getPublicKey())
     var weightSum, betaWeightSum = someone.encrypt(BigInteger.ZERO).mod(paillierNS)
     // sum(weight_i) of denominator; sum(beta_i * weight_i) of numerator respectively
     //DEBUG for verification only
@@ -185,7 +185,6 @@ object Mediator {
     // Perform Taylor expansion (assemble coefficients and variables)
     //TODO read Alice's input via network
     //val encryptedPowers = MyUtil.readResult(MyUtil.pathFile(FairplayFile) + ".Alice.power")
-    val someone = new Paillier(Helpers.getPublicKey())
 
     (encryptedPowers zip coefficients).foldLeft(someone.encrypt(BigInteger.ZERO)) { (a, x) =>
       someone.add(a, someone.multiply(x._1, x._2).mod(paillierNSquared)).mod(paillierNSquared)
@@ -212,18 +211,18 @@ object Mediator {
 
   /**
    * Compute ln(x) securely (the second phase: Taylor expansion)
-   * @param alpha  Bob's input alpha
+   * @param alpha  Bob's input alpha (plain)
    * @param beta  Bob's input beta
+   * @param alicePowers Alice's powers of alpha's in encrypted form (used later for Taylor expansion)
    * @return  encryption of scaled-up ln(x)
    */
   def secureLn(alpha: BigInteger, beta: BigInteger,
                alicePowers: Array[BigInteger], aliceBeta: BigInteger) = {
-    val someone = new Paillier(Helpers.getPublicKey())
     val taylorResult = taylorExpansion(alpha, alicePowers)
     val paillierNS = Helpers.paillierNS()
 
     //TODO transfer from socket
-    val tmp = someone.add(beta, aliceBeta).mod(paillierNS)
+    val tmp = someone.add(beta, aliceBeta).mod(paillierNS).multiply( Helpers.nScalingFactor ).mod(paillierNS)
     someone.add(taylorResult, tmp).mod(paillierNS)
   }
 
@@ -343,8 +342,8 @@ object Mediator {
 //    val lnEncryption = Mediator.secureLn(bobClient.result(0), Helpers.encryptBeta(bobClient.result(1)),
 //      aliceClient.result.init, aliceClient.result.last)
 
-    val lnEncryption = Mediator.secureLn(aResult(0), Helpers.encryptBeta(aResult(1)),
-      Manager.encryptPowers(bResult(0)), bResult(1))
+    val lnEncryption = Mediator.secureLn(aResult(0), Helpers.encryptData(someone, aResult(1)),
+      Manager.encryptPowers(bResult(0)), Helpers.encryptData(someone, bResult(1)) )
     timerStr += ("," + (System.currentTimeMillis() - fairplayEnded))
 
     println(timerStr)

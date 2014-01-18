@@ -42,7 +42,7 @@ public class CircuitServer {
             System.exit(2);
         }
 
-        nBits = ((Integer) parser.getOptionValue(optionBitLength, new Integer(64))).intValue();
+        nBits = ((Integer) parser.getOptionValue(optionBitLength, new Integer(128))).intValue();
         EstimateNConfig.socketPort = ((Integer) parser.getOptionValue(optionSocketPort, new Integer(23456))).intValue();
         inputPort = ((Integer) parser.getOptionValue(optionInputPort, new Integer(3491))).intValue();
     }

@@ -1,9 +1,18 @@
 #!/usr/bin/Rscript
 # simulate the binary circuit for estimating n and epsilon
+args <- commandArgs(TRUE)
+
+x1 <- as.integer(args[1])
+x2 <- as.integer(args[2])
+
+x <- x1 + x2
 
 # to customize inputs
 maxN <- 80
-x <- 1 + 5
+bitLength <- 128
+ 
+randa <- 11
+randb <- 22
 
 ## init
 est <- 1
@@ -15,7 +24,6 @@ for (i in 1:maxN) {
   if (est < x) {
     est = 2*est
     n = n+1
-
   }
 }
 
@@ -34,4 +42,13 @@ for (i in 1:maxN) {
 
 }
 
-print(paste("est:  ", est))
+#print(paste("est:  ", est))
+
+print("-- Server: ---")
+print(paste("est - randa:  ", est - randa))
+print(paste("n - randb:  ", n - randb))
+
+print("")
+print("-- Client: ---")
+print(paste("- randa:  ", - randa))
+print(paste("- randb:  ", - randb))
