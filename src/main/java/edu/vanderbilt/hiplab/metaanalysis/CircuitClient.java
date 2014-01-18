@@ -45,7 +45,7 @@ public class CircuitClient {
             System.exit(2);
         }
 
-        nBits = ((Integer) parser.getOptionValue(optionBitLength, new Integer(64))).intValue();
+        nBits = ((Integer) parser.getOptionValue(optionBitLength, new Integer(128))).intValue();
         ProgClient.serverIPname = (String) parser.getOptionValue(optionServerIPname, new String("localhost"));
         Program.iterCount = ((Integer) parser.getOptionValue(optionIterCount, new Integer(1))).intValue();
         EstimateNConfig.socketPort = ((Integer) parser.getOptionValue(optionSocketPort, new Integer(23456))).intValue();
@@ -97,8 +97,8 @@ public class CircuitClient {
                 client.setInputs(inputValue);
                 client.runOnline();
 
-                outStream.writeObject(client.randa);
-                outStream.writeObject(client.randb);
+                outStream.writeObject(client.randa.negate());
+                outStream.writeObject(client.randb.negate());
 
             sock.close();
         }

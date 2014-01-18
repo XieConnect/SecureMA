@@ -133,8 +133,7 @@ object Manager {
   }
 
   /**
-   * Compute encryptions of powers of alpha2
-   * NOTE: there is chance baseValue may be negative
+   * Compute encryptions of powers of alpha2 (applicable to both positive/negative)
    * @param baseValue  alpha2
    * @return  vector of encrypted powers
    */

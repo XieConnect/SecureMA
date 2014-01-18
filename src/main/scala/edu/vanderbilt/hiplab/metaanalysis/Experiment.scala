@@ -197,7 +197,7 @@ object Experiment {
   }
 
   /**
-   * Compute actual division, given numerator and denominator
+   * Compute actual division, given encrypted numerator and denominator
    * @param numeratorEncryption numerator encryption
    * @param denominatorEncryption denominator encryption
    * @param toInit whether or not to generate keys/compile Fairplay
@@ -205,6 +205,7 @@ object Experiment {
   def runDivision( numeratorEncryption: BigInteger, denominatorEncryption: BigInteger, coefficient: Int = 1,
                    timerWriter: PrintWriter = null, toInit: Boolean = false,
                    someone: Paillier = new Paillier(Helpers.getPublicKey()) ): Double = {
+
     val paillierNSquared = Helpers.getPublicKey().getNSPlusOne
     val decryptionFuture: List[Future[BigInteger]] = List(numeratorEncryption, denominatorEncryption).map(a =>
       future { blocking {Mediator.decryptData(a)} })
@@ -213,6 +214,7 @@ object Experiment {
     //println("LnWrapper: " + lnWrapper(BigInteger.valueOf(100), toInit = false, writer = null,
     //              bobPort = 3490, alicePort = 3491, socketPort = 3496)  )
 
+    //TODO why not use future instead of FutureTask?
     val pool = Executors.newFixedThreadPool(4)
     val numeratorFuture = new FutureTask[BigInteger]( new Callable[BigInteger] {
       def call(): BigInteger = Mediator.lnWrapper(decryptions(0).abs, toInit = false,

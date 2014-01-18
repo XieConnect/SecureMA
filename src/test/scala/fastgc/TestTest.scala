@@ -14,23 +14,22 @@ import edu.vanderbilt.hiplab.metaanalysis.Mediator
   */
 object TestTest {
    def main(args: Array[String]) = {
-     /*
-     val a = new CircuitQuery(3491)
-     val b = new CircuitQuery(3492)
 
-     for (i <- 0 to 5) {
+     for (i <- 0 to 30) {
+       val a = new CircuitQuery(3491)
+       val b = new CircuitQuery(3492)
+
        println("Iteration # " + i)
-       val aa = future { a.query(BigInteger.valueOf(1 + i)) }
-       val bb = future { b.query(BigInteger.valueOf(5 + i)) }
+       val aa = future { a.query(BigInteger.valueOf(i - 25)) }
+       val bb = future { b.query(BigInteger.valueOf(25)) }
 
        for (result <- Await.result(aa, 20 seconds)) println(result)
        for (result <- Await.result(bb, 20 seconds)) println(result)
      }
-     */
 
-     println(Mediator.lnWrapper(BigInteger.valueOf(10), bobPort = 3491, alicePort = 3492))
-     println(Mediator.lnWrapper(BigInteger.valueOf(21), bobPort = 3491, alicePort = 3492))
-     println(Mediator.lnWrapper(BigInteger.valueOf(10), bobPort = 3491, alicePort = 3492))
+//     println(Mediator.lnWrapper(BigInteger.valueOf(10), bobPort = 3491, alicePort = 3492))
+//     println(Mediator.lnWrapper(BigInteger.valueOf(21), bobPort = 3491, alicePort = 3492))
+//     println(Mediator.lnWrapper(BigInteger.valueOf(10), bobPort = 3491, alicePort = 3492))
 
 
    }

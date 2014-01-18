@@ -282,4 +282,10 @@ object Helpers {
   def encryptNegative(someone: Paillier, negativeValue: BigInteger): BigInteger = {
     someone.multiply(someone.encrypt(negativeValue.abs), -1).mod(someone.getPublicKey.getNSPlusOne)
   }
+
+  def encryptData(someone: Paillier, rawData: BigInteger): BigInteger = {
+    val tmp = someone.encrypt(rawData.abs)
+
+    if (rawData.compareTo(BigInteger.ZERO) >= 0)  tmp else someone.multiply(tmp, -1).mod(someone.getPublicKey.getNSPlusOne)
+  }
 }
