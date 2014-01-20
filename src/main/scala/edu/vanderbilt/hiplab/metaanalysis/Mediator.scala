@@ -143,11 +143,9 @@ object Mediator {
    * @return always-positive plain value result
    */
   def decryptDataNoProcessing(encrypted: BigInteger) = {
-    val configs = Helpers.properties("data_directory", "private_keys", "threshold_parties")
-    val privateKeys = KeyGen.PaillierThresholdKeyLoad(new File(configs(0), configs(1)).toString)
-    val parties = for (k <- privateKeys.take(configs(2).toInt)) yield new PaillierThreshold(k)
-    //val parties = privateKeys.take(configs(2).toInt).map(new PaillierThreshold(_))
-    parties(0).combineShares((for (p <- parties) yield p.decrypt(encrypted)): _*).mod(privateKeys(0).getN)
+    Helpers.DecryptionParties(0).combineShares(
+      (for (p <- Helpers.DecryptionParties) yield p.decrypt(encrypted) ): _*)
+      .mod(Helpers.DecryptionParties(0).getPrivateKey.getN)
   }
 
   /**
@@ -226,8 +224,8 @@ object Mediator {
    * @return ln(x) decryption
    */
   def decryptLn(encryptedLn: BigInteger, scale: Int = 10): Double = {
-    val divisor = Helpers.POWER_OF_TWO.pow(Helpers.K_TAYLOR_PLACES).multiply(Helpers.LCM)
-    new BigDecimal(decryptData(encryptedLn)).divide(new BigDecimal(divisor), scale, BigDecimal.ROUND_HALF_UP).doubleValue()
+    new BigDecimal(decryptData(encryptedLn)).divide(new BigDecimal(Helpers.LN_DIVISOR),
+      scale, BigDecimal.ROUND_HALF_UP).doubleValue()
   }
 
   def compile() = {

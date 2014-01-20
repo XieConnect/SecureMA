@@ -228,8 +228,8 @@ object Experiment {
     val numeratorLn = numeratorFuture.get()
     val denominatorLn = denominatorFuture.get()
 
-    val diff = someone.add( if (coefficient > 1) someone.multiply(numeratorLn, coefficient).mod(paillierNSquared) else numeratorLn,
-                             someone.multiply(denominatorLn, -1).mod(paillierNSquared) ).mod(paillierNSquared)
+    val diff = someone.add( if (coefficient > 1) someone.multiply(numeratorLn, coefficient) else numeratorLn,
+                             someone.multiply(denominatorLn, -1) ).mod(paillierNSquared)
 
     val decryptLn = System.currentTimeMillis()
     val tmp = Mediator.decryptLn(diff, 10)

@@ -8,9 +8,9 @@ package edu.vanderbilt.hiplab.metaanalysis
 
 import java.io._
 import java.util.{Random, Properties}
-import paillierp.key.PaillierKey
+import paillierp.key.{PaillierPrivateThresholdKey, KeyGen, PaillierKey}
 import java.math.BigInteger
-import paillierp.Paillier
+import paillierp.{PaillierThreshold, Paillier}
 import SFE.BOAL.MyUtil
 import io.Source
 import scala.Tuple2
@@ -30,6 +30,8 @@ object Helpers {
   var FieldBitsMax = 0
   // used to scale-up n (gamma's in paper)
   var nScalingFactor = BigInteger.ZERO
+  var DecryptionParties: Array[PaillierThreshold] = _
+
 
   // pre-compute common constants
   def precompute() {
@@ -38,11 +40,15 @@ object Helpers {
       MaxN = Helpers.property("max_exponent_n").toInt
       POWER_OF_TWO = ArithmeticUtils.pow(BigInteger.valueOf(2), MaxN)
       LCM = BigInteger.valueOf( (2 to K_TAYLOR_PLACES).foldLeft(1)((a, x) => ArithmeticUtils.lcm(a, x)) )
-      LN_DIVISOR = ArithmeticUtils.pow(POWER_OF_TWO, K_TAYLOR_PLACES).multiply(LCM)
+      LN_DIVISOR = POWER_OF_TWO.pow(K_TAYLOR_PLACES).multiply(LCM)
       nScalingFactor = new BigInteger("837963523372001241319907").multiply(
         BigInteger.valueOf(2).pow(MaxN * (K_TAYLOR_PLACES - 1) ).multiply(LCM) )
       FieldBitsMax = ((MaxN + 2) * K_TAYLOR_PLACES +
         (math.log(MaxN) / math.log(2) + math.log(Helpers.getMultiplier()  * 100) / math.log(2)).ceil.toInt)
+
+      val privateKeys = KeyGen.PaillierThresholdKeyLoad(
+        new File(property("data_directory"), property("private_keys")).toString)
+      DecryptionParties = for (k <- privateKeys.take(property("threshold_parties").toInt)) yield new PaillierThreshold(k)
     }
 
     isPrecomputed = true
