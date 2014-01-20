@@ -14,6 +14,9 @@ import paillierp.key.PaillierPrivateThresholdKey
 import paillierp.PaillierThreshold
 
 import SFE.BOAL.{MyUtil, Alice}
+import concurrent.ExecutionContext.Implicits.global
+import concurrent.{future, Await}
+import concurrent.duration._
 
 object Manager {
   //TODO Read config file
@@ -147,12 +150,13 @@ object Manager {
     }
 
     (0 to kTaylorPlaces).par.map ( i =>
-      someone.multiply(baseEncryption, baseValue.pow(i)).mod(paillierNSquared)).toArray
+      future( someone.multiply(baseEncryption, baseValue.pow(i)).mod(paillierNSquared) ) )
+      .map( fut => Await.result(fut, 3 seconds) )(collection.breakOut)
   }
 
 
   def sendData(powers: Array[BigInteger], beta: BigInteger) = {
-    val ss = new Socket("localhost", 3497);
+    val ss = new Socket("localhost", 3497)
     val os = new ObjectOutputStream(ss.getOutputStream())
     os.writeObject(powers)
     os.writeObject(beta)

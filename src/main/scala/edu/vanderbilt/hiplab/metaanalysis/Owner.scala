@@ -12,8 +12,6 @@ import akka.actor._
 import akka.routing.RoundRobinRouter
 
 object Owner {
-  val MULTIPLIER = Helpers.getMultiplier()
-
   // Encrypt and verify data in multi-thread
   sealed trait MyMessage
   case object Encrypt extends MyMessage
@@ -47,8 +45,8 @@ object Owner {
       case EncryptionWork(indx, record, someone, paillierNS) =>
         val weightI = 1.0 / math.pow(record(11).toDouble, 2)  // = 1 / se^2
         val betaWeight = record(10).toDouble * weightI
-        val raisedWeightI = Helpers.toBigInteger(weightI * Helpers.getMultiplier())
-        val raisedBetaWeight = Helpers.toBigInteger(betaWeight.abs * Helpers.getMultiplier())
+        val raisedWeightI = Helpers.toBigInteger(weightI * Helpers.SMCMultiplier)
+        val raisedBetaWeight = Helpers.toBigInteger(betaWeight.abs * Helpers.SMCMultiplier)
         var encryptedBetaWeight = someone.encrypt(raisedBetaWeight).mod(paillierNS)
         if (betaWeight < 0) encryptedBetaWeight = someone.multiply(encryptedBetaWeight, -1).mod(paillierNS)
 
@@ -59,9 +57,9 @@ object Owner {
       // To verify data record
       case VerificationWork(indx, data) =>
         val weight_i_correct: Boolean = Mediator.decryptData(new BigInteger(data(0))) ==
-          Helpers.toBigInteger(data(2).toDouble * MULTIPLIER)
+          Helpers.toBigInteger(data(2).toDouble * Helpers.SMCMultiplier)
         val beta_weight_correct: Boolean = Mediator.decryptData(new BigInteger(data(1))) ==
-          Helpers.toBigInteger(data(3).toDouble * MULTIPLIER)
+          Helpers.toBigInteger(data(3).toDouble * Helpers.SMCMultiplier)
 
         sender ! VerificationResult( indx, Array(weight_i_correct, beta_weight_correct) )
     }

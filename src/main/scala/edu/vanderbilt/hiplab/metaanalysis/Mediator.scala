@@ -8,10 +8,9 @@ package edu.vanderbilt.hiplab.metaanalysis
 import java.io._
 import java.math.BigInteger
 import java.util
-import paillierp.Paillier
+import paillierp.{PartialDecryption, Paillier, PaillierThreshold}
 import paillierp.key.KeyGen
 
-import paillierp.PaillierThreshold
 import java.math.BigDecimal
 import org.apache.commons.math3.util.ArithmeticUtils
 import java.net.ServerSocket
@@ -84,7 +83,7 @@ object Mediator {
 
     //-- Secure Division
     var computedDivision = math.sqrt(
-      Experiment.runDivision(betaWeightSum, weightSum, 2, divisionWriter) / Helpers.getMultiplier())
+      Experiment.runDivision(betaWeightSum, weightSum, 2, divisionWriter) / Helpers.SMCMultiplier)
     val divisionTime = System.currentTimeMillis()
 
     val plainDivision = testBetaWeightSum / math.sqrt(testWeightSum)
@@ -140,12 +139,16 @@ object Mediator {
 
   /**
    * Decrypt ciphertext (without further processing about expected negative results)
+   * Note: we emulate partial decryption in distributed setting using separate threads
    * @param encrypted ciphertext
    * @return always-positive plain value result
    */
   def decryptDataNoProcessing(encrypted: BigInteger) = {
-    Helpers.DecryptionParties(0).combineShares(
-      (for (p <- Helpers.DecryptionParties) yield p.decrypt(encrypted) ): _*)
+    val beforeDecrypt = System.currentTimeMillis()
+    val results = Helpers.DecryptionParties.view.par.map ( p => future(p.decrypt(encrypted)) )
+                    .map(a => Await.result(a, 3 seconds))(collection.breakOut)
+
+    Helpers.DecryptionParties(0).combineShares(results: _*)
       .mod(Helpers.DecryptionParties(0).getPrivateKey.getN)
   }
 
