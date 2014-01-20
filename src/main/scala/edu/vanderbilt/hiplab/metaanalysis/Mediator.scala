@@ -221,12 +221,9 @@ object Mediator {
   def secureLn(alpha: BigInteger, beta: BigInteger,
                alicePowers: Array[BigInteger], aliceBeta: BigInteger) = {
     val taylorResult = taylorExpansion(alpha, alicePowers)
-    val paillierNS = Helpers.paillierNS()
 
     //TODO transfer from socket
-    //val tmp = someone.add(beta, aliceBeta).multiply( Helpers.nScalingFactor ).mod(paillierNS)
-    val tmp = someone.add(beta, aliceBeta)
-    someone.add(taylorResult, tmp).mod(paillierNS)
+    someone.add( taylorResult, someone.add(beta, aliceBeta) ).mod(Helpers.paillierNS())
   }
 
   /**
@@ -320,14 +317,6 @@ object Mediator {
 
     val startedAt = System.currentTimeMillis()
 
-    //-- Estimate n in ln(x) phase 1 using garbled circuit  --
-//    // Bob
-//    val bobClient = new GCClient()
-//    val bobFuture = future { bobClient.run(bobPort, Array(inputs(0), socketPort.toString)) }
-//    // Alice
-//    val aliceClient = new GCClient()
-//    val aliceFuture = future { aliceClient.run(alicePort, Array(inputs(1), socketPort.toString)) }
-
     val a = new CircuitQuery(bobPort)
     val b = new CircuitQuery(alicePort)
 
@@ -341,28 +330,10 @@ object Mediator {
     val fairplayEnded = System.currentTimeMillis()
     timerStr += ("," + (fairplayEnded - startedAt))
 
-    //-- Assemble ln(x) pieces --
-//    val lnEncryption = Mediator.secureLn(bobClient.result(0), Helpers.encryptBeta(bobClient.result(1)),
-//      aliceClient.result.init, aliceClient.result.last)
-
-    //DEBUG
-    val tmpABeta = Helpers.encryptBeta(aResult(1), someone)
-    val startEncryptPowers = System.currentTimeMillis()
-    val tmpEncryptPowers = Manager.encryptPowers(bResult(0))
-    val endEncryptPowers = System.currentTimeMillis()
-    val tmpBBeta = Helpers.encryptBeta(bResult(1), someone)
-    val endBBeta = System.currentTimeMillis()
-
-    val lnEncryption = Mediator.secureLn( aResult(0), tmpABeta,
-      tmpEncryptPowers, tmpBBeta )
-
-    //DEBUG
-    println( "Encrypt A beta: " + (startEncryptPowers - fairplayEnded) +
-            "\nEncrypt Powers: " + (endEncryptPowers - startEncryptPowers) +
-            "\nEncrypt B beta: " + (endBBeta - endEncryptPowers) )
+    val lnEncryption = Mediator.secureLn( aResult(0), Helpers.encryptBeta(aResult(1), someone),
+      Manager.encryptPowers(bResult(0)), Helpers.encryptBeta(bResult(1), someone) )
 
     timerStr += ("," + (System.currentTimeMillis() - fairplayEnded))
-
     println(timerStr)
 
     lnEncryption
