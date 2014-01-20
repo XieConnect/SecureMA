@@ -116,10 +116,6 @@ object Manager {
     (weightErrors, betaWeightErrors)
   }
 
-
-
-
-
   /**
    * Run Alice (communicate with Bob)
    * @return  Alice's shares of alpha and beta
