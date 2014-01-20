@@ -205,14 +205,10 @@ object Helpers {
    * @param beta  the originally scaled-up Beta output by Fairplay
    * @return encryption of scaled-up beta
    */
-  def encryptBeta(beta: BigInteger) = {
-    val someone = new Paillier(Helpers.getPublicKey())
-    var scaledBeta = someone.encrypt( nScalingFactor.multiply(beta.abs) )
+  def encryptBeta(beta: BigInteger, someone: Paillier = new Paillier(Helpers.getPublicKey())) = {
+    val scaledBeta = someone.encrypt( nScalingFactor.multiply(beta.abs) )
     // handle negatives separately
-    if (beta.compareTo(BigInteger.ZERO) < 0) scaledBeta = someone.multiply(scaledBeta, BigInteger.valueOf(-1))
-    //saveFairplayResult(Array[BigInteger](scaledBeta), MyUtil.pathFile(property("fairplay_script")) + "." + who + ".beta")
-
-    scaledBeta
+    if (beta.compareTo(BigInteger.ZERO) < 0) someone.multiply(scaledBeta, BigInteger.valueOf(-1))  else scaledBeta
   }
 
 

@@ -1,0 +1,63 @@
+#!/bin/bash
+# Administer back-end circuit services
+
+# Usage:
+# To start:
+#   ./circuit_servers
+# To stop:
+#  ./fairplay_server stop
+# To show running services:
+#  ./fairplay_server show 
+
+JAR_PATH=out/MetaAnalysis.jar
+
+if [ -n "${JAVA_HOME}" ]; then
+  JAVA=${JAVA_HOME}/bin/java
+else
+  JAVA=java
+fi
+
+## 
+# Reset logs
+function reset_log {
+  :> data/bob3490.log
+  :> data/alice3491.log
+  :> data/bob3492.log
+  :> data/alice3493.log
+}
+
+# start all services
+function start_services {
+  ${JAVA} -classpath $JAR_PATH  edu.vanderbilt.hiplab.metaanalysis.CircuitServer -i 3491 -p 23456 >> data/bob3491.log &
+  ${JAVA} -classpath $JAR_PATH  edu.vanderbilt.hiplab.metaanalysis.CircuitServer -i 3494 -p 23453 >> data/bob3494.log &
+  
+  ${JAVA} -classpath $JAR_PATH  edu.vanderbilt.hiplab.metaanalysis.CircuitClient -i 3492 -p 23456 >> data/client3492.log &
+  ${JAVA} -classpath $JAR_PATH  edu.vanderbilt.hiplab.metaanalysis.CircuitClient -i 3495 -p 23453 >> data/client3495.log &
+}
+
+# stop all services
+function stop_services {
+  netstat -lpn | grep '/java' | grep :349 | tr -s ' ' | cut -d' ' -f7 | sed 's|/java||g' | xargs kill
+}
+
+function show_services {
+  netstat -antp | grep :349 | grep '/java'
+}
+
+
+if [ $# -eq 0 ]; then
+  echo "> To start services..."
+  reset_log
+  start_services
+
+  sleep 2
+  show_services
+elif [ $1 == "show" ]; then
+  show_services
+elif [ $1 == "stop" ]; then
+  echo "Stopping all services..."
+  stop_services
+  
+  sleep 2
+  show_services
+fi

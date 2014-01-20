@@ -211,9 +211,6 @@ object Experiment {
       future { blocking {Mediator.decryptData(a)} })
     val decryptions = Await.result(Future.sequence(decryptionFuture), 20 second)
 
-    //println("LnWrapper: " + lnWrapper(BigInteger.valueOf(100), toInit = false, writer = null,
-    //              bobPort = 3490, alicePort = 3491, socketPort = 3496)  )
-
     //TODO why not use future instead of FutureTask?
     val pool = Executors.newFixedThreadPool(4)
     val numeratorFuture = new FutureTask[BigInteger]( new Callable[BigInteger] {
@@ -231,17 +228,13 @@ object Experiment {
     val numeratorLn = numeratorFuture.get()
     val denominatorLn = denominatorFuture.get()
 
-    //val numeratorLn = Mediator.lnWrapper(decryptions(0).abs, toInit, timerWriter)
-    // to delimiter time records
-    //if (timerWriter != null) timerWriter.print(",")
-
-    //val denominatorLn = Mediator.lnWrapper(decryptions(1), false, timerWriter)
-    //if (timerWriter != null) timerWriter.println
-
     val diff = someone.add( if (coefficient > 1) someone.multiply(numeratorLn, coefficient).mod(paillierNSquared) else numeratorLn,
                              someone.multiply(denominatorLn, -1).mod(paillierNSquared) ).mod(paillierNSquared)
 
-    math.exp(Mediator.decryptLn(diff, 10))
+    val decryptLn = System.currentTimeMillis()
+    val tmp = Mediator.decryptLn(diff, 10)
+    println("  Finished decrypt diff: " + (System.currentTimeMillis() - decryptLn) )
+    math.exp(tmp)
   }
 
 
