@@ -137,7 +137,7 @@ object Manager {
     val someone = new Paillier(Helpers.getPublicKey())
     val paillierN = someone.getPublicKey.getN
     val paillierNSquared = paillierN.multiply(paillierN)
-    val kTaylorPlaces = Mediator.K_TAYLOR_PLACES
+    val kTaylorPlaces = Helpers.K_TAYLOR_PLACES
 
     val baseEncryption = someone.encrypt(BigInteger.ONE)
 

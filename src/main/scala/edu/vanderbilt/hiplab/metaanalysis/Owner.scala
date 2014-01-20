@@ -156,9 +156,9 @@ object Owner {
   def verifyEncryption(encryptedFile: String = Helpers.property("encrypted_data_file")) = {
     //- Verify Paillier key size
     println("> To verify key size...")
-    println("  Stored: " + Helpers.getPublicKey().getK + ";  " + " size in code: " + Mediator.FieldBitsMax)
+    println("  Stored: " + Helpers.getPublicKey().getK + ";  " + " size in code: " + Helpers.FieldBitsMax)
 
-    if (Helpers.getPublicKey().getK >= Mediator.FieldBitsMax) {
+    if (Helpers.getPublicKey().getK >= Helpers.FieldBitsMax) {
       println("  Key size correct")
     } else {
       println("  Key size ERROR!")

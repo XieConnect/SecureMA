@@ -17,6 +17,8 @@ import scala.Tuple2
 import org.apache.commons.math3.util.ArithmeticUtils
 
 object Helpers {
+  var isPrecomputed = false
+
   // scaling factor during SMC
   val MyProperties = new Properties()
   val rand = new Random()
@@ -24,20 +26,26 @@ object Helpers {
   var MaxN = 0
   var LCM = BigInteger.ZERO
   var LN_DIVISOR = BigInteger.ZERO
-  var POWER_OF_TWO = BigInteger
-
-  // used to scale-up n (gamma's in paper): for N = 80
+  var POWER_OF_TWO = BigInteger.ZERO
+  var FieldBitsMax = 0
+  // used to scale-up n (gamma's in paper)
   var nScalingFactor = BigInteger.ZERO
 
   // pre-compute common constants
   def precompute() {
-    K_TAYLOR_PLACES = Helpers.property("k_taylor_places").toInt  //it seems 7 is the cap
-    MaxN = Helpers.property("max_exponent_n").toInt
-    POWER_OF_TWO = ArithmeticUtils.pow(BigInteger.valueOf(2), MaxN)
-    LCM = BigInteger.valueOf( (2 to K_TAYLOR_PLACES).foldLeft(1)((a, x) => ArithmeticUtils.lcm(a, x)) )
-    LN_DIVISOR = ArithmeticUtils.pow(POWER_OF_TWO, Mediator.K_TAYLOR_PLACES).multiply(LCM)
-    nScalingFactor = new BigInteger("837963523372001241319907").multiply(
-      BigInteger.valueOf(2).pow(Mediator.MaxN * (Mediator.K_TAYLOR_PLACES - 1) ).multiply(LCM) )
+    if (! isPrecomputed) {
+      K_TAYLOR_PLACES = Helpers.property("k_taylor_places").toInt  //it seems 7 is the cap
+      MaxN = Helpers.property("max_exponent_n").toInt
+      POWER_OF_TWO = ArithmeticUtils.pow(BigInteger.valueOf(2), MaxN)
+      LCM = BigInteger.valueOf( (2 to K_TAYLOR_PLACES).foldLeft(1)((a, x) => ArithmeticUtils.lcm(a, x)) )
+      LN_DIVISOR = ArithmeticUtils.pow(POWER_OF_TWO, K_TAYLOR_PLACES).multiply(LCM)
+      nScalingFactor = new BigInteger("837963523372001241319907").multiply(
+        BigInteger.valueOf(2).pow(MaxN * (K_TAYLOR_PLACES - 1) ).multiply(LCM) )
+      FieldBitsMax = ((MaxN + 2) * K_TAYLOR_PLACES +
+        (math.log(MaxN) / math.log(2) + math.log(Helpers.getMultiplier()  * 100) / math.log(2)).ceil.toInt)
+    }
+
+    isPrecomputed = true
   }
 
   /**

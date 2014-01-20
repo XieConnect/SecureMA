@@ -36,7 +36,7 @@ class ManagerSuite extends FunSuite {
   test("encrypts exact number of powers") {
     val rand = new Random().nextInt(100)
     val encrypted = Manager.encryptPowers(BigInteger.valueOf(rand))
-    expect(Mediator.K_TAYLOR_PLACES + 1)(encrypted.size)
+    expect(Helpers.K_TAYLOR_PLACES + 1)(encrypted.size)
   }
 
   test("encrypted powers are within Paillier range") {
