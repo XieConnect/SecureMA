@@ -19,9 +19,7 @@ import java.util.Random;
 public class CircuitServer {
     // input value to the circuit (random)
     static BigInteger inputValue;
-    static int nBits;
     static int inputPort;
-    private static BigInteger fieldSpace = BigInteger.valueOf(2).pow(EstimateNConfig.nBits);
 
     static Random rnd = new Random();
 
@@ -31,7 +29,6 @@ public class CircuitServer {
 
     private static void process_cmdline_args(String[] args) {
         CmdLineParser parser = new CmdLineParser();
-        CmdLineParser.Option optionBitLength = parser.addIntegerOption('n', "bit-length");
         CmdLineParser.Option optionSocketPort = parser.addIntegerOption('p', "port");
         CmdLineParser.Option optionInputPort = parser.addIntegerOption('i', "input-port");
 
@@ -43,7 +40,6 @@ public class CircuitServer {
             System.exit(2);
         }
 
-        nBits = ((Integer) parser.getOptionValue(optionBitLength, new Integer(128))).intValue();
         EstimateNConfig.socketPort = ((Integer) parser.getOptionValue(optionSocketPort, new Integer(23456))).intValue();
         inputPort = ((Integer) parser.getOptionValue(optionInputPort, new Integer(3491))).intValue();
     }
@@ -58,7 +54,8 @@ public class CircuitServer {
     }
 
     public static void main(String[] args) throws Exception {
-        Object tempObject = null;
+        int maxInputBits = Integer.parseInt(Helpers.property("max_n_bits"));
+        BigInteger fieldSpace = BigInteger.valueOf(2).pow(maxInputBits);
 
         StopWatch.pointTimeStamp("Starting program");
         process_cmdline_args(args);
@@ -66,7 +63,8 @@ public class CircuitServer {
         generateData();
 
         // args: input value,  max bit size of value,  number of loops
-        EstimateNServer server = new EstimateNServer(EstimateNConfig.nBits, EstimateNConfig.maxN);
+        EstimateNServer server = new EstimateNServer( maxInputBits,
+                Integer.parseInt(Helpers.property("max_exponent_n")) );
 
         server.runOffline();
 
@@ -78,6 +76,7 @@ public class CircuitServer {
 
         BigInteger tmp;
 
+        // stay awake and take inputs from outside all the time
         while (true) {
             Socket sock = ss.accept();
             System.out.println("## Input socket connected.");
@@ -92,7 +91,6 @@ public class CircuitServer {
             }
 
             System.out.println("## Read inputs:");
-            System.out.println("Got: " + inputLine);
             inputValue = inputLine;
 
             server.setInputs(inputValue);
@@ -100,7 +98,7 @@ public class CircuitServer {
 
             // get outputs
             for (int outputIndex = 0; outputIndex < server.results.length; outputIndex++) {
-                tmp = server.results[outputIndex].testBit(EstimateNConfig.nBits - 1) ? server.results[outputIndex].subtract(fieldSpace)  :  server.results[outputIndex];
+                tmp = server.results[outputIndex].testBit(EstimateNConfig.MaxInputBits - 1) ? server.results[outputIndex].subtract(fieldSpace)  :  server.results[outputIndex];
 
                 System.out.println("Outside: " + tmp);
                 outStream.writeObject(tmp);

@@ -20,7 +20,6 @@ import java.util.Random;
  */
 public class CircuitClient {
     static BigInteger inputValue;
-    static int nBits;
     static int inputPort;
 
     static Random rnd = new Random();
@@ -45,7 +44,6 @@ public class CircuitClient {
             System.exit(2);
         }
 
-        nBits = ((Integer) parser.getOptionValue(optionBitLength, new Integer(128))).intValue();
         ProgClient.serverIPname = (String) parser.getOptionValue(optionServerIPname, new String("localhost"));
         Program.iterCount = ((Integer) parser.getOptionValue(optionIterCount, new Integer(1))).intValue();
         EstimateNConfig.socketPort = ((Integer) parser.getOptionValue(optionSocketPort, new Integer(23456))).intValue();
@@ -58,14 +56,12 @@ public class CircuitClient {
     }
 
     public static void main(String[] args) throws Exception {
-        Object tempObject = null;
-
         StopWatch.pointTimeStamp("Starting program");
         process_cmdline_args(args);
 
         generateData();
 
-        EstimateNClient client = new EstimateNClient(EstimateNConfig.nBits);
+        EstimateNClient client = new EstimateNClient( Integer.parseInt(Helpers.property("max_n_bits")) );
 
         client.runOffline();
 
