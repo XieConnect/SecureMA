@@ -21,6 +21,7 @@ public class CircuitServer {
     static BigInteger inputValue;
     static int nBits;
     static int inputPort;
+    private static BigInteger fieldSpace = BigInteger.valueOf(2).pow(EstimateNConfig.nBits);
 
     static Random rnd = new Random();
 
@@ -75,7 +76,7 @@ public class CircuitServer {
         System.out.println("## Now take inputs (before WHILE).");
         BigInteger inputLine;
 
-        String tmp;
+        BigInteger tmp;
 
         while (true) {
             Socket sock = ss.accept();
@@ -99,8 +100,10 @@ public class CircuitServer {
 
             // get outputs
             for (int outputIndex = 0; outputIndex < server.results.length; outputIndex++) {
-                System.out.println("Outside: " + server.results[outputIndex]);
-                outStream.writeObject(server.results[outputIndex]);
+                tmp = server.results[outputIndex].testBit(EstimateNConfig.nBits - 1) ? server.results[outputIndex].subtract(fieldSpace)  :  server.results[outputIndex];
+
+                System.out.println("Outside: " + tmp);
+                outStream.writeObject(tmp);
             }
 
             sock.close();

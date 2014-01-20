@@ -30,6 +30,10 @@ public class CircuitQuery {
         results[0] = (BigInteger) inStream.readObject();
         results[1] = (BigInteger) inStream.readObject();
 
+        outStream.close();
+        inStream.close();
+        sock.close();
+
         return results;
     }
 

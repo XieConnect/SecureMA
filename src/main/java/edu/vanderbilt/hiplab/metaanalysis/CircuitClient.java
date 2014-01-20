@@ -95,10 +95,13 @@ public class CircuitClient {
                 inputValue = inputLine;
 
                 client.setInputs(inputValue);
-                client.runOnline();
+                client.randa = BigInteger.ZERO;
+            client.randb = BigInteger.ZERO;
 
-                outStream.writeObject(client.randa.negate());
-                outStream.writeObject(client.randb.negate());
+            client.runOnline();
+
+                outStream.writeObject(client.randa);
+                outStream.writeObject(client.randb);
 
             sock.close();
         }

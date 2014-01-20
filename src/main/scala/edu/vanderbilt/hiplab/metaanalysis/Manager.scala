@@ -142,7 +142,9 @@ object Manager {
     val paillierN = someone.getPublicKey.getN
     val paillierNSquared = paillierN.multiply(paillierN)
 
-    //TODO read size K (of places) from shared config
+    val baseEncryption = someone.encrypt(BigInteger.ONE)
+    var previousEncryption: BigInteger = BigInteger.ZERO
+
     (0 to Mediator.K_TAYLOR_PLACES).map { i =>
         val t = baseValue.pow(i)
         if (t.abs.compareTo(paillierN) > 0) {
