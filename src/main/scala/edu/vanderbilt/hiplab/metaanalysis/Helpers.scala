@@ -31,6 +31,8 @@ object Helpers {
   // used to scale-up n (gamma's in paper)
   var nScalingFactor = BigInteger.ZERO
   var DecryptionParties: Array[PaillierThreshold] = _
+  // (for preprocessing data) to convert float-point into integers
+  var SMCMultiplier = 0.0
 
 
   // pre-compute common constants
@@ -38,13 +40,14 @@ object Helpers {
     if (! isPrecomputed) {
       K_TAYLOR_PLACES = Helpers.property("k_taylor_places").toInt  //it seems 7 is the cap
       MaxN = Helpers.property("max_exponent_n").toInt
+      SMCMultiplier = math.pow(10, property("multiplier").toInt)
       POWER_OF_TWO = ArithmeticUtils.pow(BigInteger.valueOf(2), MaxN)
       LCM = BigInteger.valueOf( (2 to K_TAYLOR_PLACES).foldLeft(1)((a, x) => ArithmeticUtils.lcm(a, x)) )
       LN_DIVISOR = POWER_OF_TWO.pow(K_TAYLOR_PLACES).multiply(LCM)
       nScalingFactor = new BigInteger("837963523372001241319907").multiply(
         BigInteger.valueOf(2).pow(MaxN * (K_TAYLOR_PLACES - 1) ).multiply(LCM) )
       FieldBitsMax = ((MaxN + 2) * K_TAYLOR_PLACES +
-        (math.log(MaxN) / math.log(2) + math.log(Helpers.getMultiplier()  * 100) / math.log(2)).ceil.toInt)
+        (math.log(MaxN) / math.log(2) + math.log(SMCMultiplier  * 100) / math.log(2)).ceil.toInt)
 
       val privateKeys = KeyGen.PaillierThresholdKeyLoad(
         new File(property("data_directory"), property("private_keys")).toString)
@@ -86,14 +89,6 @@ object Helpers {
    */
   def propertyFullPath(key: String) = {
     new File(property("data_directory"), property(key)).toString
-  }
-
-  /**
-   * SMC multiplier (10^param)
-   * @return SMC multiplier
-   */
-  def getMultiplier(): Double = {
-    math.pow(10, property("multiplier").toInt)
   }
 
   /**

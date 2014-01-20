@@ -211,6 +211,7 @@ object Experiment {
       future { blocking {Mediator.decryptData(a)} })
     val decryptions = Await.result(Future.sequence(decryptionFuture), 20 second)
 
+    // Simultaneously compute ln() of numerator and denominator
     //TODO why not use future instead of FutureTask?
     val pool = Executors.newFixedThreadPool(4)
     val numeratorFuture = new FutureTask[BigInteger]( new Callable[BigInteger] {
@@ -231,10 +232,7 @@ object Experiment {
     val diff = someone.add( if (coefficient > 1) someone.multiply(numeratorLn, coefficient) else numeratorLn,
                              someone.multiply(denominatorLn, -1) ).mod(paillierNSquared)
 
-    val decryptLn = System.currentTimeMillis()
-    val tmp = Mediator.decryptLn(diff, 10)
-    println("  Finished decrypt diff: " + (System.currentTimeMillis() - decryptLn) )
-    math.exp(tmp)
+    math.exp(Mediator.decryptLn(diff, 10))
   }
 
   /**
