@@ -141,19 +141,17 @@ object Manager {
     val someone = new Paillier(Helpers.getPublicKey())
     val paillierN = someone.getPublicKey.getN
     val paillierNSquared = paillierN.multiply(paillierN)
+    val kTaylorPlaces = Mediator.K_TAYLOR_PLACES
 
     val baseEncryption = someone.encrypt(BigInteger.ONE)
-    var previousEncryption: BigInteger = BigInteger.ZERO
 
-    (0 to Mediator.K_TAYLOR_PLACES).map { i =>
-        val t = baseValue.pow(i)
-        if (t.abs.compareTo(paillierN) > 0) {
-          println("!!! Error. Taylor power LARGER than Paillier field size")
-          sys.exit()
-        }
+    if (baseValue.pow(kTaylorPlaces).abs.compareTo(paillierN) > 0) {
+      println("!!! Error. Taylor power LARGER than Paillier field size")
+      sys.exit()
+    }
 
-        if (t.signum() >= 0) someone.encrypt(t) else someone.multiply(someone.encrypt(t.abs()), BigInteger.valueOf(-1)).mod(paillierNSquared)
-    }.toArray
+    (0 to kTaylorPlaces).par.map ( i =>
+      someone.multiply(baseEncryption, baseValue.pow(i)).mod(paillierNSquared)).toArray
   }
 
 
