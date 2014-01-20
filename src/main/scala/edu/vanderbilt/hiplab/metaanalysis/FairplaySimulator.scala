@@ -142,13 +142,13 @@ object FairplaySimulator {
     // Prepare constant coefficients
     var coefficients = Mediator.polynomialCoefficients(constA, 1)
 
-    for (variableI <- 2 to Mediator.K_TAYLOR_PLACES) {
+    for (variableI <- 2 to Helpers.K_TAYLOR_PLACES) {
       val nextVector = Mediator.polynomialCoefficients(constA, variableI)
       coefficients = for ((a, b) <- coefficients zip nextVector) yield a.add(b)  //NOTE: add mod() will cause problems
     }
 
     // Perform Taylor expansion (assemble coefficients and variables)
-    val powersOfVariable = (0 to Mediator.K_TAYLOR_PLACES).map( i => alpha2.pow(i) ).toArray
+    val powersOfVariable = (0 to Helpers.K_TAYLOR_PLACES).map( i => alpha2.pow(i) ).toArray
 
     (powersOfVariable zip coefficients).foldLeft(BigInteger.ZERO) ((a, x) => a.add(x._1.multiply(x._2)))
   }
@@ -158,11 +158,11 @@ object FairplaySimulator {
     val (aliceOutputs, bobOutputs) = fairplay(6, (3, 2, 5))
     val taylorResult = taylorExpansion(bobOutputs._1, aliceOutputs._1)
 
-    val betaSum = BigInteger.valueOf(2).pow(Mediator.MaxN * (Mediator.K_TAYLOR_PLACES - 1)).multiply(BigInteger.valueOf(Mediator.LCM)).multiply(aliceOutputs._2.add(bobOutputs._2))
+    val betaSum = BigInteger.valueOf(2).pow(Helpers.MaxN * (Helpers.K_TAYLOR_PLACES - 1)).multiply(Helpers.LCM).multiply(aliceOutputs._2.add(bobOutputs._2))
 
     val tmp = taylorResult.add(betaSum)
 
-    val divisor = new BigInteger("%.0f" format Mediator.POWER_OF_TWO).pow(Mediator.K_TAYLOR_PLACES).multiply(BigInteger.valueOf(Mediator.LCM))
+    val divisor = new BigInteger("%.0f" format Helpers.POWER_OF_TWO).pow(Helpers.K_TAYLOR_PLACES).multiply(Helpers.LCM)
     new BigDecimal(tmp).divide(new BigDecimal(divisor), 6, BigDecimal.ROUND_HALF_UP).doubleValue()
   }
 

@@ -22,16 +22,9 @@ import java.util.concurrent.{Callable, FutureTask, Executors}
 import fastgc.CircuitQuery
 
 object Mediator {
-  val K_TAYLOR_PLACES = Helpers.property("k_taylor_places").toInt  //it seems 7 is the cap. Larger number causes out-of-range crash
-  val LCM = (2 to K_TAYLOR_PLACES).foldLeft(1)((a, x) => ArithmeticUtils.lcm(a, x))
-  val MaxN = Helpers.property("max_exponent_n").toInt
-  val POWER_OF_TWO = math.pow(2, MaxN)
   //2^N
   //Currently Paillier max field bit size is set to 2048. A size > 1024 would be really slow
   //512
-  val FieldBitsMax = ((MaxN + 2) * K_TAYLOR_PLACES +
-    (math.log(MaxN) / math.log(2) + math.log(Helpers.getMultiplier()  * 100) / math.log(2)).ceil.toInt)
-  //val FieldMax = new BigInteger("%.0f".format(math.pow(2, FieldBitsMax)))
 
   val FairplayFile = Helpers.property("fairplay_script")
   val someone = new Paillier(Helpers.getPublicKey())
@@ -42,7 +35,7 @@ object Mediator {
    * @param seed  random seed in Paillier encryption
    * @return  file path to private and public keys
    */
-  def generateKeys(length: Int = FieldBitsMax, seed: Long = new util.Random().nextLong()) = {
+  def generateKeys(length: Int = Helpers.FieldBitsMax, seed: Long = Helpers.rand.nextLong()) = {
     println("Key bit length: " + length)
     val dataDir = Helpers.property("data_directory")
     val privateKeyFile = new File(dataDir, Helpers.property("private_keys")).toString
@@ -105,21 +98,21 @@ object Mediator {
 
 
   /**
-   * Obtain coefficients for binomial expansion
+   * Obtain a collection of coefficients for binomial expansion
    * @param constA  constant alpha1 as in binomial polynomial
    * @param powerI  the power size of the expansion
    * @return  vector with all coefficients
    */
   def polynomialCoefficients(constA: BigInteger, powerI: Int) = {
-    val coefficients = Array.fill[BigInteger](K_TAYLOR_PLACES + 1)(BigInteger.ZERO)
+    val coefficients = Array.fill[BigInteger](Helpers.K_TAYLOR_PLACES + 1)(BigInteger.ZERO)
 
-    //TODO reduce unnecessary power computation
-    //val tmp = new BigInteger("%.0f" format math.pow(POWER_OF_TWO, K_TAYLOR_PLACES - powerI) * math.pow(-1, powerI - 1))
-    var tmp = new BigInteger("%.0f" format POWER_OF_TWO).pow(K_TAYLOR_PLACES - powerI).multiply(BigInteger.valueOf(-1).pow(powerI - 1))
-    tmp = tmp.multiply(BigInteger.valueOf(LCM/powerI))
+    val tmp = ArithmeticUtils.pow(Helpers.POWER_OF_TWO, Helpers.K_TAYLOR_PLACES - powerI)
+      .multiply( BigInteger.valueOf(-1).pow(powerI - 1) )
+      .multiply( Helpers.LCM.divide(BigInteger.valueOf(powerI)) )
 
-    for (j <- 0 to powerI) {
-      coefficients(j) = constA.pow(powerI - j).multiply(BigInteger.valueOf(ArithmeticUtils.binomialCoefficient(powerI, j))).multiply(tmp)
+    (0 to powerI).par.map { j =>
+      coefficients(j) = constA.pow(powerI - j).multiply(
+        BigInteger.valueOf(ArithmeticUtils.binomialCoefficient(powerI, j)) ).multiply(tmp)
     }
 
     coefficients
@@ -180,7 +173,7 @@ object Mediator {
     val paillierNSquared = Helpers.getPublicKey().getN.pow(2)
 
     // combine coefficients of the same power sizes
-    for (variableI <- 2 to K_TAYLOR_PLACES) {
+    for (variableI <- 2 to Helpers.K_TAYLOR_PLACES) {
       val nextVector = polynomialCoefficients(constA, variableI)
       coefficients = for ((a, b) <- coefficients zip nextVector) yield a.add(b)
     }
@@ -234,7 +227,7 @@ object Mediator {
    * @return ln(x) decryption
    */
   def decryptLn(encryptedLn: BigInteger, scale: Int = 10): Double = {
-    val divisor = new BigInteger("%.0f" format Mediator.POWER_OF_TWO).pow(Mediator.K_TAYLOR_PLACES).multiply(BigInteger.valueOf(Mediator.LCM))
+    val divisor = Helpers.POWER_OF_TWO.pow(Helpers.K_TAYLOR_PLACES).multiply(Helpers.LCM)
     new BigDecimal(decryptData(encryptedLn)).divide(new BigDecimal(divisor), scale, BigDecimal.ROUND_HALF_UP).doubleValue()
   }
 
