@@ -1,10 +1,11 @@
-package edu.vanderbilt.hiplab.metaanalysis;
+package fastgc;
 
 import Program.ProgClient;
 import Program.EstimateNClient;
 import Program.EstimateNConfig;
 import Program.Program;
 import Utils.StopWatch;
+import edu.vanderbilt.hiplab.metaanalysis.Helpers;
 import jargs.gnu.CmdLineParser;
 
 import java.io.*;
@@ -61,7 +62,7 @@ public class CircuitClient {
 
         generateData();
 
-        EstimateNClient client = new EstimateNClient( Integer.parseInt(Helpers.property("max_n_bits")) );
+        EstimateNClient client = new EstimateNClient( Integer.parseInt(Helpers.property("max_n_bits")), Helpers.MaxN() );
 
         client.runOffline();
 

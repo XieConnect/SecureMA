@@ -1,8 +1,9 @@
-package edu.vanderbilt.hiplab.metaanalysis;
+package fastgc;
 
 import Program.EstimateNConfig;
 import Program.EstimateNServer;
 import Utils.StopWatch;
+import edu.vanderbilt.hiplab.metaanalysis.Helpers;
 import jargs.gnu.CmdLineParser;
 
 import java.io.*;
@@ -64,7 +65,7 @@ public class CircuitServer {
 
         // args: input value,  max bit size of value,  number of loops
         EstimateNServer server = new EstimateNServer( maxInputBits,
-                Integer.parseInt(Helpers.property("max_exponent_n")) );
+                Helpers.MaxN() );
 
         server.runOffline();
 
