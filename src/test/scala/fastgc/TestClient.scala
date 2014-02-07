@@ -1,7 +1,7 @@
 package fastgc
 
 import java.net.Socket
-import java.io.{ObjectInputStream, DataInputStream, DataOutputStream}
+import java.io.{ObjectInputStream, DataOutputStream}
 import java.math.BigInteger
 
 /**
