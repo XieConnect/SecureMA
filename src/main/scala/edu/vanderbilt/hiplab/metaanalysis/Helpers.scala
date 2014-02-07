@@ -8,54 +8,39 @@ package edu.vanderbilt.hiplab.metaanalysis
 
 import java.io._
 import java.util.{Random, Properties}
-import paillierp.key.{PaillierPrivateThresholdKey, KeyGen, PaillierKey}
+import paillierp.key.{KeyGen, PaillierKey}
 import java.math.BigInteger
 import paillierp.{PaillierThreshold, Paillier}
 import SFE.BOAL.MyUtil
 import io.Source
 import scala.Tuple2
 import org.apache.commons.math3.util.ArithmeticUtils
+import fastgc.CircuitQuery
 
 object Helpers {
-  var isPrecomputed = false
-
   // scaling factor during SMC
   val MyProperties = new Properties()
   val rand = new Random()
-  var K_TAYLOR_PLACES = 0
-  var MaxN = 0
-  var LCM = BigInteger.ZERO
-  var LN_DIVISOR = BigInteger.ZERO
-  var POWER_OF_TWO = BigInteger.ZERO
-  var FieldBitsMax = 0
+  val K_TAYLOR_PLACES = Helpers.property("k_taylor_places").toInt  //it seems 7 is the cap
+  // number of loops
+  val MaxN = Helpers.property("max_exponent_n").toInt
+  val LCM = BigInteger.valueOf( (2 to K_TAYLOR_PLACES).foldLeft(1)((a, x) => ArithmeticUtils.lcm(a, x)) )
+  val POWER_OF_TWO = ArithmeticUtils.pow(BigInteger.valueOf(2), MaxN)
+  val LN_DIVISOR = POWER_OF_TWO.pow(K_TAYLOR_PLACES).multiply(LCM)
+  //TODO has room for optimization?
+  val FieldBitsMax = (MaxN + 2) * K_TAYLOR_PLACES +
+    (math.log(MaxN) / math.log(2) + math.log(SMCMultiplier  * 100) / math.log(2)).ceil.toInt
   // used to scale-up n (gamma's in paper)
-  var nScalingFactor = BigInteger.ZERO
-  var DecryptionParties: Array[PaillierThreshold] = _
+  val nScalingFactor = new BigInteger("%.0f" format (POWER_OF_TWO.doubleValue() * Math.log(2))).multiply(
+    BigInteger.valueOf(2).pow(MaxN * (K_TAYLOR_PLACES - 1) ).multiply(LCM) )
+  val privateKeys = KeyGen.PaillierThresholdKeyLoad(
+    new File(property("data_directory"), property("private_keys")).toString)
+  val DecryptionParties = for (k <- privateKeys.take(property("threshold_parties").toInt)) yield new PaillierThreshold(k)
   // (for preprocessing data) to convert float-point into integers
-  var SMCMultiplier = 0.0
+  val SMCMultiplier = math.pow(10, property("multiplier").toInt)
 
-
-  // pre-compute common constants
-  def precompute() {
-    if (! isPrecomputed) {
-      K_TAYLOR_PLACES = Helpers.property("k_taylor_places").toInt  //it seems 7 is the cap
-      MaxN = Helpers.property("max_exponent_n").toInt
-      SMCMultiplier = math.pow(10, property("multiplier").toInt)
-      POWER_OF_TWO = ArithmeticUtils.pow(BigInteger.valueOf(2), MaxN)
-      LCM = BigInteger.valueOf( (2 to K_TAYLOR_PLACES).foldLeft(1)((a, x) => ArithmeticUtils.lcm(a, x)) )
-      LN_DIVISOR = POWER_OF_TWO.pow(K_TAYLOR_PLACES).multiply(LCM)
-      nScalingFactor = new BigInteger("837963523372001241319907").multiply(
-        BigInteger.valueOf(2).pow(MaxN * (K_TAYLOR_PLACES - 1) ).multiply(LCM) )
-      FieldBitsMax = ((MaxN + 2) * K_TAYLOR_PLACES +
-        (math.log(MaxN) / math.log(2) + math.log(SMCMultiplier  * 100) / math.log(2)).ceil.toInt)
-
-      val privateKeys = KeyGen.PaillierThresholdKeyLoad(
-        new File(property("data_directory"), property("private_keys")).toString)
-      DecryptionParties = for (k <- privateKeys.take(property("threshold_parties").toInt)) yield new PaillierThreshold(k)
-    }
-
-    isPrecomputed = true
-  }
+  // for querying garbled circuit results
+  var circuitQueriers: Array[CircuitQuery] = _
 
   /**
    * Find value corresponding to queried property in system config

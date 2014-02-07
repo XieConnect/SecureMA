@@ -7,8 +7,7 @@ package edu.vanderbilt.hiplab.metaanalysis
 
 import java.io._
 import java.math.BigInteger
-import java.util
-import paillierp.{PartialDecryption, Paillier, PaillierThreshold}
+import paillierp.Paillier
 import paillierp.key.KeyGen
 
 import java.math.BigDecimal
@@ -17,7 +16,6 @@ import java.net.ServerSocket
 import concurrent.ExecutionContext.Implicits.global
 import concurrent.{future, Await}
 import concurrent.duration._
-import java.util.concurrent.{Callable, FutureTask, Executors}
 import fastgc.CircuitQuery
 
 object Mediator {
@@ -27,6 +25,8 @@ object Mediator {
 
   val FairplayFile = Helpers.property("fairplay_script")
   val someone = new Paillier(Helpers.getPublicKey())
+
+
 
   /**
    * Generate and store Paillier Threshold keys to file
@@ -302,21 +302,19 @@ object Mediator {
    * Input x, compute ln(x) encryption result
    * @param xValue x as in ln(x)
    * @param toInit whether to generate keys/compile Fairplay script or not
+   * @param querierCategory denote which set of querier clients to use (0 or 1)
    * @return encryption of ln(x) result
    */
   def lnWrapper(xValue: BigInteger, toInit: Boolean = false, writer: PrintWriter = null,
-                bobPort: Int = 3491, alicePort: Int = 3492, socketPort: Int = 3496): BigInteger = {
+                querierCategory: Int = 0): BigInteger = {
 
     val inputs = Helpers.randomizeInputs(xValue)
     var timerStr = "X_In_In_Bob_Alice_SMC:" + xValue + "," + inputs(0) + "," + inputs(1) + ","
 
     val startedAt = System.currentTimeMillis()
 
-    val a = new CircuitQuery(bobPort)
-    val b = new CircuitQuery(alicePort)
-
-    val aa = future { a.query(inputs(0)) }
-    val bb = future { b.query(inputs(1)) }
+    val aa = future { Helpers.circuitQueriers(querierCategory * 2 + 0).query(inputs(0)) }
+    val bb = future { Helpers.circuitQueriers(querierCategory * 2 + 1).query(inputs(1)) }
 
     val aResult = Await.result(aa, 120 second)
     timerStr += (System.currentTimeMillis() - startedAt)

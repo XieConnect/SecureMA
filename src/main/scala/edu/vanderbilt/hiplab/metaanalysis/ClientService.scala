@@ -6,9 +6,8 @@ import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory
 import java.util.concurrent.Executors
 import java.net.InetSocketAddress
 import java.math.BigInteger
-import java.io.File
 import org.jboss.netty.handler.codec.serialization.{ClassResolvers, ObjectDecoder, ObjectEncoder}
-import Program.{EstimateNClient, EstimateNServer}
+import Program.EstimateNClient
 
 /**
  * Refer to README for details.
@@ -64,7 +63,7 @@ object ClientService {
       //val port = try { args(0).toInt } catch { case _: Exception => 3491 }
       val port = 3491
 
-      client = new EstimateNClient(80)
+      client = new EstimateNClient(80, 80)
       client.runOffline()
 
       println("Now accepting new requests...")

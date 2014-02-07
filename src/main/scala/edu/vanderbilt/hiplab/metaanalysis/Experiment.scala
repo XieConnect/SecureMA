@@ -13,10 +13,8 @@ import concurrent.{future, blocking, Future, Await}
 import concurrent.ExecutionContext.Implicits.global
 import concurrent.duration._
 import java.util.concurrent.{Callable, FutureTask, Executors}
-import Program.{EstimateNClient, EstimateNServer}
 import scala.Array
 import fastgc.CircuitQuery
-import scala.util.{Failure, Success}
 
 object Experiment {
   val PathPrefix = MyUtil.pathFile(Helpers.property("fairplay_script")) + "."
@@ -216,11 +214,11 @@ object Experiment {
     val pool = Executors.newFixedThreadPool(4)
     val numeratorFuture = new FutureTask[BigInteger]( new Callable[BigInteger] {
       def call(): BigInteger = Mediator.lnWrapper(decryptions(0).abs, toInit = false,
-        writer = timerWriter, bobPort = 3491, alicePort = 3492, socketPort = 3496)
+        writer = timerWriter, 0)
     })
     val denominatorFuture = new FutureTask[BigInteger]( new Callable[BigInteger] {
       def call(): BigInteger = Mediator.lnWrapper(decryptions(1), toInit = false,
-        writer = timerWriter, bobPort = 3494, alicePort = 3495, socketPort = 3497)
+        writer = timerWriter, 1)
     })
 
     pool.execute(numeratorFuture)
@@ -311,6 +309,7 @@ object Experiment {
     val validLines = io.Source.fromFile(inputFile).getLines().toArray.drop(1)
     val lastIndex = validLines.size - 1
 
+    Helpers.circuitQueriers = Array(3491, 3492, 3494, 3495).map(port => new CircuitQuery(port))
 
 
     for ((line, indx) <- validLines.zipWithIndex; record = line.split(",")) {
@@ -358,7 +357,6 @@ object Experiment {
     val startedAt = System.currentTimeMillis()
 
     createDataDir()
-    Helpers.precompute()
 
     // Compile Fairplay script as necessary
     if ( args.length > 0 && args(0).equals("init") ) {
