@@ -1,21 +1,23 @@
 package fastgc;
 
-import Program.ProgClient;
 import Program.EstimateNClient;
 import Program.EstimateNConfig;
+import Program.ProgClient;
 import Program.Program;
 import Utils.StopWatch;
 import edu.vanderbilt.hiplab.metaanalysis.Helpers;
 import jargs.gnu.CmdLineParser;
 
-import java.io.*;
+import java.io.EOFException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.math.BigInteger;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Random;
 
 /**
- * Refer to README for details.
+ * Host garbled circuit as backend service (client-side)
  * Author: Wei Xie
  * Version:
  */
@@ -73,13 +75,12 @@ public class CircuitClient {
         BigInteger inputLine;
 
         System.out.println("## Now take inputs (before WHILE).");
+        Socket sock = ss.accept();
+        ObjectInputStream inStream = new ObjectInputStream(sock.getInputStream());
+        ObjectOutputStream outStream = new ObjectOutputStream(sock.getOutputStream());
+        System.out.println("## Input socket OK.");
 
         while (true) {
-            Socket sock = ss.accept();
-            ObjectInputStream inStream = new ObjectInputStream(sock.getInputStream());
-            ObjectOutputStream outStream = new ObjectOutputStream(sock.getOutputStream());
-            System.out.println("## Input socket OK.");
-
             try {
                 inputLine = (BigInteger) inStream.readObject();
             } catch (EOFException e) {
@@ -88,7 +89,6 @@ public class CircuitClient {
             }
 
 
-                System.out.println("#### One more inputs: " + inputLine);
                 inputValue = inputLine;
 
                 client.setInputs(inputValue);
@@ -100,7 +100,6 @@ public class CircuitClient {
                 outStream.writeObject(client.randa);
                 outStream.writeObject(client.randb);
 
-            sock.close();
         }
 
     }
