@@ -1,9 +1,5 @@
 package fastgc
 
-import scala.concurrent._
-import ExecutionContext.Implicits.global
-import scala.concurrent.duration._
-import java.util.concurrent.TimeUnit._
 import java.math.BigInteger
 import edu.vanderbilt.hiplab.metaanalysis.Mediator
 
@@ -27,8 +23,8 @@ object TestTest {
 //       for (result <- Await.result(bb, 20 seconds)) println(result)
 //     }
 
-     println(Mediator.lnWrapper(BigInteger.valueOf(10), bobPort = 3491, alicePort = 3492))
-     println(Mediator.lnWrapper(BigInteger.valueOf(21), bobPort = 3491, alicePort = 3492))
+     println(Mediator.lnWrapper(BigInteger.valueOf(10)))
+     println(Mediator.lnWrapper(BigInteger.valueOf(21)))
      //println(Mediator.lnWrapper(BigInteger.valueOf(10), bobPort = 3491, alicePort = 3492))
 
 
