@@ -1,11 +1,11 @@
-# SecureMA: supporting secure meta-analysis #
+# SecureMA: secure meta-analysis across multiple sites #
 
-The SecureMA project aims at supporting meta-analysis computation over distributed data sites while preserving data privacy at both individual- and site-level. Specifically, individual data and site-level summary statistics are fully protected throughout the computation. And the final result of meta-analysis is only made known to the designated recipient.
+SecureMA is a secure framework for supporting genetic association studies (via meta-analysis) over distributed data sites while preserving data privacy at both person- and site-level. Specifically, person-level data and site-level summary statistics are fully protected (encrypted/randomized) throughout the computation. And the final result (association p-value) of meta-analysis is only made known to the designated recipient.
 
 
 ## Technical Overview ##
 
-This demonstration package is primarily implemented in Scala (a high-performance language on the Java Virtual Machine). We provide native API to any JVM-based languages (such as Java).
+This demonstration package is primarily implemented in Scala/Java. We provide native API to any JVM-based languages (such as Java).
 
 The whole project can be deployed as one single self-contained JAR package and run on any system where JVM is available.
 
@@ -21,7 +21,7 @@ The whole project can be deployed as one single self-contained JAR package and r
 Assume you already downloaded the pre-packaged SecureMA.jar .
 
 1. Organize input according to required format;
-2. Run FairplayBI backends (for securely computing ln(x));
+2. Run circuit evaluation backends (e.g., <i>circuit_servers</i>);
 3. Run the experiment;
 
 
@@ -58,12 +58,12 @@ Assume you already downloaded the pre-packaged SecureMA.jar .
 
 
 ## To-Do ##
-- Speed-up optimization
+- Parallel evaluation of circuits
 
 
 ## Copyright & License ##
-TBD
+Refer to the LICENSE and authors.
 
 
 ## Authors
-- Wei Xie
+- Wei Xie  (XieConnect@gmail.com)
