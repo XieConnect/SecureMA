@@ -5,7 +5,7 @@ package edu.vanderbilt.hiplab.metaanalysis
  * It runs Alice
  */
 
-import java.io.{File, ObjectOutputStream, ObjectInputStream}
+import java.io.{ObjectOutputStream, ObjectInputStream}
 import java.math.BigInteger
 import java.net.Socket
 import paillierp.Paillier
@@ -13,7 +13,7 @@ import paillierp.key.PaillierPrivateThresholdKey
 
 import paillierp.PaillierThreshold
 
-import SFE.BOAL.{MyUtil, Alice}
+import SFE.BOAL.Alice
 import concurrent.ExecutionContext.Implicits.global
 import concurrent.{future, Await}
 import concurrent.duration._
