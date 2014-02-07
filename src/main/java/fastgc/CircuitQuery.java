@@ -1,9 +1,7 @@
 package fastgc;
 
-import java.io.DataOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.PrintWriter;
 import java.math.BigInteger;
 import java.net.Socket;
 
@@ -26,18 +24,15 @@ public class CircuitQuery {
 
     public BigInteger[] query(BigInteger inputValue) throws Exception {
         outStream.writeObject(inputValue);
+        results = new BigInteger[2];
 
         results[0] = (BigInteger) inStream.readObject();
         results[1] = (BigInteger) inStream.readObject();
-
-        outStream.close();
-        inStream.close();
-        sock.close();
 
         return results;
     }
 
     public static void main(String[] args) {
-        System.out.println("haha");
+        System.out.println("do nothing.");
     }
 }

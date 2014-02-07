@@ -6,14 +6,15 @@ import Utils.StopWatch;
 import edu.vanderbilt.hiplab.metaanalysis.Helpers;
 import jargs.gnu.CmdLineParser;
 
-import java.io.*;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.math.BigInteger;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Random;
 
 /**
- * Refer to README for details.
+ * Host garbled circuit as backend service (server-side)
  * Author: Wei Xie
  * Version:
  */
@@ -76,13 +77,13 @@ public class CircuitServer {
         BigInteger inputLine;
 
         BigInteger tmp;
+        Socket sock = ss.accept();
+        System.out.println("## Input socket connected.");
+        ObjectInputStream inStream = new ObjectInputStream(sock.getInputStream());
+        ObjectOutputStream outStream = new ObjectOutputStream(sock.getOutputStream());
 
         // stay awake and take inputs from outside all the time
         while (true) {
-            Socket sock = ss.accept();
-            System.out.println("## Input socket connected.");
-            ObjectInputStream inStream = new ObjectInputStream(sock.getInputStream());
-            ObjectOutputStream outStream = new ObjectOutputStream(sock.getOutputStream());
 
             try {
                 inputLine = (BigInteger) inStream.readObject();
@@ -91,7 +92,6 @@ public class CircuitServer {
                 continue;
             }
 
-            System.out.println("## Read inputs:");
             inputValue = inputLine;
 
             server.setInputs(inputValue);
@@ -105,7 +105,6 @@ public class CircuitServer {
                 outStream.writeObject(tmp);
             }
 
-            sock.close();
         }
 
 
