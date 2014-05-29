@@ -13,7 +13,6 @@ import paillierp.key.PaillierPrivateThresholdKey
 
 import paillierp.PaillierThreshold
 
-import SFE.BOAL.Alice
 import concurrent.ExecutionContext.Implicits.global
 import concurrent.{future, Await}
 import concurrent.duration._
@@ -123,6 +122,7 @@ object Manager {
    * Run Alice (communicate with Bob)
    * @return  Alice's shares of alpha and beta
    */
+  /*
   def runAlice() = {
     val socketServer = Helpers.property("socket_server")
     val socketPort = Helpers.property("socket_port")
@@ -130,6 +130,7 @@ object Manager {
 
     //Helpers.getFairplayResult("Alice")
   }
+  */
 
   /**
    * Compute encryptions of powers of alpha2 (applicable to both positive/negative)

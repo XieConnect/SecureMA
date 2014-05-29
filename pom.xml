@@ -22,6 +22,13 @@
             <systemPath>${basedir}/lib/Paillier.jar</systemPath>
         </dependency>
         <dependency>
+            <groupId>jargs.gnu</groupId>
+            <artifactId>CmdLineParser</artifactId>
+            <version>1.0</version>
+            <scope>system</scope>
+            <systemPath>${basedir}/lib/jargs.jar</systemPath>
+        </dependency>
+        <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty</artifactId>
             <version>3.6.5.Final</version>
@@ -42,5 +49,18 @@
             <artifactId>scalatest_2.11</artifactId>
             <version>2.1.7</version>
         </dependency>
+        <dependency>
+            <groupId>com.typesafe.akka</groupId>
+            <artifactId>akka-actor_2.10</artifactId>
+            <version>2.3.3</version>
+        </dependency>
+
+        <!-- needed by FastGC -->
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>1.4</version>
+        </dependency>
+
     </dependencies>
 </project>

@@ -26,6 +26,8 @@ object Helpers {
   val LCM = BigInteger.valueOf( (2 to K_TAYLOR_PLACES).foldLeft(1)((a, x) => ArithmeticUtils.lcm(a, x)) )
   val POWER_OF_TWO = ArithmeticUtils.pow(BigInteger.valueOf(2), MaxN)
   val LN_DIVISOR = POWER_OF_TWO.pow(K_TAYLOR_PLACES).multiply(LCM)
+  // (for preprocessing data) to convert float-point into integers
+  val SMCMultiplier = math.pow(10, property("multiplier").toInt)
   //TODO has room for optimization?
   val FieldBitsMax = (MaxN + 2) * K_TAYLOR_PLACES +
     (math.log(MaxN) / math.log(2) + math.log(SMCMultiplier  * 100) / math.log(2)).ceil.toInt
@@ -35,8 +37,6 @@ object Helpers {
   val privateKeys = KeyGen.PaillierThresholdKeyLoad(
     new File(property("data_directory"), property("private_keys")).toString)
   val DecryptionParties = for (k <- privateKeys.take(property("threshold_parties").toInt)) yield new PaillierThreshold(k)
-  // (for preprocessing data) to convert float-point into integers
-  val SMCMultiplier = math.pow(10, property("multiplier").toInt)
 
   // for querying garbled circuit results
   var circuitQueriers: Array[CircuitQuery] = _
@@ -191,10 +191,12 @@ object Helpers {
    * @param whichParty whose output to read out? (either Alice or Bob)
    * @return  shares of Alpha, and Beta
    */
+  /*
   def getFairplayResult(whichParty: String = "Bob"): Array[BigInteger] = {
     // path of the form: run/progs/Sub.txt.Alice.output
-    readFairplayResult(MyUtil.pathFile(property("fairplay_script")) + "." + whichParty + ".output").filter(_ != null)
+    //readFairplayResult(MyUtil.pathFile(property("fairplay_script")) + "." + whichParty + ".output").filter(_ != null)
   }
+  */
 
   def saveFairplayResult(result: Array[BigInteger], path: String) = {
     val out = new ObjectOutputStream(new FileOutputStream(path))
@@ -226,6 +228,7 @@ object Helpers {
   // for DEBUG only
   // Simulate specialized Fairplay script and verify output
   // NOTE need customization for different cases (over-, under- and optimal-estimate)
+  /*
   def simulateFairplay() = {
     // Need to be consistent with current Fairplay script
     val MaxN = property("max_exponent_n").toInt
@@ -264,6 +267,7 @@ object Helpers {
     getFairplayResult("Alice").map(println)
     getFairplayResult("Bob").map(println)
   }
+  */
 
   /*
   def getPlainInput(): BigInteger = {
@@ -275,6 +279,7 @@ object Helpers {
   }
   */
 
+  /*
   def copyFiles() = {
     for (a <- Array("conf.properties", MyUtil.pathFile(Helpers.property("fairplay_script")))) {
       val filename = a.substring(a.lastIndexOf("/") + 1)
@@ -283,6 +288,7 @@ object Helpers {
         )
     }
   }
+  */
 
   def paillierNS() = {
     getPublicKey().getNSPlusOne

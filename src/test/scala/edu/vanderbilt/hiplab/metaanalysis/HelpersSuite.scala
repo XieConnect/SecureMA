@@ -61,17 +61,5 @@ class HelpersSuite extends FunSuite {
   }
   */
 
-  test("prepares correct inputs for Fairplay") {
-    // test multiple times
-    for (count <- 1 to 5) {
-      val i = BigInteger.valueOf(new Random().nextInt(10000))
-      Helpers.prepareInputs(i)
-      val inputs = Array("Alice", "Bob").map( a =>
-        new BigInteger(Source.fromFile(Experiment.PathPrefix + a + ".input").getLines().toArray.head)
-      )
-
-      expectResult(0) (inputs(0).add(inputs(1)).compareTo(i))
-    }
-  }
 
 }
