@@ -1,8 +1,0 @@
-#!/bin/bash
-# Sort relevant data
-
-raw_data=data/raw_data_sorted.csv
-(head -1 $raw_data; tail -n +2 $raw_data | sort -t',' -k1,6) > data/raw_data.tmp.csv
-mv data/raw_data.tmp.csv  $raw_data
-
-#encrypted_data=data/encrypted_data.csv

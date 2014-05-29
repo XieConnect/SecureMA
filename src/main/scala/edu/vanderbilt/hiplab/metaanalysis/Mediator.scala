@@ -232,9 +232,11 @@ object Mediator {
       scale, BigDecimal.ROUND_HALF_UP).doubleValue()
   }
 
+  /*
   def compile() = {
     SFE.BOAL.Bob.main( Array("-c", Helpers.property("fairplay_script")) )
   }
+  */
 
 /*
   //TODO for testing only
@@ -341,7 +343,7 @@ object Mediator {
     val startedAt = System.currentTimeMillis()
 
     // to compile Fairplay script
-    SFE.BOAL.Bob.main( Array("-c", Helpers.property("fairplay_script")) )
+    //SFE.BOAL.Bob.main( Array("-c", Helpers.property("fairplay_script")) )
 
     //println("LnWrapper: " + lnWrapper(BigInteger.valueOf(100), toInit = false, writer = null,
     //              bobPort = 3490, alicePort = 3491, socketPort = 3496)  )

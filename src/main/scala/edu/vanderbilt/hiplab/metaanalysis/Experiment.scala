@@ -6,7 +6,6 @@ package edu.vanderbilt.hiplab.metaanalysis
  */
 
 import java.io.{FileInputStream, FileOutputStream, PrintWriter, File}
-import SFE.BOAL.MyUtil
 import java.math.BigInteger
 import paillierp.Paillier
 import concurrent.{future, blocking, Future, Await}
@@ -17,7 +16,7 @@ import scala.Array
 import fastgc.CircuitQuery
 
 object Experiment {
-  val PathPrefix = MyUtil.pathFile(Helpers.property("fairplay_script")) + "."
+  //val PathPrefix = MyUtil.pathFile(Helpers.property("fairplay_script")) + "."
 
   /**
    * Directory path containing data for current experiment
@@ -29,10 +28,12 @@ object Experiment {
   }
 
   // Return: (AliceOutput, BobOutput)
+  /*
   def readOutputs(): Tuple2[Array[BigInteger], Array[BigInteger]] = {
     ( Helpers.readFairplayResult(PathPrefix + "Alice.output").filter(_ != null).asInstanceOf[Array[BigInteger]],
       Helpers.readFairplayResult(PathPrefix + "Bob.output").filter(_ != null).asInstanceOf[Array[BigInteger]] )
   }
+  */
 
   /**
    * Create data directory for current experiment
@@ -109,6 +110,7 @@ object Experiment {
     4 / math.log(2) / (math.pow(2, powerExponent) * powerExponent)
   }
 
+  /*
   def copyFiles() = {
     for (a <- Array("conf.properties", MyUtil.pathFile(Helpers.property("fairplay_script")))) {
       val filename = a.substring(a.lastIndexOf("/") + 1)
@@ -117,6 +119,7 @@ object Experiment {
       )
     }
   }
+  */
 
   /**
    * Experiment with secure ln(x) computation
@@ -360,18 +363,23 @@ object Experiment {
 
     // Compile Fairplay script as necessary
     if ( args.length > 0 && args(0).equals("init") ) {
+      /*
       println("> To generate keys (takes time)...")
       Mediator.generateKeys()
 
       println("> To compile Fairplay script...")
       Mediator.compile()
+      */
 
     } else if ( args.length > 0 && args(0).equals("compile") ) {
+      /*
       println("> To compile Fairplay script...")
       Mediator.compile()
       println("= END of compiling Fairplay script.")
+      */
 
     } else if (args.length > 0 && args(0).equals("ln")) {
+      /*
       println("> Secure ln(x)...")
       // document current experiment
       copyFiles()
@@ -379,6 +387,7 @@ object Experiment {
 
       runLn(startedAt)
       println("= END of secure ln(x)")
+      */
 
     } else {
       // Experiment on secure meta-analysis

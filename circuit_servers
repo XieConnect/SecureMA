@@ -9,7 +9,7 @@
 # To show running services:
 #  ./fairplay_server show 
 
-JAR_PATH=out/MetaAnalysis.jar
+JAR_PATH=out/SecureMA.jar
 
 if [ -n "${JAVA_HOME}" ]; then
   JAVA=${JAVA_HOME}/bin/java
