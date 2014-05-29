@@ -1,4 +1,4 @@
-package edu.vanderbilt.hiplab.metaanalysis
+package edu.vanderbilt.hiplab.securema
 
 /**
  * @description Data Owners encrypt and contribute their data

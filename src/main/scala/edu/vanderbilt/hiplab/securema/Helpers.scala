@@ -1,4 +1,4 @@
-package edu.vanderbilt.hiplab.metaanalysis
+package edu.vanderbilt.hiplab.securema
 
 /**
  * @description Helper methods for project

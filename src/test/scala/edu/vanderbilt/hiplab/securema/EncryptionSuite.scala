@@ -1,4 +1,4 @@
-package edu.vanderbilt.hiplab.metaanalysis
+package edu.vanderbilt.hiplab.securema
 
 /**
  * @description Ensure encryption/decryption produces correct result

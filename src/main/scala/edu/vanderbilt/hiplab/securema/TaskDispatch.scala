@@ -1,4 +1,4 @@
-package edu.vanderbilt.hiplab.metaanalysis
+package edu.vanderbilt.hiplab.securema
 
 import java.util.Properties
 import java.io.{File, FileOutputStream, FileInputStream}

@@ -1,4 +1,4 @@
-package edu.vanderbilt.hiplab.metaanalysis
+package edu.vanderbilt.hiplab.securema
 
 /**
  * @description Run whole protocol on test data

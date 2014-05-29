@@ -1,4 +1,4 @@
-package edu.vanderbilt.hiplab.metaanalysis;
+package edu.vanderbilt.hiplab.securema;
 
 /**
  * @author Wei Xie <wei.xie (at) vanderbilt.edu>

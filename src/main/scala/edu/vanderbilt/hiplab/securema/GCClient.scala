@@ -1,4 +1,4 @@
-package edu.vanderbilt.hiplab.metaanalysis
+package edu.vanderbilt.hiplab.securema
 
 import org.jboss.netty.bootstrap.ClientBootstrap
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory

@@ -1,4 +1,4 @@
-package edu.vanderbilt.hiplab.metaanalysis
+package edu.vanderbilt.hiplab.securema
 
 import org.jboss.netty.channel._
 import org.jboss.netty.bootstrap.ServerBootstrap
@@ -7,30 +7,25 @@ import java.util.concurrent.Executors
 import java.net.InetSocketAddress
 import java.math.BigInteger
 import org.jboss.netty.handler.codec.serialization.{ClassResolvers, ObjectDecoder, ObjectEncoder}
-import Program.EstimateNServer
+import Program.EstimateNClient
 
 /**
  * Refer to README for details.
  * Author: Wei Xie
  * Version:
  */
-object ServerService {
-  var server: EstimateNServer = _
+object ClientService {
+  var client: EstimateNClient = _
 
-  class ServerHandler extends SimpleChannelUpstreamHandler {
+  class ClientHandler extends SimpleChannelUpstreamHandler {
     override def messageReceived(ctx: ChannelHandlerContext, e: MessageEvent) {
       try {
         val args = e.getMessage.asInstanceOf[Array[String]]
         println("Got: " + args(0))
 
-        server.setInputs(new BigInteger("1"))
-        server.runOnline()
 
-        /*
-        for (result <- server.results) {
-          println("Result: " + result)
-        }
-        */
+        client.setInputs(new BigInteger("5"))
+        client.runOnline()
 
       } catch { case e: Exception =>
         e.printStackTrace()
@@ -39,7 +34,7 @@ object ServerService {
   }
 
 
-  class ServiceServer(port: Int) {
+  class ServiceClient(port: Int) {
     def run() = {
       val bootstrap = new ServerBootstrap(
         new NioServerSocketChannelFactory(
@@ -52,7 +47,7 @@ object ServerService {
         def getPipeline: ChannelPipeline = Channels.pipeline(
           new ObjectEncoder(),
           new ObjectDecoder(ClassResolvers.cacheDisabled(getClass.getClassLoader)),
-          new ServerHandler()
+          new ClientHandler()
         )
       })
 
@@ -63,16 +58,16 @@ object ServerService {
 
   def main(args: Array[String]): Unit = {
     if (args.length < 1) {
-      println("ERROR: need to provide PORT number for Service.")
+      println("ERROR: need to provide PORT number for AliceService.")
     } else {
-      //val port = try { args(0).toInt } catch { case _: Exception => 3492 }
-      val port = 3492
+      //val port = try { args(0).toInt } catch { case _: Exception => 3491 }
+      val port = 3491
 
-      server = new EstimateNServer(80, 80)
-      server.runOffline()
+      client = new EstimateNClient(80, 80)
+      client.runOffline()
 
       println("Now accepting new requests...")
-      new ServiceServer(port).run()
+      new ServiceClient(port).run()
     }
   }
 }

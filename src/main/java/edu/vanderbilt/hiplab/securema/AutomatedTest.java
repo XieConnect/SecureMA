@@ -4,7 +4,7 @@
  * @description Test running Alice and Bob
  */
 
-package edu.vanderbilt.hiplab.metaanalysis;
+package edu.vanderbilt.hiplab.securema;
 
 import java.io.BufferedReader;
 import java.io.IOException;
