@@ -40,7 +40,7 @@ object TaskDispatch {
 
   def main(args: Array[String]) = {
     println("Preparing files using Bash...")
-    Runtime.getRuntime.exec("/bin/bash prepare_experiment.sh blabla2 " + Helpers.property("total_instances"))
+    //Runtime.getRuntime.exec("/bin/bash prepare_experiment.sh blabla2 " + Helpers.property("total_instances"))
     println("End of bash!")
 
     customizeConf("blabla2")

@@ -4,6 +4,8 @@
 # Usage:
 #   ./start
 
+JAR_PATH=out/SecureMA.jar
+
 if [ -n "${JAVA_HOME}" ]; then
   JAVA=${JAVA_HOME}/bin/java
 else
@@ -11,7 +13,7 @@ else
 fi
 
 function prepare_data(){
-  ${JAVA} -Drundir=run/ -classpath MetaAnalysis.jar edu.vanderbilt.hiplab.metaanalysis.Owner "verify"
+  ${JAVA} -Drundir=run/ -classpath $JAR_PATH  edu.vanderbilt.hiplab.metaanalysis.Owner "verify"
 }
 
 ## Prepare data
@@ -20,4 +22,4 @@ function prepare_data(){
 
 ## Run experiment
 #${JAVA} -Xms800m -Xmx2g -Drundir=run/ -classpath MetaAnalysis.jar edu.vanderbilt.hiplab.metaanalysis.Experiment > data/experiment.log
-${JAVA} -Xms800m -Xmx2g -Drundir=run/ -classpath MetaAnalysis.jar edu.vanderbilt.hiplab.metaanalysis.Experiment
+${JAVA} -Xms800m -Xmx2g -Drundir=run/ -classpath $JAR_PATH  edu.vanderbilt.hiplab.metaanalysis.Experiment
