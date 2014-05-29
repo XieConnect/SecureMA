@@ -1,3 +1,3 @@
 Manifest-Version: 1.0
-Main-Class: edu.vanderbilt.hiplab.metaanalysis.Experiment
+Main-Class: edu.vanderbilt.hiplab.securema.Experiment
 

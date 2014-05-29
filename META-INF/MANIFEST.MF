@@ -2,5 +2,5 @@ Manifest-Version: 1.0
 Class-Path: FairplayBI.jar log4j-1.2.15.jar scalatest_2.9.2-1.8.jar co
  mmons-math3-3.0.jar Paillier.jar scala-compiler.jar scala-library.jar
   scala-reflect.jar akka-actors.jar typesafe-config.jar
-Main-Class: edu.vanderbilt.hiplab.metaanalysis.Experiment
+Main-Class: edu.vanderbilt.hiplab.securema.Experiment
 

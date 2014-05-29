@@ -3,7 +3,7 @@ package fastgc;
 import Program.EstimateNConfig;
 import Program.EstimateNServer;
 import Utils.StopWatch;
-import edu.vanderbilt.hiplab.metaanalysis.Helpers;
+import edu.vanderbilt.hiplab.securema.Helpers;
 import jargs.gnu.CmdLineParser;
 
 import java.io.ObjectInputStream;

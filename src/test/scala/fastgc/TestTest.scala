@@ -1,7 +1,7 @@
 package fastgc
 
 import java.math.BigInteger
-import edu.vanderbilt.hiplab.metaanalysis.Mediator
+import edu.vanderbilt.hiplab.securema.Mediator
 
 /**
   * Refer to README for details.

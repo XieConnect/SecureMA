@@ -5,7 +5,7 @@ import Program.EstimateNConfig;
 import Program.ProgClient;
 import Program.Program;
 import Utils.StopWatch;
-import edu.vanderbilt.hiplab.metaanalysis.Helpers;
+import edu.vanderbilt.hiplab.securema.Helpers;
 import jargs.gnu.CmdLineParser;
 
 import java.io.EOFException;
