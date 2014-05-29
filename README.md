@@ -1,64 +1,68 @@
-# SecureMA: secure meta-analysis across multiple sites #
+# SecureMA: secure meta-analysis for genetic association studies #
 
-SecureMA is a secure framework for supporting genetic association studies (via meta-analysis) over distributed data sites while preserving data privacy at both person- and site-level. Specifically, person-level data and site-level summary statistics are fully protected (encrypted/randomized) throughout the computation. And the final result (association p-value) of meta-analysis is only made known to the designated recipient.
+SecureMA is a secure framework for performing multi-site genetic association studies across large consortia, without violating privacy/confidentiality of individual participants or substudy sites. It aims at addressing various attacks on genomic privacy, and provides comprehensive protection over genomic data without impeding scientific endeavor.
 
 
 ## Technical Overview ##
 
-This demonstration package is primarily implemented in Scala/Java. We provide native API to any JVM-based languages (such as Java).
+This demonstration software is implemented in Scala/Java, and provides native API for JVM-based languages (such as Java, Scala, etc).
 
-The whole project can be deployed as one single self-contained JAR package and run on any system where JVM is available.
-
-
-## How to Get ##
-
-- Source code available at: http://github.com/XieConnect/SecureMA
-- Pre-compiled JAR package: (TO ANNOUNCE SOON)
+The whole project can be deployed as a stand-alone JAR package and run on any computer with JVM.
 
 
 ## Lazy User's Guide ##
 
-Assume you already downloaded the pre-packaged SecureMA.jar .
+Assume you have already built or downloaded our SecureMA.jar package. Please follow the instructions below to get SecureMA running.
 
-1. Organize input according to required format;
-2. Run circuit evaluation backends (e.g., <i>circuit_servers</i>);
-3. Run the experiment;
+1. Perform local sub-studies, and organize site-level inputs according to required format;
+    (for demonstration on a single machine, you can place them in file: *data/raw_data_sorted.csv*);
+
+2. Encrypt local site summaries (each site run the helper functions to encrypt their private summary data);
+
+3. Now launch the backend services for executing garbled circuits (via the provided script: *circuit_servers*);
+    
+    This will spawn four background Java processes awaiting incoming computations;
+
+4. Run the secure meta-analysis experiments (via script: *start*);
+
+    Currently experiments will be run in sequential in order to to accurately measure runtime.
 
 
-## Description ##
-
-- Owner.scala : data owners (e.g., local sites) encrypt and contribute their data to entrusted parties;
-- Manager.scala : collects data encryptions from data owners and act as data
-  delegates;
-- Mediator.scala : secure computation (aggregation);
-
-
-## Dependencies ##
-- JDK 1.6+
-- Other required jars are included in lib/ or specified as Maven dependencies;
-- (optional) scalatest jar package (for automated tests only);
+(The system is tunable via the configuration file *conf.properties*. More details will be provided later)
 
 
 ## Directory structure ##
-- data/raw_data_sorted.csv: input raw data for meta-analysis (delimitered by comma). This should be sorted by experiment identifiers (to distinguish between different experiments); the first row should be the header. Important columns include:
+- *data/raw_data_sorted.csv*: input raw data for meta-analysis (delimitered by comma). This should be sorted by experiment identifiers (to distinguish between different experiments); the first row should be the header. Important columns include:
     * standard error (or se., 12th column)
     * beta (11th column)
     * the other columns (1 to 4th, and 6 to 10th) will be combined to form an identifier to distinguish different experiments (in other words, you can safely put site names in column 5).
 
+- *conf.properties*: configuration file for various sytem parameters;
+
+- *src/*: source code folder;
+
 
 ## Notes ##
-- API for Alice and Bob has changed a little from original one (to config server and port to run socket)
-- Check if current port available: lsof -i :3496  (3496 is port you desire)
+- Our backend service require 4 vacant socket ports. You can use this command to check ports: lsof -i :3496  (3496 is port you desire)
+
 - When customizing MaxN (as in Fairplay), remember to :
-    * modify two related parameters in Fairplay script;
     * modify max_exponent_n in .properties file;
 - When customizing multiplier in SMC, remember to:
     * modify .properties file;
     * re-generate input data (encrypted_data.csv);
 
 
-## To-Do ##
-- Parallel evaluation of circuits
+## How to Get ##
+
+- Pre-compiled binaries (prepared on JVM 1.7): https://github.com/XieConnect/SecureMA/releases/tag/v0.2
+
+- Source code available at: http://github.com/XieConnect/SecureMA
+
+
+## Dependencies ##
+- JVM 1.6+ (our pre-compiled binaries require JVM 1.7);
+- The key file *NPOTKey* is required by the circuit backend service;
+- (*Optional*) The provided helper scripts require a Shell runtime (such as Bash);
 
 
 ## Copyright & License ##
