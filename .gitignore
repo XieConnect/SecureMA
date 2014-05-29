@@ -1,0 +1,13 @@
+*.class
+*.log
+out/*
+target/*
+experiment/*
+
+data/*
+
+*.swp
+run/*
+
+*.iml
+.idea/*
