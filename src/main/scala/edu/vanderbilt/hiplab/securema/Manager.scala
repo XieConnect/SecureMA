@@ -14,7 +14,7 @@ import paillierp.key.PaillierPrivateThresholdKey
 import paillierp.PaillierThreshold
 
 import concurrent.ExecutionContext.Implicits.global
-import concurrent.{future, Await}
+import scala.concurrent.{Future, future, Await}
 import concurrent.duration._
 
 object Manager {
@@ -151,7 +151,7 @@ object Manager {
     }
 
     (0 to kTaylorPlaces).par.map ( i =>
-      future( someone.multiply(baseEncryption, baseValue.pow(i)).mod(paillierNSquared) ) )
+      Future( someone.multiply(baseEncryption, baseValue.pow(i)).mod(paillierNSquared) ) )
       .map( fut => Await.result(fut, 3 seconds) )(collection.breakOut)
   }
 

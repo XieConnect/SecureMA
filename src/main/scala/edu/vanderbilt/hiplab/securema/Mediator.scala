@@ -14,7 +14,7 @@ import java.math.BigDecimal
 import org.apache.commons.math3.util.ArithmeticUtils
 import java.net.ServerSocket
 import concurrent.ExecutionContext.Implicits.global
-import concurrent.{future, Await}
+import scala.concurrent.{Future, future, Await}
 import concurrent.duration._
 import fastgc.CircuitQuery
 
@@ -145,7 +145,7 @@ object Mediator {
    */
   def decryptDataNoProcessing(encrypted: BigInteger) = {
     val beforeDecrypt = System.currentTimeMillis()
-    val results = Helpers.DecryptionParties.view.par.map ( p => future(p.decrypt(encrypted)) )
+    val results = Helpers.DecryptionParties.view.par.map ( p => Future(p.decrypt(encrypted)) )
                     .map(a => Await.result(a, 3 seconds))(collection.breakOut)
 
     Helpers.DecryptionParties(0).combineShares(results: _*)
@@ -315,8 +315,8 @@ object Mediator {
 
     val startedAt = System.currentTimeMillis()
 
-    val aa = future { Helpers.circuitQueriers(querierCategory * 2 + 0).query(inputs(0)) }
-    val bb = future { Helpers.circuitQueriers(querierCategory * 2 + 1).query(inputs(1)) }
+    val aa = Future { Helpers.circuitQueriers(querierCategory * 2 + 0).query(inputs(0)) }
+    val bb = Future { Helpers.circuitQueriers(querierCategory * 2 + 1).query(inputs(1)) }
 
     val aResult = Await.result(aa, 120 second)
     timerStr += (System.currentTimeMillis() - startedAt)

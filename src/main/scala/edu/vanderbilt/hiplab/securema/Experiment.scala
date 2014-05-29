@@ -209,7 +209,8 @@ object Experiment {
 
     val paillierNSquared = Helpers.getPublicKey().getNSPlusOne
     val decryptionFuture: List[Future[BigInteger]] = List(numeratorEncryption, denominatorEncryption).map(a =>
-      future { blocking {Mediator.decryptData(a)} })
+      Future { blocking {Mediator.decryptData(a)} })
+
     val decryptions = Await.result(Future.sequence(decryptionFuture), 20 second)
 
     // Simultaneously compute ln() of numerator and denominator
