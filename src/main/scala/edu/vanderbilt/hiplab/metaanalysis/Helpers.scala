@@ -11,7 +11,6 @@ import java.util.{Random, Properties}
 import paillierp.key.{KeyGen, PaillierKey}
 import java.math.BigInteger
 import paillierp.{PaillierThreshold, Paillier}
-import SFE.BOAL.MyUtil
 import io.Source
 import scala.Tuple2
 import org.apache.commons.math3.util.ArithmeticUtils
@@ -139,6 +138,7 @@ object Helpers {
    * TODO: it's cheating in dealing with negatives
    * @param encryption  Paillier encrypted input to be randomized
    */
+  /*
   def encryption2Shares(encryption: BigInteger, plainValue: BigInteger): Tuple2[BigInteger, BigInteger] = {
     val writers = Array("Bob", "Alice").map(a => new PrintWriter(new File(Experiment.PathPrefix + a + ".input")))
     val shareRand = BigInteger.valueOf(new Random().nextInt(10000))
@@ -161,6 +161,7 @@ object Helpers {
 
     (share1, share2)
   }
+  */
 
   def readFairplayResult(path: String): Array[BigInteger] = {
     var result = Array[BigInteger]()
@@ -264,6 +265,7 @@ object Helpers {
     getFairplayResult("Bob").map(println)
   }
 
+  /*
   def getPlainInput(): BigInteger = {
     val inputs = Array("Alice", "Bob").map(a =>
       new BigInteger(Source.fromFile(Experiment.PathPrefix + a + ".input").getLines().take(1).mkString)
@@ -271,6 +273,7 @@ object Helpers {
 
     inputs(0).add(inputs(1))
   }
+  */
 
   def copyFiles() = {
     for (a <- Array("conf.properties", MyUtil.pathFile(Helpers.property("fairplay_script")))) {

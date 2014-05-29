@@ -46,6 +46,7 @@ class HelpersSuite extends FunSuite {
   }
   */
 
+  /*
   test("converts encryption to secret shares") {
     val someone = new Paillier(Helpers.getPublicKey())
     val rnd = new Random()
@@ -58,6 +59,7 @@ class HelpersSuite extends FunSuite {
       expectResult(0) (share1.add(share2).compareTo(plainValue))
     }
   }
+  */
 
   test("prepares correct inputs for Fairplay") {
     // test multiple times
